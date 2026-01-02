@@ -26,6 +26,7 @@ import { getInvoiceStats } from "@/lib/firestore/invoices";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 
 export default function DashboardPage() {
+    console.log("🟢 Dashboard component is rendering!");
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -40,6 +41,7 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const fetchDashboardData = async () => {
+            console.log("📈 Dashboard: Starting data fetch...");
             try {
                 const [
                     leadsResult,
@@ -56,6 +58,8 @@ export default function DashboardPage() {
                     getTasks({ assigneeId: user?.uid }),
                     getInvoiceStats(),
                 ]);
+
+                console.log("✅ Dashboard: Data fetched successfully");
 
                 // Calculate stats
                 const activeDeals = dealsResult.deals.filter(
@@ -91,14 +95,18 @@ export default function DashboardPage() {
 
                 setUpcomingTasks(upcoming);
             } catch (error) {
-                console.error("Error fetching dashboard data:", error);
+                console.error("❌ Dashboard: Error fetching data:", error);
             } finally {
+                console.log("🏁 Dashboard: Setting loading to false");
                 setLoading(false);
             }
         };
 
         if (user) {
+            console.log("👤 Dashboard: User detected, fetching data for:", user.email);
             fetchDashboardData();
+        } else {
+            console.log("⚠️ Dashboard: No user, skipping data fetch");
         }
     }, [user]);
 
@@ -240,10 +248,10 @@ export default function DashboardPage() {
                                             {task.dueDate && (
                                                 <p
                                                     className={`text-xs mt-1 ${isOverdue(task.dueDate)
-                                                            ? "text-red-600 font-semibold"
-                                                            : isDueToday(task.dueDate)
-                                                                ? "text-orange-600 font-semibold"
-                                                                : "text-muted-foreground"
+                                                        ? "text-red-600 font-semibold"
+                                                        : isDueToday(task.dueDate)
+                                                            ? "text-orange-600 font-semibold"
+                                                            : "text-muted-foreground"
                                                         }`}
                                                 >
                                                     {isOverdue(task.dueDate)
@@ -256,10 +264,10 @@ export default function DashboardPage() {
                                         </div>
                                         <span
                                             className={`px-2 py-1 text-xs rounded-full ${task.priority === "Urgent"
-                                                    ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
-                                                    : task.priority === "High"
-                                                        ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
-                                                        : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+                                                ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                                                : task.priority === "High"
+                                                    ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
+                                                    : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
                                                 }`}
                                         >
                                             {task.priority}

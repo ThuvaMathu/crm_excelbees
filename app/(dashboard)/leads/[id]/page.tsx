@@ -214,7 +214,7 @@ export default function LeadDetailPage({
                     { label: "Leads", href: "/leads" },
                     { label: `${lead.firstName} ${lead.lastName}` },
                 ]}
-                actions={
+                action={
                     <div className="flex gap-2">
                         {canEdit && (
                             <Button variant="outline" size="sm">

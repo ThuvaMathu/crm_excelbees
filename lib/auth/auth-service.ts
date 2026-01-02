@@ -3,8 +3,6 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
-  GoogleAuthProvider,
-  signInWithPopup,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User,
   updateProfile,
@@ -57,19 +55,7 @@ export async function signUpWithEmail(
   }
 }
 
-// Sign in with Google (using popup)
-export async function signInWithGoogle() {
-  console.log("🔐 Attempting Google sign-in with popup");
-  try {
-    const provider = new GoogleAuthProvider();
-    const userCredential = await signInWithPopup(auth, provider);
-    console.log("✅ Google sign-in successful:", userCredential.user.uid);
-    return { user: userCredential.user, error: null };
-  } catch (error: any) {
-    console.error("❌ Google sign-in failed:", error.code, error.message);
-    return { user: null, error: error.message };
-  }
-}
+
 
 // Sign out
 export async function signOut() {

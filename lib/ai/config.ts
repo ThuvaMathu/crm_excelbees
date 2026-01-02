@@ -20,10 +20,10 @@ export type AIModel =
   | 'gemini-pro' 
   | 'gemini-2.0-flash-lite' 
   | 'gemini-2.0-flash' 
-  | 'gpt-4' 
-  | 'gpt-4o' 
+  | 'gpt-5.1' 
+  | 'gpt-5-mini' 
   | 'gpt-4o-mini'
-  | 'deepseek-v3'; 
+
 
 interface TaskConfig {
   provider: AIProvider;

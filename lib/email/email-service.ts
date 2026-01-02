@@ -1,14 +1,22 @@
 import nodemailer from "nodemailer";
+import {
+  getWelcomeEmailTemplate,
+  getPasswordChangedEmailTemplate,
+  getPasswordResetEmailTemplate,
+} from "./templates/auth-templates";
 
 // Zoho AU SMTP Configuration
 const transporter = nodemailer.createTransport({
-  host: process.env.ZOHO_SMTP_HOST || "smtp.zoho.com.au",
-  port: parseInt(process.env.ZOHO_SMTP_PORT || "465"),
+  host: process.env.SMTP_HOST || "smtppro.zoho.com.au",
+  port: parseInt(process.env.SMTP_PORT || "465"),
   secure: true, // Use SSL
   auth: {
-    user: process.env.ZOHO_EMAIL,
-    pass: process.env.ZOHO_APP_PASSWORD,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
+  tls: {
+    rejectUnauthorized: false // Allow self-signed certificates for development
+  }
 });
 
 // Verify transporter configuration
@@ -32,14 +40,15 @@ export async function sendEmail(
   attachments?: Array<{ filename: string; path?: string; content?: string | Buffer }>
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    const fromEmail = from || process.env.ZOHO_EMAIL;
+    const fromEmail = from || process.env.FROM_EMAIL || process.env.SMTP_USER;
+    const fromName = process.env.FROM_EMAIL_NAME || "Excel Bees CRM";
     
     if (!fromEmail) {
       throw new Error("Sender email not configured");
     }
 
     const info = await transporter.sendMail({
-      from: `"CRM Excel Bees" <${fromEmail}>`,
+      from: `"${fromName}" <${fromEmail}>`,
       to: Array.isArray(to) ? to.join(", ") : to,
       subject,
       html,
@@ -322,4 +331,72 @@ export async function sendTaskReminderEmail(
   `;
 
   return sendEmail(userEmail, subject, html);
+}
+
+// ============================================================================
+// AUTHENTICATION EMAILS (Admin-Only User Management)
+// ============================================================================
+
+/**
+ * Send welcome email to newly created user with temporary password
+ */
+export async function sendAdminCreatedUserEmail(
+  data: {
+    email: string;
+    userName: string;
+    tempPassword: string;
+    role: string;
+  }
+): Promise<{ success: boolean; error: string | null }> {
+  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`;
+  
+  const template = getWelcomeEmailTemplate({
+    userName: data.userName,
+    email: data.email,
+    tempPassword: data.tempPassword,
+    role: data.role,
+    loginUrl,
+  });
+
+  return sendEmail(data.email, template.subject, template.html);
+}
+
+/**
+ * Send password changed confirmation email
+ */
+export async function sendPasswordChangedConfirmation(
+  data: {
+    email: string;
+    userName: string;
+  }
+): Promise<{ success: boolean; error: string | null }> {
+  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`;
+  
+  const template = getPasswordChangedEmailTemplate({
+    userName: data.userName,
+    loginUrl,
+  });
+
+  return sendEmail(data.email, template.subject, template.html);
+}
+
+/**
+ * Send password reset email with new temporary password (Admin reset)
+ */
+export async function sendAdminPasswordResetEmail(
+  data: {
+    email: string;
+    userName: string;
+    tempPassword: string;
+  }
+): Promise<{ success: boolean; error: string | null }> {
+  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`;
+  
+  const template = getPasswordResetEmailTemplate({
+    userName: data.userName,
+    tempPassword: data.tempPassword,
+    loginUrl,
+  });
+
+  return sendEmail(data.email, template.subject, template.html);
 }

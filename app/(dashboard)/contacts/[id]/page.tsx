@@ -121,7 +121,7 @@ export default function ContactDetailPage({
                     { label: "Contacts", href: "/contacts" },
                     { label: `${contact.firstName} ${contact.lastName}` },
                 ]}
-                actions={
+                action={
                     <div className="flex gap-2">
                         {canEdit && (
                             <Button variant="outline" size="sm">

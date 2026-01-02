@@ -10,15 +10,15 @@ interface Breadcrumb {
 
 interface PageHeaderProps {
     title: string;
-    breadcrumbs?: Breadcrumb[];
-    actions?: ReactNode;
     description?: string;
+    breadcrumbs?: { label: string; href?: string }[];
+    action?: React.ReactNode; // Add action prop for buttons/actions
 }
 
 export function PageHeader({
     title,
     breadcrumbs,
-    actions,
+    action,
     description,
 }: PageHeaderProps) {
     return (
@@ -50,7 +50,7 @@ export function PageHeader({
                     <p className="text-muted-foreground">{description}</p>
                 )}
             </div>
-            {actions && <div className="flex items-center gap-2">{actions}</div>}
+            {action && <div className="flex items-center gap-2">{action}</div>}
         </div>
     );
 }

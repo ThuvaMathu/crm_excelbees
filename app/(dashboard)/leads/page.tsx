@@ -86,7 +86,7 @@ export default function LeadsPage() {
                     { label: "Leads" },
                 ]}
                 description="Manage your sales leads and prospects"
-                actions={
+                action={
                     <Button
                         onClick={() => setCreateDialogOpen(true)}
                         className="bg-primary hover:bg-primary/90"

@@ -80,7 +80,7 @@ export default function CompaniesPage() {
                     { label: "Companies" },
                 ]}
                 description="Manage your business accounts and organizations"
-                actions={
+                action={
                     <Button
                         onClick={() => setCreateDialogOpen(true)}
                         className="bg-primary hover:bg-primary/90 gap-2"

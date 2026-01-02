@@ -107,7 +107,7 @@ export default function ProjectDetailPage() {
                     { label: project.name },
                 ]}
                 description={project.description || "Project Details"}
-                actions={
+                action={
                     <Button variant="outline">Edit Project</Button>
                 }
             />

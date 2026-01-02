@@ -39,11 +39,21 @@ const navigation = [
     { name: "Settings", href: "/settings", icon: Settings },
 ];
 
+const adminNavigation = [
+    { name: "Users", href: "/users", icon: Users },
+];
+
 export function Sidebar() {
     const pathname = usePathname();
     const router = useRouter();
     const { sidebarCollapsed, toggleSidebar } = useUIStore();
     const { user } = useAuth();
+
+    // Debug Sidebar Visibility
+    // console.log("Sidebar User State:", { uid: user?.uid, role: user?.role });
+
+    // Ensure role is available before rendering admin menu checks
+    const hasAdminAccess = user?.role === "admin" || user?.role === "manager";
 
     const handleLogout = async () => {
         const { error } = await signOut();
@@ -51,7 +61,7 @@ export function Sidebar() {
             toast.error("Failed to sign out");
         } else {
             toast.success("Signed out successfully");
-            router.push("/login");
+            // AuthGate will automatically redirect to /login when user becomes null
         }
     };
 
@@ -105,6 +115,44 @@ export function Sidebar() {
                             </li>
                         );
                     })}
+
+                    {/* Admin/Manager Navigation */}
+                    {hasAdminAccess && (
+                        <>
+                            <div className="my-2 px-3">
+                                <span className={cn("text-xs font-semibold text-gray-500 uppercase tracking-wider", sidebarCollapsed && "hidden")}>
+                                    Management
+                                </span>
+                                {sidebarCollapsed && <Separator className="my-2" />}
+                            </div>
+                            {adminNavigation.map((item) => {
+                                const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+                                return (
+                                    <li key={item.name}>
+                                        <Link
+                                            href={item.href}
+                                            className={cn(
+                                                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group relative",
+                                                isActive
+                                                    ? "bg-primary text-white"
+                                                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary-800 hover:text-gray-900 dark:hover:text-white"
+                                            )}
+                                        >
+                                            <item.icon className="h-5 w-5 flex-shrink-0" />
+                                            {!sidebarCollapsed && (
+                                                <span className="text-sm font-medium">{item.name}</span>
+                                            )}
+                                            {sidebarCollapsed && (
+                                                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 dark:bg-secondary-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                                                    {item.name}
+                                                </div>
+                                            )}
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </>
+                    )}
                 </ul>
             </nav>
 

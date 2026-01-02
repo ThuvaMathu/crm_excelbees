@@ -13,13 +13,14 @@ import { Switch } from "@/components/ui/switch";
 import { RecipientInput } from "./RecipientInput";
 import { TemplateSelector } from "./TemplateSelector";
 import { MergeFieldDropdown } from "./MergeFieldDropdown";
+import { AIAssistantEnhanced } from "./AIAssistantEnhanced";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Send, Save, X, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { createEmail, saveDraft } from "@/lib/firestore/emails";
 import { validateEmail } from "@/lib/email/merge-fields";
-import { incrementUsageCount } from "@/lib/firestore/email-templates";
+import { incrementUsageCount, createTemplate } from "@/lib/firestore/email-templates";
 import type { EmailContext, EmailRecipient, EmailTemplate, MergeFieldDefinition, EmailAttachment } from "@/types/email";
 import { Timestamp } from "firebase/firestore";
 import { uploadAttachment } from "@/lib/storage/attachments";
@@ -69,6 +70,16 @@ export function EmailComposeModal({
     const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
     const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
     const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+
+    // Undo state for AI Assistant
+    const [subjectHistory, setSubjectHistory] = useState<string[]>([]);
+    const [bodyHistory, setBodyHistory] = useState<string[]>([]);
+
+    // Save as Template State
+    const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
+    const [newTemplateName, setNewTemplateName] = useState("");
+    const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+    const [templateSelectorKey, setTemplateSelectorKey] = useState(0);
 
     // Initialize from context
     useEffect(() => {
@@ -140,6 +151,58 @@ export function EmailComposeModal({
         setAttachments(prev => prev.filter(a => a.id !== id));
     };
 
+    // Helper to sanitize email data and remove undefined fields
+    const sanitizeEmailData = (data: any) => {
+        const sanitized: any = {};
+
+        Object.keys(data).forEach(key => {
+            if (data[key] !== undefined) {
+                sanitized[key] = data[key];
+            }
+        });
+
+        return sanitized;
+    };
+
+    // AI Assistant handlers
+    const handleAIGenerateSubject = (text: string, shouldReplace: boolean) => {
+        if (shouldReplace && subject) {
+            // Save current subject to history before replacing
+            setSubjectHistory(prev => [...prev, subject]);
+        }
+
+        setSubject(text);
+        toast.success("Subject updated with AI");
+    };
+
+    const handleAIGenerateBody = (text: string, shouldReplace: boolean) => {
+        if (shouldReplace && body) {
+            // Save current body to history before replacing
+            setBodyHistory(prev => [...prev, body]);
+        }
+
+        setBody(text);
+        toast.success("Email content updated");
+    };
+
+    const handleUndoSubject = () => {
+        if (subjectHistory.length === 0) return;
+
+        const previous = subjectHistory[subjectHistory.length - 1];
+        setSubjectHistory(prev => prev.slice(0, -1));
+        setSubject(previous);
+        toast.success("Subject restored");
+    };
+
+    const handleUndoBody = () => {
+        if (bodyHistory.length === 0) return;
+
+        const previous = bodyHistory[bodyHistory.length - 1];
+        setBodyHistory(prev => prev.slice(0, -1));
+        setBody(previous);
+        toast.success("Content restored");
+    };
+
     const handleSaveDraft = async () => {
         if (!user) {
             toast.error("You must be logged in");
@@ -149,14 +212,14 @@ export function EmailComposeModal({
         setIsSavingDraft(true);
 
         try {
-            const emailData = {
+            const emailData: any = {
                 from: user.email || "",
                 fromName: user.displayName || user.email || "",
                 to,
-                cc: cc.length > 0 ? cc : undefined,
-                bcc: bcc.length > 0 ? bcc : undefined,
-                subject,
-                body,
+                cc: cc.length > 0 ? cc : [],
+                bcc: bcc.length > 0 ? bcc : [],
+                subject: subject || "",
+                body: body || "",
                 status: "draft" as const,
                 templateId: selectedTemplate?.id,
                 templateName: selectedTemplate?.name,
@@ -166,22 +229,25 @@ export function EmailComposeModal({
                     opens: 0,
                     clicks: 0,
                 },
-                relatedTo: context?.relatedRecordId
-                    ? {
-                        collection: context.type === "invoice" ? "invoices" :
-                            context.type === "deal" ? "deals" :
-                                context.type === "contact" ? "contacts" :
-                                    context.type === "company" ? "companies" : "emails",
-                        id: context.relatedRecordId,
-                        name: context.relatedRecordName,
-                    }
-                    : undefined,
                 createdBy: user.uid,
                 createdByName: user.displayName || user.email || "",
-                attachments,
+                attachments: attachments || [],
             };
 
-            const { success, id, error } = await saveDraft(emailData, user.uid, draftId || undefined);
+            // Add relatedTo only if it exists
+            if (context?.relatedRecordId) {
+                emailData.relatedTo = {
+                    collection: context.type === "invoice" ? "invoices" :
+                        context.type === "deal" ? "deals" :
+                            context.type === "contact" ? "contacts" :
+                                context.type === "company" ? "companies" : "emails",
+                    id: context.relatedRecordId,
+                    name: context.relatedRecordName,
+                };
+            }
+
+            const sanitizedData = sanitizeEmailData(emailData);
+            const { success, id, error } = await saveDraft(sanitizedData, user.uid, draftId || undefined);
 
             if (success && id) {
                 setDraftId(id);
@@ -226,20 +292,14 @@ export function EmailComposeModal({
                 toast.loading(`Sending to ${to.length} recipients...`);
 
                 for (const recipient of to) {
-                    const emailData = {
+                    const emailData: any = {
                         from: user.email || "",
                         fromName: user.displayName || user.email || "",
                         to: [recipient], // Send to one at a time
-                        subject, // Note: We should probably resolve merge fields here if we had access to recipient data context. 
-                        // But the API route handles it if we pass the context? 
-                        // No, the API route expects a single 'relatedTo'.
-                        // For true mail merge, we need to pass a list of contexts or resolving locally.
-                        // For MVP: We send the same email to everyone. 
-                        // If the user uses {{contact.firstName}}, it won't resolve per user unless we handle it.
-                        // Let's assume for now we just send the email.
-                        body, // Logic to resolve variables per user is Complex.
-                        // Enhancing this: We can't do client-side merge for everyone easily without full data.
-                        // We'll trust the user knows what they are doing or we warn them.
+                        cc: [],
+                        bcc: [],
+                        subject: subject || "",
+                        body: body || "",
                         status: "sending" as const,
                         templateId: selectedTemplate?.id,
                         templateName: selectedTemplate?.name,
@@ -251,17 +311,18 @@ export function EmailComposeModal({
                         },
                         createdBy: user.uid,
                         createdByName: user.displayName || user.email || "",
-                        attachments,
+                        attachments: attachments || [],
                     };
 
-                    const { success } = await createEmail(emailData, user.uid);
+                    const sanitizedData = sanitizeEmailData(emailData);
+                    const { success } = await createEmail(sanitizedData, user.uid);
                     if (success) {
                         // Trigger send API
                         await fetch("/api/email/send", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
-                                ...emailData,
+                                ...sanitizedData,
                                 id: "temp-bulk-id", // API might need ID or separate endpoint
                                 // Actually createEmail returns ID. We should use it.
                             }),
@@ -280,16 +341,15 @@ export function EmailComposeModal({
 
             // Normal Send Logic
             // Create email
-            const emailData = {
+            const emailData: any = {
                 from: user.email || "",
                 fromName: user.displayName || user.email || "",
                 to,
-                cc: cc.length > 0 ? cc : undefined,
-                bcc: bcc.length > 0 ? bcc : undefined,
-                subject,
-                body,
+                cc: cc.length > 0 ? cc : [],
+                bcc: bcc.length > 0 ? bcc : [],
+                subject: subject || "",
+                body: body || "",
                 status: scheduledDate ? ("scheduled" as const) : ("sending" as const),
-                scheduledAt: scheduledDate ? Timestamp.fromDate(scheduledDate) : undefined,
                 templateId: selectedTemplate?.id,
                 templateName: selectedTemplate?.name,
                 tracking: {
@@ -298,22 +358,30 @@ export function EmailComposeModal({
                     opens: 0,
                     clicks: 0,
                 },
-                relatedTo: context?.relatedRecordId
-                    ? {
-                        collection: context.type === "invoice" ? "invoices" :
-                            context.type === "deal" ? "deals" :
-                                context.type === "contact" ? "contacts" :
-                                    context.type === "company" ? "companies" : "emails",
-                        id: context.relatedRecordId,
-                        name: context.relatedRecordName,
-                    }
-                    : undefined,
                 createdBy: user.uid,
                 createdByName: user.displayName || user.email || "",
-                attachments,
+                attachments: attachments || [],
             };
 
-            const { success, id, error } = await createEmail(emailData, user.uid);
+            // Add scheduledAt only if scheduled
+            if (scheduledDate) {
+                emailData.scheduledAt = Timestamp.fromDate(scheduledDate);
+            }
+
+            // Add relatedTo only if it exists
+            if (context?.relatedRecordId) {
+                emailData.relatedTo = {
+                    collection: context.type === "invoice" ? "invoices" :
+                        context.type === "deal" ? "deals" :
+                            context.type === "contact" ? "contacts" :
+                                context.type === "company" ? "companies" : "emails",
+                    id: context.relatedRecordId,
+                    name: context.relatedRecordName,
+                };
+            }
+
+            const sanitizedData = sanitizeEmailData(emailData);
+            const { success, id, error } = await createEmail(sanitizedData, user.uid);
 
             if (!success || !id) {
                 toast.error(error || "Failed to create email");
@@ -374,6 +442,37 @@ export function EmailComposeModal({
         setIsMediaLibraryOpen(false);
         setScheduledDate(undefined);
         setIsScheduleOpen(false);
+        setNewTemplateName("");
+    };
+
+    const handleSaveTemplate = async () => {
+        if (!user || !newTemplateName.trim()) return;
+
+        setIsSavingTemplate(true);
+        try {
+            const { success, error } = await createTemplate({
+                name: newTemplateName,
+                subject,
+                body,
+                category: (context?.type as any) || "general",
+                isShared: true, // Default to shared for team
+                isActive: true,
+                description: `Created from compose window on ${new Date().toLocaleDateString()}`
+            }, user.uid);
+
+            if (success) {
+                toast.success("Template saved successfully");
+                setIsSaveTemplateOpen(false);
+                setNewTemplateName("");
+                // Refresh selector
+                setTemplateSelectorKey(prev => prev + 1);
+            } else {
+                toast.error(error || "Failed to save template");
+            }
+        } catch (error: any) {
+            toast.error(error.message || "Failed to save template");
+        }
+        setIsSavingTemplate(false);
     };
 
     const handleClose = () => {
@@ -398,6 +497,7 @@ export function EmailComposeModal({
                     <div className="flex items-center gap-2">
                         <Label>Template:</Label>
                         <TemplateSelector
+                            key={templateSelectorKey}
                             onSelectTemplate={handleSelectTemplate}
                             category={context?.type as any}
                         />
@@ -455,20 +555,11 @@ export function EmailComposeModal({
                             <MergeFieldDropdown onInsertField={(field) => setSubject((prev) => prev + ` {{${field.key}}}`)} />
                         </div>
                         <div className="flex justify-end mt-1">
-                            <AIAssistant
-                                onGenerate={(text, type) => {
-                                    if (type === "subject") {
-                                        // If it's a list, take the first one or let user choose. 
-                                        // For MVP, if it returns multiple lines, we might just append or replace.
-                                        // Ideally we show a selection dialog, but let's just use the result for now.
-                                        // If content starts with numbers, clean it.
-                                        const clean = text.replace(/^\d+\.\s*/gm, '').split('\n')[0]; // Take first line
-                                        setSubject(clean);
-                                        toast.success("Subject updated");
-                                    }
-                                }}
-                                contextContent={body || subject} // Use body to generate subject
-                                contextType="compose"
+                            <AIAssistantEnhanced
+                                context="subject"
+                                currentContent={subject}
+                                onGenerate={handleAIGenerateSubject}
+                                onUndo={subjectHistory.length > 0 ? handleUndoSubject : undefined}
                             />
                         </div>
                     </div>
@@ -484,13 +575,11 @@ export function EmailComposeModal({
                             <div className="flex justify-between items-center">
                                 <Label>Body:</Label>
                                 <div className="flex gap-2">
-                                    <AIAssistant
-                                        onGenerate={(text, type) => {
-                                            setBody(text);
-                                            toast.success("Content updated");
-                                        }}
-                                        contextContent={body}
-                                        contextType="compose"
+                                    <AIAssistantEnhanced
+                                        context="body"
+                                        currentContent={body}
+                                        onGenerate={handleAIGenerateBody}
+                                        onUndo={bodyHistory.length > 0 ? handleUndoBody : undefined}
                                     />
                                     <Button
                                         type="button"
@@ -597,6 +686,15 @@ export function EmailComposeModal({
                             <Button
                                 type="button"
                                 variant="outline"
+                                onClick={() => setIsSaveTemplateOpen(true)}
+                                disabled={isSending || !subject || !body}
+                            >
+                                <Save className="h-4 w-4 mr-2" />
+                                Save as Template
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
                                 onClick={handleClose}
                                 disabled={isSending}
                             >
@@ -619,15 +717,38 @@ export function EmailComposeModal({
                     isOpen={isMediaLibraryOpen}
                     onClose={() => setIsMediaLibraryOpen(false)}
                     onSelect={(url, alt) => {
-                        // Insert image into body
-                        // Simple append for now as we use textarea. 
-                        // If Rich Text Editor, we would insert at cursor.
-                        // For HTML textarea, we insert <img /> tag.
                         const imgTag = `<img src="${url}" alt="${alt}" style="max-width: 100%; border-radius: 4px;" /><br/>`;
                         setBody((prev) => prev + imgTag);
                         toast.success("Image inserted");
                     }}
                 />
+
+                {/* Save Template Dialog */}
+                <Dialog open={isSaveTemplateOpen} onOpenChange={setIsSaveTemplateOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Save as Template</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="template-name">Template Name</Label>
+                                <Input
+                                    id="template-name"
+                                    placeholder="e.g., Monthly Update"
+                                    value={newTemplateName}
+                                    onChange={(e) => setNewTemplateName(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setIsSaveTemplateOpen(false)}>Cancel</Button>
+                            <Button onClick={handleSaveTemplate} disabled={!newTemplateName.trim() || isSavingTemplate}>
+                                {isSavingTemplate && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Template
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </DialogContent>
         </Dialog>
     );

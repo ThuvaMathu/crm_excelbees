@@ -147,7 +147,7 @@ export default function DealDetailPage({
                     { label: "Deals", href: "/deals" },
                     { label: deal.title },
                 ]}
-                actions={
+                action={
                     <div className="flex gap-2">
                         <Button
                             variant="outline"

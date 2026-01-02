@@ -25,19 +25,20 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { signInWithEmail, signInWithGoogle } from "@/lib/auth/auth-service";
+import { signInWithEmail } from "@/lib/auth/auth-service";
 import { createUserProfile } from "@/lib/firestore/users";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { auth } from "@/lib/firebase";
 import { analytics } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
-import { Mail, Lock, Chrome } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
     const router = useRouter();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
 
     const form = useForm<LoginFormData>({
@@ -125,55 +126,7 @@ export default function LoginPage() {
         }
     };
 
-    const handleGoogleLogin = async () => {
-        console.log("🔐 Starting Google login flow");
-        setLoading(true);
 
-        try {
-            const { user, error: authError } = await signInWithGoogle();
-
-            if (authError) {
-                console.error("❌ Google login error:", authError);
-                analytics.loginFailed("", authError, "google");
-                toast.error(getErrorMessage(authError));
-                setLoading(false);
-                return;
-            }
-
-            if (!user) {
-                console.error("❌ No user returned from Google login");
-                toast.error("Login failed. Please try again.");
-                setLoading(false);
-                return;
-            }
-
-            console.log("✅ Google login successful, user:", user.uid);
-            console.log("📝 Creating user profile in Firestore...");
-
-            // Ensure user profile exists in Firestore
-            try {
-                await createUserProfile(user.uid, {
-                    email: user.email!,
-                    displayName: user.displayName || "User",
-                    photoURL: user.photoURL || undefined,
-                });
-                console.log("✅ User profile created/updated");
-            } catch (profileError: any) {
-                console.error("⚠️ Failed to create user profile:", profileError);
-                // Continue anyway - profile creation is not critical for login
-            }
-
-            analytics.loginSuccess(user.uid, user.email!, "google");
-            toast.success("Welcome back!");
-
-            console.log("🔄 Redirecting to dashboard...");
-            router.push("/dashboard");
-        } catch (error: any) {
-            console.error("❌ Unexpected error in Google login:", error);
-            toast.error("An unexpected error occurred. Please try again.");
-            setLoading(false);
-        }
-    };
 
     return (
         <Card className="shadow-2xl border-0">
@@ -223,12 +176,26 @@ export default function LoginPage() {
                                         <div className="relative">
                                             <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                             <Input
-                                                type="password"
+                                                type={showPassword ? "text" : "password"}
                                                 placeholder="••••••••"
-                                                className="pl-10"
+                                                className="pl-10 pr-10"
                                                 disabled={loading}
                                                 {...field}
                                             />
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                aria-label={showPassword ? "Hide password" : "Show password"}
+                                            >
+                                                {showPassword ? (
+                                                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                                ) : (
+                                                    <Eye className="h-4 w-4 text-muted-foreground" />
+                                                )}
+                                            </Button>
                                         </div>
                                     </FormControl>
                                     <FormMessage />
@@ -259,38 +226,16 @@ export default function LoginPage() {
                     </form>
                 </Form>
 
-                <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">
-                            Or continue with
-                        </span>
-                    </div>
-                </div>
 
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleGoogleLogin}
-                    disabled={loading}
-                >
-                    <Chrome className="mr-2 h-4 w-4" />
-                    Google
-                </Button>
             </CardContent>
 
             <CardFooter className="flex justify-center border-t pt-6">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground text-center">
                     Don't have an account?{" "}
-                    <Link
-                        href="/register"
-                        className="text-primary hover:underline font-medium"
-                    >
-                        Sign up
-                    </Link>
+                    <span className="text-foreground font-medium">
+                        Contact your administrator
+                    </span>
+                    {" "}to request access.
                 </p>
             </CardFooter>
         </Card>

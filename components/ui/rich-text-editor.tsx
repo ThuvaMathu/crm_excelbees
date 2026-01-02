@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Bold,
@@ -64,10 +64,26 @@ export function RichTextEditor({
         content: value,
         editable: !disabled,
         onUpdate: ({ editor }) => {
-            onChange(editor.getHTML());
+            const html = editor.getHTML();
+            onChange(html);
+        },
+        onBlur: ({ editor }) => {
+            // Ensure final state is captured when user leaves editor
+            const html = editor.getHTML();
+            onChange(html);
         },
         immediatelyRender: false,
     });
+
+    // Sync external changes to editor (e.g., from AI Assistant or templates)
+    useEffect(() => {
+        if (!editor) return;
+
+        const currentContent = editor.getHTML();
+        if (value && value !== currentContent) {
+            editor.commands.setContent(value, { emitUpdate: false });
+        }
+    }, [value, editor]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);

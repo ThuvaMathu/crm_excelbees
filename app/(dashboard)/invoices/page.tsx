@@ -74,10 +74,12 @@ export default function InvoicesPage() {
                     { label: "Invoices" },
                 ]}
                 description="Manage your invoices and track payments"
-                actions={
-                    <Button className="bg-primary hover:bg-primary/90 gap-2">
-                        <Plus className="h-4 w-4" />
-                        New Invoice
+                action={
+                    <Button className="bg-primary hover:bg-primary/90 gap-2" asChild>
+                        <Link href="/invoices/create">
+                            <Plus className="h-4 w-4" />
+                            New Invoice
+                        </Link>
                     </Button>
                 }
             />

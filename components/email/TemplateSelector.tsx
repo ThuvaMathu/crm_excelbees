@@ -8,6 +8,9 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
+    SelectGroup,
+    SelectLabel,
+    SelectSeparator
 } from "@/components/ui/select";
 import {
     Dialog,
@@ -16,15 +19,56 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { FileText, Eye } from "lucide-react";
+import { FileText, Eye, Sparkles } from "lucide-react";
 import { getTemplates } from "@/lib/firestore/email-templates";
 import type { EmailTemplate, EmailTemplateCategory } from "@/types/email";
+import { toast } from "sonner";
 
 interface TemplateSelectorProps {
     onSelectTemplate: (template: EmailTemplate) => void;
     category?: EmailTemplateCategory;
     disabled?: boolean;
 }
+
+// Static templates always available
+const STATIC_TEMPLATES: Partial<EmailTemplate>[] = [
+    {
+        id: "static_followup",
+        name: "General Follow-up",
+        description: "Standard follow-up after initial contact",
+        category: "follow-up",
+        subject: "Following up on our conversation",
+        body: "<p>Hi {{contact.firstName}},</p><p>I hope you're having a great week.</p><p>I'm writing to follow up on our last conversation.</p><p>Do you have any questions or need further information?</p><p>Best regards,<br>{{user.fullName}}</p>",
+        isDefault: false
+    },
+    {
+        id: "static_meeting",
+        name: "Meeting Invitation",
+        description: "Request for a quick sync",
+        category: "general",
+        subject: "Meeting Request: {{company.name}}",
+        body: "<p>Hi {{contact.firstName}},</p><p>I'd love to schedule a quick call to discuss how we can help with your current projects.</p><p>Are you available for a 15-minute chat next Tuesday or Wednesday?</p><p>Looking forward to connecting.</p><p>Thanks,<br>{{user.fullName}}</p>",
+        isDefault: false
+    },
+    {
+        id: "static_invoice",
+        name: "Standard Invoice",
+        description: "Template for sending invoices",
+        category: "invoice",
+        subject: "Invoice #{{invoice.number}} from {{company.name}}",
+        body: "<p>Dear {{contact.firstName}},</p><p>Please find attached the invoice for our recent services.</p><p>Amount Due: {{invoice.total}}</p><p>Due Date: {{invoice.dueDate}}</p><p>If you have any questions, please let me know.</p><p>Regards,<br>{{user.fullName}}</p>",
+        isDefault: false
+    },
+    {
+        id: "static_welcome",
+        name: "Welcome Email",
+        description: "Warm welcome to new clients",
+        category: "welcome",
+        subject: "Welcome to {{company.name}}!",
+        body: "<p>Hi {{contact.firstName}},</p><p>Welcome aboard! We are thrilled to have you as a client.</p><p>We are committed to providing you with the best service possible.</p><p>Let's get started!</p><p>Cheers,<br>{{user.fullName}}</p>",
+        isDefault: false
+    }
+];
 
 export function TemplateSelector({
     onSelectTemplate,
@@ -33,7 +77,7 @@ export function TemplateSelector({
 }: TemplateSelectorProps) {
     const [templates, setTemplates] = useState<EmailTemplate[]>([]);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
-    const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+    const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | Partial<EmailTemplate> | null>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -42,23 +86,45 @@ export function TemplateSelector({
 
     const fetchTemplates = async () => {
         setLoading(true);
-        const { templates: fetchedTemplates } = await getTemplates({
+        const { templates: fetchedTemplates, error } = await getTemplates({
             category,
             isActive: true,
         });
+
+        if (error) {
+            console.error("Error fetching templates:", error);
+            // Silent fail for templates is often better than aggressive toasts, 
+            // but we can log it.
+        }
+
         setTemplates(fetchedTemplates);
         setLoading(false);
     };
 
-    const handleSelectTemplate = (templateId: string) => {
-        setSelectedTemplateId(templateId);
-        const template = templates.find((t) => t.id === templateId);
-        if (template) {
-            onSelectTemplate(template);
+    const handleSelectTemplate = (value: string) => {
+        setSelectedTemplateId(value);
+        if (value === "none") return;
+
+        // Check fetched templates first
+        const dbTemplate = templates.find((t) => t.id === value);
+        if (dbTemplate) {
+            onSelectTemplate(dbTemplate);
+            return;
+        }
+
+        // Check static templates
+        const staticTemplate = STATIC_TEMPLATES.find((t) => t.id === value);
+        if (staticTemplate) {
+            // Cast to EmailTemplate for strict typing, though Partial is safer in state
+            // Ideally we pass simple struct.
+            // onSelectTemplate expects EmailTemplate which has IDs/Timestamps. 
+            // We should mock them or update type.
+            // For now, let's fast-cast, assuming the consumer mostly cares about body/subject.
+            onSelectTemplate(staticTemplate as EmailTemplate);
         }
     };
 
-    const handlePreview = (template: EmailTemplate) => {
+    const handlePreview = (template: EmailTemplate | Partial<EmailTemplate>) => {
         setPreviewTemplate(template);
     };
 
@@ -77,17 +143,42 @@ export function TemplateSelector({
                         <SelectItem value="none">
                             <span className="text-muted-foreground">No template</span>
                         </SelectItem>
-                        {templates.map((template) => (
-                            <SelectItem key={template.id} value={template.id}>
-                                <div className="flex items-center gap-2">
-                                    <FileText className="h-4 w-4" />
-                                    <span>{template.name}</span>
-                                    {template.isDefault && (
-                                        <span className="text-xs text-muted-foreground">(Default)</span>
-                                    )}
-                                </div>
-                            </SelectItem>
-                        ))}
+
+                        {/* Static / System Templates */}
+                        <SelectGroup>
+                            <SelectLabel className="flex items-center gap-2 text-purple-600">
+                                <Sparkles className="h-3 w-3" />
+                                Quick Templates
+                            </SelectLabel>
+                            {STATIC_TEMPLATES.map((template) => (
+                                <SelectItem key={template.id} value={template.id!}>
+                                    <div className="flex items-center gap-2">
+                                        <span>{template.name}</span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+
+                        {/* User Templates */}
+                        {templates.length > 0 && (
+                            <>
+                                <SelectSeparator />
+                                <SelectGroup>
+                                    <SelectLabel>My Templates</SelectLabel>
+                                    {templates.map((template) => (
+                                        <SelectItem key={template.id} value={template.id}>
+                                            <div className="flex items-center gap-2">
+                                                <FileText className="h-4 w-4" />
+                                                <span>{template.name}</span>
+                                                {template.isDefault && (
+                                                    <span className="text-xs text-muted-foreground">(Default)</span>
+                                                )}
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </>
+                        )}
                     </SelectContent>
                 </Select>
 
@@ -97,8 +188,9 @@ export function TemplateSelector({
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                            const template = templates.find((t) => t.id === selectedTemplateId);
-                            if (template) handlePreview(template);
+                            const t = templates.find((t) => t.id === selectedTemplateId)
+                                || STATIC_TEMPLATES.find((t) => t.id === selectedTemplateId);
+                            if (t) handlePreview(t);
                         }}
                     >
                         <Eye className="h-4 w-4 mr-2" />
@@ -128,7 +220,7 @@ export function TemplateSelector({
                                 <label className="text-sm font-medium">Body:</label>
                                 <div
                                     className="mt-1 p-4 bg-muted rounded-md text-sm prose prose-sm max-w-none"
-                                    dangerouslySetInnerHTML={{ __html: previewTemplate.body }}
+                                    dangerouslySetInnerHTML={{ __html: previewTemplate.body || "" }}
                                 />
                             </div>
 
@@ -143,7 +235,8 @@ export function TemplateSelector({
                                 <Button
                                     type="button"
                                     onClick={() => {
-                                        onSelectTemplate(previewTemplate);
+                                        // Cast here safely enough for selection purposes
+                                        onSelectTemplate(previewTemplate as EmailTemplate);
                                         setPreviewTemplate(null);
                                     }}
                                 >
@@ -157,3 +250,4 @@ export function TemplateSelector({
         </>
     );
 }
+

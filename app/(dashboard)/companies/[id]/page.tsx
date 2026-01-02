@@ -121,7 +121,7 @@ export default function CompanyDetailPage({
                     { label: "Companies", href: "/companies" },
                     { label: company.name },
                 ]}
-                actions={
+                action={
                     <div className="flex gap-2">
                         <Button
                             variant="outline"

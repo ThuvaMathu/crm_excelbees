@@ -17,6 +17,8 @@ import type { EmailTemplate, EmailTemplateInput, EmailTemplateCategory } from "@
 
 const COLLECTION_NAME = "emailTemplates";
 
+
+
 // Create a new email template
 export async function createTemplate(
   data: Partial<EmailTemplateInput>,
@@ -82,16 +84,19 @@ export async function getTemplates(filters?: {
       q = query(q, where("createdBy", "==", filters.createdBy));
     }
 
-    // Order by name
-    q = query(q, orderBy("name", "asc"));
+    // Order by name - DONE CLIENT SIDE TO AVOID INDEX ISSUES
+    // q = query(q, orderBy("name", "asc"));
 
     const querySnapshot = await getDocs(q);
     console.log("📊 Templates fetched:", querySnapshot.size);
 
-    const templates: EmailTemplate[] = [];
+    let templates: EmailTemplate[] = [];
     querySnapshot.forEach((doc) => {
       templates.push({ id: doc.id, ...doc.data() } as EmailTemplate);
     });
+
+    // Sort client-side
+    templates.sort((a, b) => a.name.localeCompare(b.name));
 
     console.log("✅ Returning", templates.length, "templates");
     return {
@@ -195,6 +200,11 @@ export async function deleteTemplate(id: string): Promise<{
 
 // Increment template usage count
 export async function incrementUsageCount(id: string): Promise<void> {
+  // Static templates are not stored in Firestore, so we don't track usage for them
+  if (id.startsWith("static_")) {
+    return;
+  }
+
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, {
@@ -207,126 +217,4 @@ export async function incrementUsageCount(id: string): Promise<void> {
   }
 }
 
-// Seed default templates
-export async function seedDefaultTemplates(userId: string): Promise<void> {
-  try {
-    console.log("🌱 Seeding default email templates...");
-    
-    const defaultTemplates: Partial<EmailTemplateInput>[] = [
-      {
-        name: "Invoice Email",
-        description: "Send invoice to client",
-        category: "invoice",
-        subject: "Invoice {{invoice.number}} from {{company.name}}",
-        body: `<p>Dear {{contact.firstName}},</p>
 
-<p>I hope this email finds you well. Please find attached Invoice {{invoice.number}} for {{invoice.total}}.</p>
-
-<p><strong>Invoice Details:</strong></p>
-<ul>
-  <li>Invoice Number: {{invoice.number}}</li>
-  <li>Invoice Date: {{invoice.date}}</li>
-  <li>Due Date: {{invoice.dueDate}}</li>
-  <li>Amount Due: {{invoice.total}}</li>
-</ul>
-
-<p>Please process payment by {{invoice.dueDate}} to avoid any late fees.</p>
-
-<p>If you have any questions, please don't hesitate to contact me.</p>
-
-<p>Best regards,<br>
-{{user.fullName}}<br>
-{{user.jobTitle}}<br>
-{{company.name}}</p>`,
-        isDefault: true,
-        isShared: true,
-      },
-      {
-        name: "Quote Email",
-        description: "Send quote to prospect",
-        category: "quote",
-        subject: "Quote for {{deal.name}}",
-        body: `<p>Dear {{contact.firstName}},</p>
-
-<p>Thank you for your interest in {{company.name}}. I'm pleased to provide you with a quote for {{deal.name}}.</p>
-
-<p>Please review the attached quote and let me know if you have any questions.</p>
-
-<p>This quote is valid for 30 days from {{today}}.</p>
-
-<p>Looking forward to working with you!</p>
-
-<p>Best regards,<br>
-{{user.fullName}}<br>
-{{user.jobTitle}}<br>
-{{company.name}}</p>`,
-        isDefault: true,
-        isShared: true,
-      },
-      {
-        name: "Follow-up Email",
-        description: "Follow up with contact",
-        category: "follow-up",
-        subject: "Following up on {{deal.name}}",
-        body: `<p>Hi {{contact.firstName}},</p>
-
-<p>I wanted to follow up on our recent conversation about {{deal.name}}.</p>
-
-<p>Do you have any questions or need any additional information?</p>
-
-<p>I'm here to help!</p>
-
-<p>Best regards,<br>
-{{user.fullName}}<br>
-{{user.jobTitle}}<br>
-{{company.name}}</p>`,
-        isDefault: true,
-        isShared: true,
-      },
-      {
-        name: "Payment Reminder",
-        description: "Remind client about payment",
-        category: "reminder",
-        subject: "Payment Reminder - Invoice {{invoice.number}}",
-        body: `<p>Dear {{contact.firstName}},</p>
-
-<p>This is a friendly reminder that Invoice {{invoice.number}} for {{invoice.total}} is due on {{invoice.dueDate}}.</p>
-
-<p>Please process payment at your earliest convenience.</p>
-
-<p>Thank you for your business!</p>
-
-<p>Best regards,<br>
-{{user.fullName}}<br>
-{{user.jobTitle}}<br>
-{{company.name}}</p>`,
-        isDefault: true,
-        isShared: true,
-      },
-      {
-        name: "General Email",
-        description: "General purpose email template",
-        category: "general",
-        subject: "",
-        body: `<p>Dear {{contact.firstName}},</p>
-
-<p>[Your message here]</p>
-
-<p>Best regards,<br>
-{{user.fullName}}<br>
-{{user.jobTitle}}<br>
-{{company.name}}</p>`,
-        isDefault: true,
-        isShared: true,
-      },
-    ];
-
-    for (const template of defaultTemplates) {
-      await createTemplate(template, userId);
-    }
-
-    console.log("✅ Default templates seeded successfully");
-  } catch (error: any) {
-    console.error("❌ Failed to seed default templates:", error.message);
-  }
-}

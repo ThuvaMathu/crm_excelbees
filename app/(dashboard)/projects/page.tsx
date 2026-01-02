@@ -71,7 +71,7 @@ export default function ProjectsPage() {
                     { label: "Projects" },
                 ]}
                 description="Manage your projects and track progress"
-                actions={
+                action={
                     <Button
                         onClick={() => setCreateDialogOpen(true)}
                         className="bg-primary hover:bg-primary/90 gap-2"

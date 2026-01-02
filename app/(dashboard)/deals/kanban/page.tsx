@@ -293,7 +293,7 @@ export default function DealsKanbanPage() {
                     { label: "Deals", href: "/deals" },
                     { label: "Kanban" },
                 ]}
-                actions={
+                action={
                     <div className="flex gap-2">
                         <Link href="/deals">
                             <Button variant="outline" size="sm">

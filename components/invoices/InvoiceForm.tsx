@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -135,6 +135,56 @@ export function InvoiceForm({ invoice, mode, onSave, saving = false }: InvoiceFo
                     selectedCompanyId={form.watch("companyId")}
                     selectedContactId={form.watch("contactId")}
                 />
+
+                {/* Client Details (Editable) */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">Billing Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="companyName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Client Name / Company</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} placeholder="Client Name" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="clientEmail"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Client Email</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} type="email" placeholder="billing@client.com" />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="billingAddress"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Billing Address</FormLabel>
+                                    <FormControl>
+                                        <Textarea {...field} placeholder="Full billing address..." rows={3} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
 
                 <Card>
                     <CardContent className="pt-6 space-y-4">

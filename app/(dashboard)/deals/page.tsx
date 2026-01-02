@@ -156,7 +156,7 @@ export default function DealsPage() {
                     { label: "Deals" },
                 ]}
                 description="Manage your sales pipeline"
-                actions={
+                action={
                     <Button
                         onClick={() => setCreateDialogOpen(true)}
                         className="bg-primary hover:bg-primary/90 gap-2"

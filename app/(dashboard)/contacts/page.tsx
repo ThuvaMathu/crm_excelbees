@@ -113,7 +113,7 @@ export default function ContactsPage() {
                     { label: "Contacts" },
                 ]}
                 description="Manage your business contacts"
-                actions={
+                action={
                     <div className="flex gap-2">
                         {selectedIds.size > 0 && (
                             <Button variant="secondary" onClick={handleBulkEmail} className="gap-2">

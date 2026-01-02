@@ -91,7 +91,7 @@ export default function TasksPage() {
                     { label: "Tasks" },
                 ]}
                 description="Manage your tasks and to-dos"
-                actions={
+                action={
                     <div className="flex items-center gap-2">
                         <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")}>
                             <TabsList>

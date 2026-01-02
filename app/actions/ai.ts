@@ -6,8 +6,8 @@ import { getAIAdapter } from "@/lib/ai/service";
 
 export async function generateText(prompt: string) {
   try {
-    // defaults to 'tasks' strategy for general text generation
-    const { service, model, temperature } = getAIAdapter('tasks');
+    // defaults to 'email' strategy for email-related operations
+    const { service, model, temperature } = getAIAdapter('email');
 
     const response = await service.generateText({
       prompt: prompt,

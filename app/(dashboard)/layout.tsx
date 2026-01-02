@@ -20,9 +20,7 @@ export default function DashboardLayout({
     const { sidebarCollapsed } = useUIStore();
 
     // Redirect to login if not authenticated
-    if (!user) {
-        redirect("/login");
-    }
+    // Note: RBACGuard handles this now
 
     return (
         <div className="min-h-screen bg-background">

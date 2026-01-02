@@ -1,94 +1,119 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper functions
+    // ============================================================================
+    // HELPER FUNCTIONS
+    // ============================================================================
+    
     function isAuthenticated() {
       return request.auth != null;
     }
     
     function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      // In a real app, you'd check a custom claim or a user role document
-      // For now, we'll assume any authenticated user can act as an 'admin' 
-      // of their own data, but you might want to restrict this further.
-      return isAuthenticated(); 
-    }
-
-    // Users collection
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
-    }
-
-    // Leads
-    match /leads/{leadId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || resource.data.ownerId == null);
-    }
-
-    // Contacts
-    match /contacts/{contactId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || resource.data.ownerId == null);
-    }
-
-    // Companies
-    match /companies/{companyId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || resource.data.ownerId == null);
-    }
-
-    // Deals
-    match /deals/{dealId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || resource.data.ownerId == null);
-    }
-
-    // Projects
-    match /projects/{projectId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || resource.data.ownerId == null);
-    }
-
-    // Tasks
-    match /tasks/{taskId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || resource.data.assigneeId == request.auth.uid || resource.data.ownerId == null);
-    }
-
-    // Invoices
-    match /invoices/{invoiceId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || resource.data.ownerId == null);
-    }
-
-    // Notifications
-    match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // Allow functions or backend triggers to write (in client-side logic we might need this if we create notifs from client)
-      // Actually strictly, notifications should probably be created by Cloud Functions, 
-      // but our current architecture creates them from the client side calls in lib/firestore/*.ts
-      allow create: if isAuthenticated(); 
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid; // Read/Delete
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Activities
-    match /activities/{activityId} {
-       allow read: if isAuthenticated();
-       allow create: if isAuthenticated();
+    // User Data Helpers
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    // Check if user is approved AND active (new field)
+    function isApproved() {
+      return isAuthenticated() && 
+             getUserData().isApproved == true &&
+             getUserData().isActive != false; // Default to true if missing
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'admin';
+    }
+    
+    function isManager() {
+      return isAuthenticated() && (getUserData().role == 'manager' || getUserData().role == 'admin');
+    }
+
+    // ============================================================================
+    // USERS COLLECTION (Admin-Only User Creation System)
+    // ============================================================================
+    
+    match /users/{userId} {
+      // Read: Users can read their own profile. Admins/Managers can read all.
+      allow read: if isOwner(userId) || isManager();
+      
+      // Create: ONLY ADMINS can create users (no public registration)
+      // Exception: Allow self-creation during migration/first login if doc doesn't exist
+      allow create: if isAdmin() || (
+        isOwner(userId) && 
+        !exists(/databases/$(database)/documents/users/$(userId))
+      );
+      
+      // Update: 
+      // - Users can update their own non-critical fields (displayName, photoURL, settings, etc.)
+      // - Users CANNOT change: role, isApproved, isActive, createdBy
+      // - Users CAN change: isFirstLogin (when changing password)
+      // - Admins can update any field
+      allow update: if 
+        (isOwner(userId) && (
+          // Users can update non-sensitive fields
+          !request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasAny(['role', 'isApproved', 'isActive', 'createdBy']) ||
+          // Users can update isFirstLogin when changing password
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isFirstLogin', 'passwordChangedAt', 'updatedAt', 'lastLoginAt']) &&
+           request.resource.data.isFirstLogin == false)
+        )) ||
+        isManager(); // Admins/Managers can update any user
+      
+      // Delete: Only admins can delete users
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // DEFAULT PROTECTION FOR OTHER COLLECTIONS
+    // Only approved AND active users can access CRM data
+    // ============================================================================
+    
+    match /{collection}/{docId} {
+      allow read, write: if isAuthenticated() && isApproved();
+    }
+    
+    // ============================================================================
+    // SPECIFIC COLLECTION RULES
+    // ============================================================================
+    
+    match /leads/{leadId} {
+      allow read, write: if isAuthenticated() && isApproved();
+    }
+    
+    match /contacts/{contactId} {
+      allow read, write: if isAuthenticated() && isApproved();
+    }
+    
+    match /companies/{companyId} {
+      allow read, write: if isAuthenticated() && isApproved();
+    }
+    
+    match /deals/{dealId} {
+      allow read, write: if isAuthenticated() && isApproved();
+    }
+    
+    match /projects/{projectId} {
+      allow read, write: if isAuthenticated() && isApproved();
+    }
+    
+    match /tasks/{taskId} {
+      allow read, write: if isAuthenticated() && isApproved();
+    }
+
+    match /email_templates/{templateId} {
+      allow read: if isAuthenticated() && isApproved();
+      allow write: if isAuthenticated() && isApproved(); 
+    }
+    
+    match /invoices/{invoiceId} {
+      allow read, write: if isAuthenticated() && isApproved();
     }
   }
 }

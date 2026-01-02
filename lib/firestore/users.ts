@@ -10,7 +10,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 
-export type UserRole = "admin" | "manager" | "sales" | "support";
+export type UserRole = "admin" | "manager" | "team";
 export type UserStatus = "active" | "inactive";
 
 export interface UserDocument {
@@ -34,10 +34,17 @@ export interface UserProfile {
   employeeId?: string;
   // Role & Status
   role: UserRole;
+  isFirstLogin: boolean; // Force password change on first login
+  isActive: boolean; // Soft delete flag (account deactivation)
   status: UserStatus;
   // Timestamps
   createdAt: Timestamp;
+  createdBy: string; // Admin UID who created this user
   lastLoginAt: Timestamp;
+  passwordChangedAt?: Timestamp; // Track password changes
+  updatedAt?: Timestamp; // Last profile update
+  // Auth Provider
+  provider: "password" | "google.com"; // Authentication method
   // Documents
   documents?: UserDocument[];
   // Settings
@@ -49,6 +56,7 @@ export interface UserProfile {
 }
 
 // Create user profile in Firestore
+// Create or Update user profile in Firestore
 export async function createUserProfile(
   uid: string,
   data: {
@@ -62,45 +70,82 @@ export async function createUserProfile(
     role?: UserRole;
   }
 ) {
-  console.log("📝 Creating user profile in Firestore for UID:", uid);
-  console.log("📝 User data:", { email: data.email, displayName: data.displayName });
+  console.log("📝 User Profile Sync for UID:", uid);
   
   try {
     const userRef = doc(db, "users", uid);
-    console.log("📁 Firestore reference created for collection: users, document:", uid);
-    
-    // Check if user already exists
-    console.log("🔍 Checking if user already exists...");
     const existingUser = await getDoc(userRef);
     
     if (existingUser.exists()) {
-      console.log("✅ User already exists, updating lastLoginAt");
-      // User already exists, just update lastLoginAt
-      await setDoc(
-        userRef,
-        {
+      // ----------------------------------------------------------------
+      // EXISTING USER: Only update non-destructive fields
+      // ----------------------------------------------------------------
+      const userData = existingUser.data();
+      console.log(`✅ User exists (Role: ${userData.role}, Active: ${userData.isActive})`);
+
+      // 1. Always update last login
+      const updates: any = {
           lastLoginAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
-      console.log("✅ User lastLoginAt updated successfully");
+      };
+
+      // 2. Sync profile fields if they are better/newer (optional, but good for Google Auth)
+      // Only update displayName if it's currently "Unknown" or missing
+      if (!userData.displayName && data.displayName) {
+          updates.displayName = data.displayName;
+      }
+      if (!userData.photoURL && data.photoURL) {
+          updates.photoURL = data.photoURL;
+      }
+
+      // 3. BACKFILL SAFETY: Only set admin fields if they represent a corruption state (missing)
+      // NEVER overwrite existing values, even if they are false/team
+      if (userData.role === undefined || userData.role === null) {
+          console.warn("⚠️ Data integrity fix: Backfilling missing ROLE to 'team'");
+          updates.role = "team";
+      }
+
+
+      // 4. Ensure createdAt exists
+      if (!userData.createdAt) {
+          updates.createdAt = serverTimestamp();
+      }
+
+      await setDoc(userRef, updates, { merge: true });
+      console.log("✅ User profile synced (updates only)");
       return { success: true, error: null };
     }
 
-    console.log("📝 Creating new user profile...");
-    // Create new user profile
-    const userProfile: Omit<UserProfile, "uid"> = {
+    // ----------------------------------------------------------------
+    // NEW USER: Full creation
+    // ----------------------------------------------------------------
+    console.log("🆕 Creating NEW user profile...");
+    
+    // Explicitly define the new user object to ensure strict schema enforcement
+    const newUserProfile: Omit<UserProfile, "uid"> = {
       email: data.email,
-      displayName: data.displayName,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      photoURL: data.photoURL,
-      phone: data.phone,
-      employeeId: data.employeeId,
-      role: data.role || "sales", // Default role
+      displayName: data.displayName || data.email.split('@')[0],
+      firstName: data.firstName || "",
+      lastName: data.lastName || "",
+      photoURL: data.photoURL || "",
+      phone: data.phone || "",
+      employeeId: data.employeeId || "",
+      
+      // Critical Security Fields - Set Default
+      role: data.role || "team", 
+      isFirstLogin: true, // Force password change on first login
+      isActive: true, // Active by default
       status: "active",
+      
+      // Verification Timestamps
       createdAt: serverTimestamp() as Timestamp,
+      createdBy: "self_registration", // Will be admin UID for admin-created users
       lastLoginAt: serverTimestamp() as Timestamp,
+      passwordChangedAt: undefined,
+      updatedAt: serverTimestamp() as Timestamp,
+      
+      // Auth Provider
+      provider: "password", // Default to password, will be updated for Google
+      
       documents: [],
       settings: {
         theme: "system",
@@ -109,16 +154,12 @@ export async function createUserProfile(
       },
     };
 
-    console.log("💾 Saving user profile to Firestore...");
-    await setDoc(userRef, userProfile);
-    console.log("✅ User profile created successfully in Firestore!");
-    console.log("✅ User can be found at: Firestore → users →", uid);
+    await setDoc(userRef, newUserProfile);
+    console.log("✅ New user profile created explicitly:", uid);
     
     return { success: true, error: null };
   } catch (error: any) {
-    console.error("❌ Failed to create user profile:", error);
-    console.error("❌ Error code:", error.code);
-    console.error("❌ Error message:", error.message);
+    console.error("❌ Failed to sync user profile:", error);
     return { success: false, error: error.message };
   }
 }
@@ -182,12 +223,59 @@ export async function getUsers(): Promise<{ users: UserProfile[] | null; error: 
     try {
         const usersRef = collection(db, "users");
         const snapshot = await getDocs(usersRef);
-        const users = snapshot.docs.map(doc => ({
-            uid: doc.id,
-            ...doc.data()
-        } as UserProfile));
+        const users = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                uid: doc.id,
+                ...data,
+                // Fallback for missing displayName
+                displayName: data.displayName || data.email?.split('@')[0] || "Unknown User"
+            } as UserProfile;
+        });
         return { users, error: null };
     } catch (error: any) {
         return { users: [] as UserProfile[], error: error.message };
+    }
+}
+
+// Approve User (Admin/Manager)
+export async function approveUser(uid: string, approved: boolean = true) {
+    try {
+        const userRef = doc(db, "users", uid);
+        await updateDoc(userRef, {
+            isActive: approved,
+            updatedAt: serverTimestamp(),
+        });
+        return { success: true, error: null };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+// Update User Role (Admin/Manager)
+export async function updateUserRole(uid: string, role: UserRole) {
+    try {
+        const userRef = doc(db, "users", uid);
+        await updateDoc(userRef, {
+            role,
+            updatedAt: serverTimestamp(),
+        });
+        return { success: true, error: null };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+// Delete User (Admin only)
+export async function deleteUser(uid: string) {
+    try {
+        const userRef = doc(db, "users", uid);
+        await updateDoc(userRef, {
+            status: "inactive",
+            deletedAt: serverTimestamp(),
+        });
+        return { success: true, error: null };
+    } catch (error: any) {
+        return { success: false, error: error.message };
     }
 }

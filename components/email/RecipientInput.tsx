@@ -172,19 +172,19 @@ export function RecipientInput({
 
                 {/* Suggestions dropdown */}
                 {showSuggestions && suggestions.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-[200px] overflow-y-auto">
                         {suggestions.map((contact) => (
                             <button
                                 key={contact.id}
                                 type="button"
                                 onClick={() => handleSelectContact(contact)}
-                                className="w-full px-3 py-2 text-left hover:bg-accent flex items-center gap-2"
+                                className="w-full px-3 py-2 text-left hover:bg-slate-100 hover:text-slate-900 flex items-center gap-2 group"
                             >
                                 <div className="flex-1">
-                                    <div className="font-medium">
+                                    <div className="font-medium text-slate-900 group-hover:text-slate-900 text-sm">
                                         {contact.firstName} {contact.lastName}
                                     </div>
-                                    <div className="text-sm text-muted-foreground">
+                                    <div className="text-xs text-slate-500 group-hover:text-slate-600">
                                         {contact.email}
                                     </div>
                                     {contact.companyName && (
