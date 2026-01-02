@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Deal, DealInput, DealFilters, DealStage } from "@/types/crm";
+import { createNotification } from "./notifications";
 
 const COLLECTION_NAME = "deals";
 
@@ -201,10 +202,32 @@ export async function updateDeal(id: string, data: Partial<DealInput>): Promise<
 }> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
+    
+    // Fetch current deal to compare changes and get owner
+    const currentDealSnap = await getDoc(docRef);
+    if (!currentDealSnap.exists()) throw new Error("Deal not found");
+    const currentDeal = currentDealSnap.data() as Deal;
+
     await updateDoc(docRef, {
       ...data,
       updatedAt: Timestamp.now(),
     } as any);
+
+    // Check for stage change to notify
+    if (data.stage && data.stage !== currentDeal.stage && (data.stage === "Won" || data.stage === "Lost")) {
+      const type = data.stage === "Won" ? "deal_won" : "deal_lost";
+      const title = `Deal ${data.stage}`;
+      const message = `Deal "${currentDeal.title}" has been marked as ${data.stage}.`;
+      
+      await createNotification(
+        currentDeal.ownerId, 
+        type, 
+        title, 
+        message, 
+        "deal", 
+        id
+      );
+    }
 
     return {
       success: true,
@@ -225,10 +248,32 @@ export async function updateDealStage(id: string, stage: DealStage): Promise<{
 }> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
+    
+    // Fetch current deal to get owner
+    const currentDealSnap = await getDoc(docRef);
+    if (!currentDealSnap.exists()) throw new Error("Deal not found");
+    const currentDeal = currentDealSnap.data() as Deal;
+
     await updateDoc(docRef, {
       stage,
       updatedAt: Timestamp.now(),
     });
+
+    // Notify if stage is Won or Lost
+    if (stage !== currentDeal.stage && (stage === "Won" || stage === "Lost")) {
+        const type = stage === "Won" ? "deal_won" : "deal_lost";
+        const title = `Deal ${stage}`;
+        const message = `Deal "${currentDeal.title}" has been marked as ${stage}.`;
+        
+        await createNotification(
+          currentDeal.ownerId, 
+          type, 
+          title, 
+          message, 
+          "deal", 
+          id
+        );
+    }
 
     return {
       success: true,

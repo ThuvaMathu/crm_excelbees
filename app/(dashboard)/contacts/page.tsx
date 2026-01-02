@@ -26,9 +26,14 @@ import {
     Users,
     Eye,
     Upload,
+    Mail,
+    CheckSquare
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import { Checkbox } from "@/components/ui/checkbox";
+import { EmailComposeModal } from "@/components/email/EmailComposeModal";
+import { toast } from "sonner";
 
 export default function ContactsPage() {
     const router = useRouter();
@@ -37,6 +42,8 @@ export default function ContactsPage() {
     const [loading, setLoading] = useState(true);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
     const fetchContacts = async () => {
         try {
@@ -72,6 +79,31 @@ export default function ContactsPage() {
         fetchContacts();
     };
 
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedIds(new Set(contacts.map(c => c.id)));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
+
+    const handleSelectOne = (id: string, checked: boolean) => {
+        const newSelected = new Set(selectedIds);
+        if (checked) {
+            newSelected.add(id);
+        } else {
+            newSelected.delete(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
+    const handleBulkEmail = () => {
+        if (selectedIds.size === 0) return;
+        setIsEmailModalOpen(true);
+    };
+
+
+
     return (
         <div className="space-y-6">
             <PageHeader
@@ -83,6 +115,12 @@ export default function ContactsPage() {
                 description="Manage your business contacts"
                 actions={
                     <div className="flex gap-2">
+                        {selectedIds.size > 0 && (
+                            <Button variant="secondary" onClick={handleBulkEmail} className="gap-2">
+                                <Mail className="h-4 w-4" />
+                                Email ({selectedIds.size})
+                            </Button>
+                        )}
                         <Button
                             variant="outline"
                             onClick={() => { }}
@@ -142,6 +180,12 @@ export default function ContactsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead className="w-[50px]">
+                                        <Checkbox
+                                            checked={contacts.length > 0 && selectedIds.size === contacts.length}
+                                            onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                                        />
+                                    </TableHead>
                                     <TableHead>Name</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Phone</TableHead>
@@ -154,6 +198,12 @@ export default function ContactsPage() {
                             <TableBody>
                                 {contacts.map((contact) => (
                                     <TableRow key={contact.id}>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selectedIds.has(contact.id)}
+                                                onCheckedChange={(checked) => handleSelectOne(contact.id, checked as boolean)}
+                                            />
+                                        </TableCell>
                                         <TableCell className="font-medium">
                                             {contact.firstName} {contact.lastName}
                                         </TableCell>
@@ -188,6 +238,23 @@ export default function ContactsPage() {
                 open={createDialogOpen}
                 onOpenChange={setCreateDialogOpen}
                 onSuccess={fetchContacts}
+            />
+
+            {/* Email Modal */}
+            <EmailComposeModal
+                isOpen={isEmailModalOpen}
+                onClose={() => setIsEmailModalOpen(false)}
+                // We need to pass the selected contacts as recipients
+                // Since modal expects context or default inputs, we might need a prop for initialRecipients 
+                // OR we just use the 'to' prepopulation if we add that prop.
+                context={{ type: 'general' }}
+                initialRecipients={contacts.filter(c => selectedIds.has(c.id)).map(c => ({
+                    email: c.email,
+                    name: `${c.firstName} ${c.lastName}`,
+                    contactId: c.id,
+                    isValid: true // simplified
+                }))}
+                isBulkMode={true} // New prop for Bulk Mode
             />
         </div>
     );

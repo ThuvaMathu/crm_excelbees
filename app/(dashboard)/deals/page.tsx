@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,6 +32,7 @@ const stageColors: Record<DealStage, string> = {
 };
 
 export default function DealsPage() {
+    const router = useRouter();
     const [dealsByStage, setDealsByStage] = useState<Record<DealStage, Deal[]> | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeDeal, setActiveDeal] = useState<Deal | null>(null);
@@ -193,7 +195,8 @@ export default function DealsPage() {
                                             <Card
                                                 key={deal.id}
                                                 id={deal.id}
-                                                className="p-3 cursor-move hover:shadow-md transition-shadow bg-card"
+                                                className="p-3 cursor-pointer hover:shadow-md transition-shadow bg-card"
+                                                onClick={() => router.push(`/deals/${deal.id}`)}
                                             >
                                                 <div className="space-y-2">
                                                     <h4 className="font-medium text-sm line-clamp-2">

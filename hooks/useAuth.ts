@@ -2,8 +2,16 @@
 
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth";
-import { onAuthStateChanged } from "@/lib/auth/auth-service";
-import { getUserProfile, updateLastLogin } from "@/lib/firestore/users";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { updateLastLogin } from "@/lib/firestore/users";
+import { UserRole } from "@/types/crm";
+import { User as FirebaseUser } from "firebase/auth";
+
+// Extend Firebase User with our custom properties
+export interface User extends FirebaseUser {
+  role?: UserRole;
+}
 
 export function useAuth() {
   const { user, setUser, setLoading, loading } = useAuthStore();
@@ -18,13 +26,13 @@ export function useAuth() {
       setLoading(false);
     }, 5000);
 
-    const unsubscribe = onAuthStateChanged(async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       clearTimeout(timeout); // Clear timeout since auth state changed
       
       try {
         if (firebaseUser) {
           // User is signed in
-          setUser(firebaseUser);
+          setUser(firebaseUser as User);
 
           // Update last login timestamp (wrapped in try-catch to prevent blocking)
           try {
@@ -33,9 +41,6 @@ export function useAuth() {
             console.error("Failed to update last login:", error);
             // Continue anyway - don't block the user from accessing the dashboard
           }
-
-          // Optionally fetch full user profile from Firestore
-          // const { user: profile } = await getUserProfile(firebaseUser.uid);
         } else {
           // User is signed out
           setUser(null);

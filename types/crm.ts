@@ -1,5 +1,18 @@
 import { Timestamp } from "firebase/firestore";
 
+// User Types
+export type UserRole = "admin" | "manager" | "sales" | "support";
+
+export interface User {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  role?: UserRole;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
 // Lead Types
 export type LeadStatus = "New" | "Contacted" | "Follow Up" | "Qualified" | "Lost";
 export type LeadSource = "Website" | "Referral" | "Ads" | "Cold Call" | "Other";
@@ -19,6 +32,10 @@ export interface Lead {
   ownerName?: string;
   tags: string[];
   notes?: string;
+  // AI Qualification
+  aiScore?: number;
+  aiReasoning?: string[];
+  aiLastUpdated?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -56,6 +73,8 @@ export interface Company {
   id: string;
   name: string;
   domain?: string;
+  phone?: string;
+  description?: string;
   industry?: string;
   size?: CompanySize;
   annualRevenue?: number;
@@ -66,6 +85,42 @@ export interface Company {
   notes?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+// Activity Types
+export type ActivityType = 
+  | "note" 
+  | "email" 
+  | "call" 
+  | "log" 
+  | "status_change" 
+  | "created" 
+  | "updated" 
+  | "deleted";
+
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  content: string; // Can be plain text or HTML
+  performedBy: string;
+  performedByName?: string;
+  relatedTo: {
+    collection: string;
+    id: string;
+  };
+  metadata?: {
+    oldValue?: any;
+    newValue?: any;
+    field?: string;
+  };
+  attachments?: {
+    name: string;
+    url: string;
+    size: number;
+    type: string;
+  }[];
+  mentions?: string[]; // Array of user IDs mentioned
+  createdAt: Timestamp;
 }
 
 // Deal Types
@@ -95,28 +150,151 @@ export interface Deal {
   updatedAt: Timestamp;
 }
 
-// Activity Types
-export type ActivityType = "note" | "email" | "call" | "log" | "status_change";
+// Project Types
+export type ProjectStatus = "Planning" | "Active" | "On Hold" | "Completed" | "Cancelled";
+export type ProjectPriority = "Low" | "Medium" | "High" | "Critical";
 
-export interface Activity {
+export interface Project {
   id: string;
-  type: ActivityType;
-  content: string;
-  performedBy: string;
-  performedByName?: string;
-  relatedTo: {
-    collection: "leads" | "contacts" | "companies" | "deals";
+  name: string;
+  description?: string;
+  status: ProjectStatus;
+  priority: ProjectPriority;
+  startDate: Timestamp;
+  endDate?: Timestamp;
+  budget?: number;
+  companyId?: string;
+  companyName?: string;
+  dealId?: string;
+  teamMembers: string[]; // User IDs
+  ownerId: string;
+  ownerName?: string;
+  progress: number; // 0-100
+  tags: string[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Task Types
+export type TaskStatus = "To Do" | "In Progress" | "Review" | "Done";
+export type TaskPriority = "Low" | "Medium" | "High" | "Urgent";
+export type TaskType = "To Do" | "Call" | "Email" | "Meeting";
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  type: TaskType;
+  status: TaskStatus;
+  priority: TaskPriority;
+  projectId?: string;
+  projectName?: string;
+  assigneeId?: string;
+  assigneeName?: string;
+  dueDate?: Timestamp;
+  startDate?: Timestamp;
+  estimatedHours?: number;
+  actualHours?: number;
+  tags: string[];
+  ownerId: string;
+  ownerName?: string;
+  relatedTo?: {
+    type: "lead" | "contact" | "deal" | "company";
     id: string;
+    name: string;
   };
-  metadata?: Record<string, any>;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  completedAt?: Timestamp;
+}
+
+// Invoice Types
+export type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
+export type PaymentTerms = "Net 15" | "Net 30" | "Net 60" | "Custom";
+export type InvoiceTemplate = "standard" | "project" | "recurring";
+
+export interface InvoiceLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  price: number;
+  taxRate: number; // Percentage (e.g., 10 for 10%)
+  total: number; // Auto-calculated
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  template: InvoiceTemplate;
+  // Client Information
+  companyId?: string;
+  companyName?: string;
+  contactId?: string;
+  contactName?: string;
+  clientEmail?: string;
+  billingAddress?: string;
+  // Deal/Project Linking
+  dealId?: string;
+  dealName?: string;
+  projectId?: string;
+  projectName?: string;
+  // Invoice Details
+  issueDate: Timestamp;
+  dueDate: Timestamp;
+  paidDate?: Timestamp;
+  paymentTerms: PaymentTerms;
+  currency: string; // e.g., "USD", "EUR"
+  // Line Items & Calculations
+  lineItems: InvoiceLineItem[];
+  subtotal: number;
+  taxAmount: number;
+  taxRate: number; // Percentage
+  discount: number; // Fixed amount
+  total: number;
+  // Additional Info
+  notes?: string;
+  terms?: string;
+  // Metadata
+  ownerId: string;
+  ownerName?: string;
+  createdBy: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  sentAt?: Timestamp;
+}
+
+// Notification Types
+export type NotificationType = 
+  | "deal_won" 
+  | "deal_lost" 
+  | "task_assigned" 
+  | "task_due" 
+  | "invoice_paid" 
+  | "invoice_overdue"
+  | "project_completed"
+  | "mention";
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  entityType: "lead" | "contact" | "deal" | "company" | "project" | "task" | "invoice";
+  entityId: string;
+  read: boolean;
   createdAt: Timestamp;
 }
 
 // Form Input Types (without Firestore-specific fields)
-export type LeadInput = Omit<Lead, "id" | "createdAt" | "updatedAt" | "ownerName" | "ownerId">;
-export type ContactInput = Omit<Contact, "id" | "createdAt" | "updatedAt" | "ownerName" | "companyName" | "ownerId">;
-export type CompanyInput = Omit<Company, "id" | "createdAt" | "updatedAt" | "ownerName" | "ownerId">;
-export type DealInput = Omit<Deal, "id" | "createdAt" | "updatedAt" | "ownerName" | "companyName" | "ownerId">;
+export type LeadInput = Omit<Lead, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type ContactInput = Omit<Contact, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type CompanyInput = Omit<Company, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type DealInput = Omit<Deal, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type ProjectInput = Omit<Project, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type TaskInput = Omit<Task, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName" | "completedAt">;
+export type InvoiceInput = Omit<Invoice, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName" | "paidDate">;
 
 // Filter Types
 export interface LeadFilters {
@@ -146,6 +324,28 @@ export interface DealFilters {
   search?: string;
   minValue?: number;
   maxValue?: number;
+}
+
+export interface ProjectFilters {
+  status?: ProjectStatus;
+  priority?: ProjectPriority;
+  ownerId?: string;
+  companyId?: string;
+  search?: string;
+  startDateFrom?: Date;
+  startDateTo?: Date;
+}
+
+export interface TaskFilters {
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  type?: TaskType;
+  assigneeId?: string;
+  projectId?: string;
+  ownerId?: string;
+  search?: string;
+  dueDateFrom?: Date;
+  dueDateTo?: Date;
 }
 
 // Pagination

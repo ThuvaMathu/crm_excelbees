@@ -25,9 +25,8 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { resetPassword } from "@/lib/auth/auth-service";
+import { sendPasswordReset } from "@/lib/auth/auth-service";
 import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/validations/auth";
-import { analytics } from "@/lib/analytics";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,15 +45,13 @@ export default function ForgotPasswordPage() {
     const onSubmit = async (data: ForgotPasswordFormData) => {
         setLoading(true);
 
-        const { error } = await resetPassword(data.email);
+        const { error } = await sendPasswordReset(data.email);
 
         setLoading(false);
 
         if (error) {
-            analytics.passwordResetFailed(data.email, error);
             toast.error(error);
         } else {
-            analytics.passwordResetRequested(data.email);
             setEmailSent(true);
             toast.success("Password reset email sent!");
         }

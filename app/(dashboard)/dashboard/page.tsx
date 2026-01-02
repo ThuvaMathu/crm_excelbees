@@ -1,65 +1,181 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
     Users,
     Building2,
     Handshake,
+    DollarSign,
+    Briefcase,
+    CheckCircle2,
+    FileText,
     TrendingUp,
     ArrowRight,
-    Sparkles
 } from "lucide-react";
 import Link from "next/link";
-
-const quickStats = [
-    {
-        title: "Total Leads",
-        value: "0",
-        change: "+0%",
-        icon: Users,
-        href: "/leads",
-        color: "text-blue-600 dark:text-blue-400",
-        bgColor: "bg-blue-100 dark:bg-blue-900/20",
-    },
-    {
-        title: "Active Deals",
-        value: "0",
-        change: "+0%",
-        icon: Handshake,
-        href: "/deals",
-        color: "text-primary",
-        bgColor: "bg-primary/10",
-    },
-    {
-        title: "Companies",
-        value: "0",
-        change: "+0%",
-        icon: Building2,
-        href: "/companies",
-        color: "text-purple-600 dark:text-purple-400",
-        bgColor: "bg-purple-100 dark:bg-purple-900/20",
-    },
-    {
-        title: "Revenue",
-        value: "$0",
-        change: "+0%",
-        icon: TrendingUp,
-        href: "/reports",
-        color: "text-green-600 dark:text-green-400",
-        bgColor: "bg-green-100 dark:bg-green-900/20",
-    },
-];
-
-const quickActions = [
-    { label: "Add Lead", href: "/leads?action=create", icon: Users },
-    { label: "Create Deal", href: "/deals?action=create", icon: Handshake },
-    { label: "New Company", href: "/companies?action=create", icon: Building2 },
-];
+import { getLeads } from "@/lib/firestore/leads";
+import { getDeals } from "@/lib/firestore/deals";
+import { getCompanies } from "@/lib/firestore/companies";
+import { getProjects } from "@/lib/firestore/projects";
+import { getTasks } from "@/lib/firestore/tasks";
+import { getInvoiceStats } from "@/lib/firestore/invoices";
+import { format, isAfter, isBefore, addDays } from "date-fns";
 
 export default function DashboardPage() {
     const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalLeads: 0,
+        activeDeals: 0,
+        totalCompanies: 0,
+        totalRevenue: 0,
+        activeProjects: 0,
+        pendingTasks: 0,
+    });
+    const [upcomingTasks, setUpcomingTasks] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const [
+                    leadsResult,
+                    dealsResult,
+                    companiesResult,
+                    projectsResult,
+                    tasksResult,
+                    invoiceStatsResult,
+                ] = await Promise.all([
+                    getLeads(),
+                    getDeals(),
+                    getCompanies(),
+                    getProjects(),
+                    getTasks({ assigneeId: user?.uid }),
+                    getInvoiceStats(),
+                ]);
+
+                // Calculate stats
+                const activeDeals = dealsResult.deals.filter(
+                    (d) => d.stage !== "Won" && d.stage !== "Lost"
+                );
+
+                const activeProjects = projectsResult.projects.filter(
+                    (p) => p.status === "Active"
+                );
+
+                const pendingTasks = tasksResult.tasks.filter(
+                    (t) => t.status !== "Done"
+                );
+
+                // Get upcoming tasks (next 5, not done)
+                const upcoming = tasksResult.tasks
+                    .filter((t) => t.status !== "Done")
+                    .sort((a, b) => {
+                        if (!a.dueDate) return 1;
+                        if (!b.dueDate) return -1;
+                        return a.dueDate.toMillis() - b.dueDate.toMillis();
+                    })
+                    .slice(0, 5);
+
+                setStats({
+                    totalLeads: leadsResult.leads.length,
+                    activeDeals: activeDeals.length,
+                    totalCompanies: companiesResult.companies.length,
+                    totalRevenue: invoiceStatsResult.stats?.totalRevenue || 0,
+                    activeProjects: activeProjects.length,
+                    pendingTasks: pendingTasks.length,
+                });
+
+                setUpcomingTasks(upcoming);
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            fetchDashboardData();
+        }
+    }, [user]);
+
+    const quickStats = [
+        {
+            title: "Total Leads",
+            value: stats.totalLeads.toString(),
+            icon: Users,
+            href: "/leads",
+            color: "text-blue-600 dark:text-blue-400",
+            bgColor: "bg-blue-100 dark:bg-blue-900/20",
+        },
+        {
+            title: "Active Deals",
+            value: stats.activeDeals.toString(),
+            icon: Handshake,
+            href: "/deals",
+            color: "text-primary",
+            bgColor: "bg-primary/10",
+        },
+        {
+            title: "Companies",
+            value: stats.totalCompanies.toString(),
+            icon: Building2,
+            href: "/companies",
+            color: "text-purple-600 dark:text-purple-400",
+            bgColor: "bg-purple-100 dark:bg-purple-900/20",
+        },
+        {
+            title: "Revenue",
+            value: `$${stats.totalRevenue.toLocaleString()}`,
+            icon: DollarSign,
+            href: "/invoices",
+            color: "text-green-600 dark:text-green-400",
+            bgColor: "bg-green-100 dark:bg-green-900/20",
+        },
+        {
+            title: "Active Projects",
+            value: stats.activeProjects.toString(),
+            icon: Briefcase,
+            href: "/projects",
+            color: "text-orange-600 dark:text-orange-400",
+            bgColor: "bg-orange-100 dark:bg-orange-900/20",
+        },
+        {
+            title: "Pending Tasks",
+            value: stats.pendingTasks.toString(),
+            icon: CheckCircle2,
+            href: "/tasks",
+            color: "text-indigo-600 dark:text-indigo-400",
+            bgColor: "bg-indigo-100 dark:bg-indigo-900/20",
+        },
+    ];
+
+    const isOverdue = (dueDate: any) => {
+        if (!dueDate) return false;
+        return isBefore(dueDate.toDate(), new Date());
+    };
+
+    const isDueToday = (dueDate: any) => {
+        if (!dueDate) return false;
+        const today = new Date();
+        const due = dueDate.toDate();
+        return (
+            due.getDate() === today.getDate() &&
+            due.getMonth() === today.getMonth() &&
+            due.getFullYear() === today.getFullYear()
+        );
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <LoadingSpinner size="lg" />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -74,7 +190,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {quickStats.map((stat) => (
                     <Link key={stat.title} href={stat.href}>
                         <Card className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-primary/50">
@@ -88,93 +204,136 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{stat.value}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    <span className="text-green-600">{stat.change}</span> from last month
-                                </p>
                             </CardContent>
                         </Card>
                     </Link>
                 ))}
             </div>
 
-            {/* Quick Actions */}
-            <Card className="border-2 border-primary/20">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-primary" />
-                        Quick Actions
-                    </CardTitle>
-                    <CardDescription>
-                        Get started with common tasks
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid gap-3 md:grid-cols-3">
-                        {quickActions.map((action) => (
-                            <Link key={action.label} href={action.href}>
+            <div className="grid gap-6 md:grid-cols-2">
+                {/* Upcoming Tasks Widget */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-primary" />
+                            My Upcoming Tasks
+                        </CardTitle>
+                        <CardDescription>
+                            Your next {upcomingTasks.length} tasks
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {upcomingTasks.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <CheckCircle2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                                <p>No upcoming tasks</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {upcomingTasks.map((task) => (
+                                    <div
+                                        key={task.id}
+                                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                                    >
+                                        <div className="flex-1">
+                                            <p className="font-medium text-sm">{task.title}</p>
+                                            {task.dueDate && (
+                                                <p
+                                                    className={`text-xs mt-1 ${isOverdue(task.dueDate)
+                                                            ? "text-red-600 font-semibold"
+                                                            : isDueToday(task.dueDate)
+                                                                ? "text-orange-600 font-semibold"
+                                                                : "text-muted-foreground"
+                                                        }`}
+                                                >
+                                                    {isOverdue(task.dueDate)
+                                                        ? "Overdue"
+                                                        : isDueToday(task.dueDate)
+                                                            ? "Due Today"
+                                                            : `Due ${format(task.dueDate.toDate(), "MMM d")}`}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <span
+                                            className={`px-2 py-1 text-xs rounded-full ${task.priority === "Urgent"
+                                                    ? "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400"
+                                                    : task.priority === "High"
+                                                        ? "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400"
+                                                        : "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400"
+                                                }`}
+                                        >
+                                            {task.priority}
+                                        </span>
+                                    </div>
+                                ))}
+                                <Link href="/tasks">
+                                    <Button variant="ghost" className="w-full gap-2">
+                                        View All Tasks
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Button>
+                                </Link>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Quick Actions */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <TrendingUp className="h-5 w-5 text-primary" />
+                            Quick Actions
+                        </CardTitle>
+                        <CardDescription>
+                            Get started with common tasks
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid gap-3">
+                            <Link href="/leads">
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary"
                                 >
-                                    <action.icon className="h-5 w-5 text-primary" />
-                                    <span>{action.label}</span>
+                                    <Users className="h-5 w-5 text-primary" />
+                                    <span>Add Lead</span>
                                     <ArrowRight className="h-4 w-4 ml-auto" />
                                 </Button>
                             </Link>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Getting Started */}
-            <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-secondary-900 dark:to-secondary-800 border-2 border-primary/30">
-                <CardHeader>
-                    <CardTitle className="text-2xl">🚀 Phase 1 Complete!</CardTitle>
-                    <CardDescription className="text-base">
-                        Your CRM is ready to use
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid gap-3 text-sm">
-                        <div className="flex items-start gap-3">
-                            <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-xs">✓</span>
-                            </div>
-                            <div>
-                                <p className="font-semibold">Authentication System</p>
-                                <p className="text-muted-foreground">Email/Password & Google Sign-In working perfectly</p>
-                            </div>
+                            <Link href="/deals">
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary"
+                                >
+                                    <Handshake className="h-5 w-5 text-primary" />
+                                    <span>Create Deal</span>
+                                    <ArrowRight className="h-4 w-4 ml-auto" />
+                                </Button>
+                            </Link>
+                            <Link href="/projects">
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary"
+                                >
+                                    <Briefcase className="h-5 w-5 text-primary" />
+                                    <span>New Project</span>
+                                    <ArrowRight className="h-4 w-4 ml-auto" />
+                                </Button>
+                            </Link>
+                            <Link href="/invoices">
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-start gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary"
+                                >
+                                    <FileText className="h-5 w-5 text-primary" />
+                                    <span>Create Invoice</span>
+                                    <ArrowRight className="h-4 w-4 ml-auto" />
+                                </Button>
+                            </Link>
                         </div>
-                        <div className="flex items-start gap-3">
-                            <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-xs">✓</span>
-                            </div>
-                            <div>
-                                <p className="font-semibold">Dashboard Layout</p>
-                                <p className="text-muted-foreground">Responsive sidebar, header, and mobile navigation</p>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-white text-xs">✓</span>
-                            </div>
-                            <div>
-                                <p className="font-semibold">Excel Bees Branding</p>
-                                <p className="text-muted-foreground">Amber/Orange & Deep Blue-Gray color scheme applied</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="pt-4 border-t">
-                        <p className="text-sm font-medium mb-2">Next Steps:</p>
-                        <ul className="text-sm text-muted-foreground space-y-1 ml-4">
-                            <li>• Phase 2: Build Leads, Contacts & Companies modules</li>
-                            <li>• Phase 3: Create Deals & Pipeline Kanban board</li>
-                            <li>• Phase 4: Add Projects & Tasks management</li>
-                        </ul>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }

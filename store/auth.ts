@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { User } from "firebase/auth";
+import { User } from "@/hooks/useAuth"; // Import extended User type
 
 interface AuthState {
   user: User | null;

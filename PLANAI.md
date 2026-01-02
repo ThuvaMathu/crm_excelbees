@@ -9,10 +9,9 @@ This document extends the master implementation plan (PLAN.md) with cutting-edge
 **Vision**: Transform the CRM from a data management tool into an intelligent assistant that predicts, suggests, and automates tasks to maximize sales team productivity.
 
 **AI Stack**:
-- **Primary AI**: Google Gemini API (multimodal capabilities)
-- **Embeddings**: Firebase Extensions - Vertex AI Search
+- **Primary AI**: Google Gemini API and OpenAI API (GPT-4) (multimodal capabilities)
 - **Vector Storage**: Firestore with vector search
-- **Alternative**: OpenAI API (GPT-4) for comparison
+
 
 ---
 
@@ -20,8 +19,8 @@ This document extends the master implementation plan (PLAN.md) with cutting-edge
 
 ### 9.1 AI Infrastructure Setup
 - [ ] **Gemini API Integration**:
-    - [ ] Install `@google/generative-ai` SDK
-    - [ ] Create `lib/ai/gemini.ts` with API configuration
+    - [ ] Install `@google/generative-ai` and open ai SDK
+    - [ ] Create `lib/ai/gemini.ts` and for open ai  with API configuration
     - [ ] Implement rate limiting and error handling
     - [ ] Set up streaming responses for real-time feedback
 

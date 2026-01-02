@@ -5,6 +5,8 @@ import {
   updateDoc,
   serverTimestamp,
   Timestamp,
+  collection,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -173,4 +175,19 @@ export async function updateLastLogin(uid: string) {
   } catch (error: any) {
     return { success: false, error: error.message };
   }
+}
+
+// Get all users (for assignee lists)
+export async function getUsers(): Promise<{ users: UserProfile[] | null; error: string | null }> {
+    try {
+        const usersRef = collection(db, "users");
+        const snapshot = await getDocs(usersRef);
+        const users = snapshot.docs.map(doc => ({
+            uid: doc.id,
+            ...doc.data()
+        } as UserProfile));
+        return { users, error: null };
+    } catch (error: any) {
+        return { users: [] as UserProfile[], error: error.message };
+    }
 }

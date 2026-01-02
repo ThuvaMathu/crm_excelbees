@@ -5,9 +5,11 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { CommandPalette } from "@/components/search/CommandPalette";
 import { useUIStore } from "@/store/ui";
 import { redirect } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { CopilotWidget } from "@/components/ai/CopilotWidget";
 
 export default function DashboardLayout({
     children,
@@ -24,6 +26,8 @@ export default function DashboardLayout({
 
     return (
         <div className="min-h-screen bg-background">
+            {/* Global Command Palette */}
+            <CommandPalette />
             {/* Desktop Sidebar */}
             <div className="hidden md:block">
                 <Sidebar />
@@ -51,6 +55,9 @@ export default function DashboardLayout({
                     {children}
                 </main>
             </div>
+
+            {/* Copilot Widget */}
+            <CopilotWidget />
         </div>
     );
 }
