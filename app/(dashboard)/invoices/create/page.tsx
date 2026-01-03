@@ -9,14 +9,29 @@ import { createInvoice } from "@/lib/firestore/invoices";
 // import { sendInvoiceEmail } from "@/lib/email/invoice-email"; // Removed to avoid SSR issues
 import { getInvoicePDFBlob } from "@/lib/pdf/invoice-generator";
 import { createActivity } from "@/lib/firestore/activities";
+import { generateNextInvoiceNumber } from "@/lib/firestore/invoice-number-generator";
 import type { Invoice } from "@/types/crm";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 
+import { useSearchParams } from "next/navigation";
+
 export default function CreateInvoicePage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user } = useAuth();
     const [saving, setSaving] = useState(false);
+
+    // Parse prefill data
+    const defaultInvoice: Partial<Invoice> = {
+        dealId: searchParams.get("dealId") || undefined,
+        dealName: searchParams.get("dealName") || undefined,
+        companyId: searchParams.get("companyId") || undefined,
+        companyName: searchParams.get("companyName") || undefined,
+        contactId: searchParams.get("contactId") || undefined,
+        projectId: searchParams.get("projectId") || undefined,
+        projectName: searchParams.get("projectName") || undefined,
+    };
 
     const handleSave = async (invoiceData: Partial<Invoice>, sendEmail: boolean) => {
         if (!user) {
@@ -27,12 +42,15 @@ export default function CreateInvoicePage() {
         setSaving(true);
 
         try {
+            // Generate next sequential invoice number
+            const invoiceNumber = await generateNextInvoiceNumber(user.uid);
+
             // Add metadata and defaults
             const completeInvoiceData = {
                 ...invoiceData,
                 template: invoiceData.template || "standard",
                 status: invoiceData.status || "Draft",
-                invoiceNumber: invoiceData.invoiceNumber || `INV-${Date.now()}`,
+                invoiceNumber: invoiceData.invoiceNumber || invoiceNumber,
                 issueDate: invoiceData.issueDate || Timestamp.now(),
                 dueDate: invoiceData.dueDate || Timestamp.fromDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
                 paymentTerms: invoiceData.paymentTerms || "Net 30",
@@ -74,15 +92,10 @@ export default function CreateInvoicePage() {
             // Send email if requested
             // Send email if requested
             if (sendEmail && invoiceData.clientEmail) {
-                // Generate PDF on client side
-                const pdfBlob = getInvoicePDFBlob(
+                // Generate PDF on client side with user settings
+                const pdfBlob = await getInvoicePDFBlob(
                     { ...completeInvoiceData, id } as Invoice,
-                    {
-                        name: "Your Company",
-                        address: "123 Business St",
-                        phone: "+1 234 567 8900",
-                        email: "billing@yourcompany.com",
-                    }
+                    user?.uid
                 );
 
                 // Convert blob to base64
@@ -158,7 +171,12 @@ export default function CreateInvoicePage() {
                 description="Create a new invoice for your client"
             />
 
-            <InvoiceForm mode="create" onSave={handleSave} saving={saving} />
+            <InvoiceForm
+                mode="create"
+                invoice={defaultInvoice as Invoice}
+                onSave={handleSave}
+                saving={saving}
+            />
         </div>
     );
 }

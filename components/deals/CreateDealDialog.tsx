@@ -43,6 +43,7 @@ interface CreateDealDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    defaultCompanyId?: string;
 }
 
 const DEAL_STAGES: DealStage[] = [
@@ -58,6 +59,7 @@ export function CreateDealDialog({
     open,
     onOpenChange,
     onSuccess,
+    defaultCompanyId,
 }: CreateDealDialogProps) {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -72,6 +74,7 @@ export function CreateDealDialog({
             value: 0,
             probability: 50,
             contactIds: [],
+            companyId: defaultCompanyId,
             description: "",
             notes: "",
         },

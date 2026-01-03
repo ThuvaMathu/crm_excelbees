@@ -7,6 +7,7 @@ import type { Task } from "@/types/crm";
 import { useState } from "react";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { cn } from "@/lib/utils";
+import { CalendarToolbar } from "./CalendarToolbar";
 
 const locales = {
     "en-US": enUS,
@@ -27,6 +28,7 @@ interface TaskCalendarProps {
 
 export function TaskCalendar({ tasks, onSelectTask }: TaskCalendarProps) {
     const [view, setView] = useState<View>(Views.MONTH);
+    const [date, setDate] = useState(new Date());
 
     const events = tasks
         .filter((task) => task.dueDate)
@@ -46,32 +48,40 @@ export function TaskCalendar({ tasks, onSelectTask }: TaskCalendarProps) {
 
     const eventPropGetter = (event: any) => {
         const task = event.resource as Task;
-        let className = "bg-primary text-primary-foreground border-none text-xs";
+        // Default styling - muted but visible
+        let className = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-l-2 border-slate-500";
 
         switch (task.priority) {
             case "High":
             case "Urgent":
-                className = "bg-red-500 text-white border-none text-xs";
+                // Urgent: Red
+                className = "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 border-l-2 border-red-500";
                 break;
             case "Medium":
-                className = "bg-blue-500 text-white border-none text-xs";
+                // Medium: Blue
+                className = "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-l-2 border-blue-500";
                 break;
             case "Low":
-                className = "bg-gray-500 text-white border-none text-xs";
+                // Low: Gray/Green
+                className = "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border-l-2 border-emerald-500";
                 break;
         }
 
         if (task.status === "Done") {
-            className = "bg-green-500 text-white opacity-60 line-through text-xs";
+            className = "bg-gray-100/50 text-gray-400 dark:text-gray-600 border-gray-300 dark:border-gray-700 line-through opacity-70";
         }
 
         return {
-            className,
+            className: cn("px-2 py-1 text-xs rounded-r-md border-0 border-l-4 mb-1 truncate", className),
         };
     };
 
+    const handleNavigate = (newDate: Date) => {
+        setDate(newDate);
+    };
+
     return (
-        <div className="h-[700px] bg-white dark:bg-gray-950 rounded-md border p-4 shadow-sm">
+        <div className="h-[750px] p-2">
             <Calendar
                 localizer={localizer}
                 events={events}
@@ -82,8 +92,13 @@ export function TaskCalendar({ tasks, onSelectTask }: TaskCalendarProps) {
                 views={["month", "week", "day", "agenda"]}
                 view={view}
                 onView={setView}
+                date={date}
+                onNavigate={handleNavigate}
                 eventPropGetter={eventPropGetter}
                 tooltipAccessor={(event) => event.title}
+                components={{
+                    toolbar: CalendarToolbar as any,
+                }}
             />
         </div>
     );

@@ -20,6 +20,7 @@ export const invoiceSchema = z.object({
   contactName: z.string().optional(),
   clientEmail: z.union([z.string().email("Invalid client email"), z.literal("")]).optional(),
   billingAddress: z.string().optional(),
+  shippingAddress: z.string().optional(),
 
   // Relationships
   dealId: z.string().optional(),
@@ -33,7 +34,7 @@ export const invoiceSchema = z.object({
 
   // Financials
   currency: z.string().default("USD"),
-  paymentTerms: z.enum(["Net 15", "Net 30", "Net 60", "Custom"]),
+  paymentTerms: z.enum(["Due on Receipt", "Net 15", "Net 30", "Net 60", "Custom"]),
   lineItems: z.array(invoiceLineItemSchema).min(1, "At least one item is required"),
   
   // Calculations
@@ -46,6 +47,16 @@ export const invoiceSchema = z.object({
   // Metadata
   notes: z.string().optional(),
   terms: z.string().optional(),
+  
+  // Recurring
+  isRecurring: z.boolean().default(false).optional(),
+  recurring: z.object({
+      frequency: z.enum(["weekly", "monthly", "quarterly", "yearly"]),
+      interval: z.number().min(1),
+      startDate: z.date(),
+      endDate: z.date().optional(),
+      status: z.enum(["active", "paused", "ended"]).default("active")
+  }).optional().nullable(),
 });
 
 export type InvoiceFormData = z.infer<typeof invoiceSchema>;

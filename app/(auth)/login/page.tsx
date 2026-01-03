@@ -31,7 +31,7 @@ import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { auth } from "@/lib/firebase";
 import { analytics } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -129,8 +129,17 @@ export default function LoginPage() {
 
 
     return (
-        <Card className="shadow-2xl border-0">
-            <CardHeader className="space-y-4 text-center pb-6">
+        <Card className="shadow-2xl border-0 relative">
+            <div className="absolute top-4 left-4">
+                <Link
+                    href="/"
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors group"
+                >
+                    <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    Back to Home
+                </Link>
+            </div>
+            <CardHeader className="space-y-4 text-center pb-6 pt-12">
                 <div className="flex justify-center">
                     <Logo width={180} height={48} />
                 </div>

@@ -34,7 +34,7 @@ import { createProject } from "@/lib/firestore/projects";
 import { getCompanies } from "@/lib/firestore/companies";
 import { projectSchema, type ProjectFormData } from "@/lib/validations/project";
 import { useAuth } from "@/hooks/useAuth";
-import type { Company, ProjectStatus, ProjectPriority } from "@/types/crm";
+import type { ProjectInput, ProjectPriority, Company, ManagementBillingCycle, ProjectStatus } from "@/types/crm";
 import { toast } from "sonner";
 import { Timestamp } from "firebase/firestore";
 
@@ -73,14 +73,20 @@ export function CreateProjectDialog({
         defaultValues: {
             name: "",
             description: "",
-            status: "Planning",
-            priority: "Medium",
+            status: "Planning" as ProjectStatus,
+            priority: "Medium" as ProjectPriority,
             startDate: new Date(),
             teamMembers: [],
             endDate: undefined,
             budget: undefined,
             companyId: undefined,
             dealId: undefined,
+            initialCost: undefined,
+            annualRecurringCost: undefined,
+            managementBillingCycle: "None" as ManagementBillingCycle,
+            isRecurringEnabled: false,
+            notificationsEnabled: true,
+            emailNotificationsEnabled: true,
         } as ProjectFormData,
     });
 
@@ -120,9 +126,25 @@ export function CreateProjectDialog({
             progress: 0,
             tags: [],
             teamMembers: data.teamMembers.length > 0 ? data.teamMembers : [user.uid], // Default to creator if empty
+            // Transform flat form data to nested objects
+            financials: {
+                initialCost: data.initialCost || 0,
+                annualRecurringCost: data.annualRecurringCost || 0,
+                managementBillingCycle: "None" as ManagementBillingCycle,
+                isRecurringEnabled: false,
+            },
+            notificationSettings: {
+                enabled: true,
+                emailEnabled: true,
+            },
         };
 
-        const { success, error } = await createProject(projectData, user.uid);
+        // Remove undefined fields to prevent Firestore errors
+        const cleanProjectData = Object.fromEntries(
+            Object.entries(projectData).filter(([_, v]) => v !== undefined)
+        ) as any; // Type assertion needed after filtering
+
+        const { success, error } = await createProject(cleanProjectData, user.uid);
 
         setLoading(false);
 
@@ -285,7 +307,7 @@ export function CreateProjectDialog({
                                 name="budget"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Budget ($)</FormLabel>
+                                        <FormLabel>Total Budget ($)</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
@@ -299,6 +321,48 @@ export function CreateProjectDialog({
                                     </FormItem>
                                 )}
                             />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="initialCost"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Initial Cost ($)</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                                                    value={field.value || ""}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="annualRecurringCost"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Annual Recurring ($)</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                                                    value={field.value || ""}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
 
                             <FormField
                                 control={form.control}

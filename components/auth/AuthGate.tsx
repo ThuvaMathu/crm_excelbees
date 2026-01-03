@@ -11,7 +11,8 @@ const PUBLIC_ROUTES = [
     "/register",
     "/forgot-password",
     "/change-password", // First-time password change
-    "/auth/action" // Firebase email action handlers
+    "/auth/action", // Firebase email action handlers
+    "/" // Landing page is public
 ];
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
@@ -28,7 +29,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         // 1. Wait for hydration/mounting
         if (!isMounted || loading || !hydrated) return;
 
-        const isPublicRoute = PUBLIC_ROUTES.some(route => pathname?.startsWith(route));
+        const isPublicRoute = PUBLIC_ROUTES.some(route => {
+            if (route === "/") return pathname === "/";
+            return pathname?.startsWith(route);
+        });
 
         // SCENARIO 1: Not Logged In
         if (!user) {
@@ -58,8 +62,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         }
 
 
-        // Redirect root, login, or pending page to dashboard
-        if (pathname === "/" || pathname === "/login" || pathname === "/pending-approval" || pathname === "/change-password") {
+        // Redirect login or pending page to dashboard
+        if (pathname === "/login" || pathname === "/pending-approval" || pathname === "/change-password") {
             console.log("🔒 Route: User approved -> Redirecting to Dashboard");
             router.replace("/dashboard");
         }
@@ -101,7 +105,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     console.log("✅ PASSED LOADING CHECK - Rendering content");
 
-    const isPublicRoute = PUBLIC_ROUTES.some(route => pathname?.startsWith(route));
+    const isPublicRoute = PUBLIC_ROUTES.some(route => {
+        if (route === "/") return pathname === "/";
+        return pathname?.startsWith(route);
+    });
 
     // ----------------------------------------------------------------
     // 2. FINAL DECISION ROUTING (No Intermediate States)
@@ -110,8 +117,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     // Scenario 1: NOT LOGGED IN
     if (!user) {
         console.log("🔴 AuthGate Scenario 1: NOT LOGGED IN");
-        // If on root or trying to access protected route -> Redirect to Login
-        if (pathname === "/" || (!isPublicRoute && pathname !== "/")) {
+        // If trying to access protected route -> Redirect to Login
+        if (!isPublicRoute) {
             console.log("  → Showing loading spinner (redirecting)");
             return <LoadingSpinner />; // Block content while redirecting
         }
@@ -130,7 +137,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     // Scenario 3: LOGGED IN and ACTIVE
     console.log("🟢 AuthGate Scenario 3: LOGGED IN and ACTIVE", { pathname });
     // If on pending page or login page -> Dashboard
-    if (pathname === "/pending-approval" || pathname === "/login" || pathname === "/") {
+    if (pathname === "/pending-approval" || pathname === "/login") {
         console.log("  → Showing loading spinner (redirecting to dashboard)");
         return <LoadingSpinner />; // Block content while redirecting
     }

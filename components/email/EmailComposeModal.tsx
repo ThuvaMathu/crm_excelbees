@@ -240,7 +240,8 @@ export function EmailComposeModal({
                     collection: context.type === "invoice" ? "invoices" :
                         context.type === "deal" ? "deals" :
                             context.type === "contact" ? "contacts" :
-                                context.type === "company" ? "companies" : "emails",
+                                context.type === "company" ? "companies" :
+                                    context.type === "lead" ? "leads" : "emails",
                     id: context.relatedRecordId,
                     name: context.relatedRecordName,
                 };

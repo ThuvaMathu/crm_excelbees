@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getCompany, deleteCompany } from "@/lib/firestore/companies";
 import { getActivities, type Activity } from "@/lib/firestore/activities";
-import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
+
 import { EmailComposeModal } from "@/components/email/EmailComposeModal";
+import { EditCompanyDialog } from "@/components/companies/EditCompanyDialog";
+import { CreateDealDialog } from "@/components/deals/CreateDealDialog";
 import type { Company } from "@/types/crm";
 import {
     ArrowLeft,
@@ -31,6 +33,7 @@ import {
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
+import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 
 export default function CompanyDetailPage({
     params,
@@ -44,6 +47,8 @@ export default function CompanyDetailPage({
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
     const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [dealModalOpen, setDealModalOpen] = useState(false);
 
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || company?.ownerId === user?.uid;
@@ -52,6 +57,14 @@ export default function CompanyDetailPage({
     useEffect(() => {
         fetchCompanyData();
     }, [id]);
+
+    const handleCall = () => {
+        if (!company?.phone) {
+            toast.error("No phone number available");
+            return;
+        }
+        window.location.href = `tel:${company.phone}`;
+    };
 
     const fetchCompanyData = async () => {
         setLoading(true);
@@ -132,7 +145,11 @@ export default function CompanyDetailPage({
                             Send Email
                         </Button>
                         {canEdit && (
-                            <Button variant="outline" size="sm">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditModalOpen(true)}
+                            >
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
                             </Button>
@@ -292,15 +309,30 @@ export default function CompanyDetailPage({
                             <CardTitle>Quick Actions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                            <Button className="w-full justify-start" variant="outline" disabled={!canEdit}>
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit}
+                                onClick={() => setEmailModalOpen(true)}
+                            >
                                 <Mail className="h-4 w-4 mr-2" />
                                 Email Company
                             </Button>
-                            <Button className="w-full justify-start" variant="outline" disabled={!canEdit}>
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit || !company.phone}
+                                onClick={handleCall}
+                            >
                                 <Phone className="h-4 w-4 mr-2" />
                                 Call Company
                             </Button>
-                            <Button className="w-full justify-start" variant="outline" disabled={!canEdit}>
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit}
+                                onClick={() => setDealModalOpen(true)}
+                            >
                                 <Target className="h-4 w-4 mr-2" />
                                 New Deal
                             </Button>
@@ -338,6 +370,25 @@ export default function CompanyDetailPage({
                     relatedRecordId: company.id,
                     relatedRecordName: company.name,
                     companyId: company.id,
+                }}
+            />
+
+            {/* Edit Company Dialog */}
+            <EditCompanyDialog
+                open={editModalOpen}
+                onOpenChange={setEditModalOpen}
+                company={company}
+                onSuccess={fetchCompanyData}
+            />
+
+            {/* Create Deal Dialog */}
+            <CreateDealDialog
+                open={dealModalOpen}
+                onOpenChange={setDealModalOpen}
+                defaultCompanyId={company.id}
+                onSuccess={() => {
+                    fetchCompanyData();
+                    // Optionally refresh activities or deals list if displayed
                 }}
             />
         </div>

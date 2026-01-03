@@ -117,7 +117,7 @@ export interface EmailTemplate {
 
 // Email Context (for opening compose modal)
 export interface EmailContext {
-  type: "invoice" | "quote" | "deal" | "contact" | "company" | "general";
+  type: "invoice" | "quote" | "deal" | "contact" | "company" | "lead" | "general";
   relatedRecordId?: string;
   relatedRecordName?: string;
   contactId?: string;

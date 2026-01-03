@@ -5,62 +5,88 @@ import type { Invoice } from "@/types/crm";
 
 export async function POST(request: NextRequest) {
   try {
-    const { invoice, companyInfo, recipientEmail, pdfBase64, filename } = await request.json();
+    const json = await request.json();
+    
+    // Support both old and new payload formats
+    const { 
+      to, 
+      cc, 
+      bcc, 
+      subject, 
+      body, 
+      pdfBase64, 
+      pdfName,
+      // Legacy fields
+      invoice, 
+      companyInfo, 
+      recipientEmail, 
+      filename 
+    } = json;
 
-    if (!invoice || !recipientEmail || !pdfBase64) {
+    const finalTo = to || recipientEmail;
+    
+    // Validate required fields
+    if (!finalTo || !pdfBase64) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Generate HTML
-    const html = generateInvoiceEmailHtml(invoice, companyInfo);
+    // Determine final subject and body
+    let finalSubject = subject;
+    let finalBody = body;
 
-    // Send email with attachment
+    // If legacy format, generate them
+    if (!subject && invoice && companyInfo) {
+       finalSubject = `Invoice ${invoice.invoiceNumber} from ${companyInfo?.name || "Your Company"}`;
+       finalBody = generateInvoiceEmailHtml(invoice, companyInfo);
+    } else if (body) {
+       // Convert plain text body to simple HTML if it's from the modal
+       // (Modal sends plain text from textarea)
+       finalBody = body.replace(/\n/g, "<br>");
+    }
+
+    // Validate we have subject and body now
+    if (!finalSubject || !finalBody) {
+       return NextResponse.json(
+        { success: false, error: "Missing subject or body" },
+        { status: 400 }
+      );
+    }
+
+    // Attachments
+    const attachmentName = pdfName || filename || (invoice ? `Invoice-${invoice.invoiceNumber}.pdf` : "Invoice.pdf");
+    const attachments = [
+        {
+          filename: attachmentName,
+          content: Buffer.from(pdfBase64, "base64"),
+        },
+    ];
+
+    // Send email
+    // Note: If sendEmail doesn't support CC/BCC yet, they will be ignored for now.
+    // We should check email-service.ts if we want to add support, but for now let's get it working.
+    // Basic sendEmail signature: (to, subject, html, from, attachments)
+    
+    // Modify this if sendEmail supports options object in future.
+    // For now we just send to 'to'.
+    
     const result = await sendEmail(
-      recipientEmail,
-      `Invoice ${invoice.invoiceNumber} from ${companyInfo?.name || "Your Company"}`,
-      html,
-      undefined, // default sender
-      [
-        {
-          filename: filename || `Invoice-${invoice.invoiceNumber}.pdf`,
-          content: Buffer.from(pdfBase64, "base64").toString("base64"), // Nodemailer handles base64 string if marked encoding? 
-          // Actually nodemailer content can be Buffer, Stream, or String.
-          // If string, it assumes utf-8 unless encoding set.
-          // Better to pass Buffer.
-        },
-      ]
-    );
-
-    // Wait, Buffer in JSON? No, sendEmail takes object.
-    // email-service.ts signature: attachments?: Array<{ filename: string; path?: string; content?: string | Buffer }>
-    // I should pass Buffer.
-    // Buffer.from(pdfBase64, "base64") returns a Buffer. Correct.
-
-    // Re-check sendEmail logic. 
-    // It passes to transporter.sendMail.
-    // Nodemailer supports Buffer content.
-
-    const resultWithBuffer = await sendEmail(
-      recipientEmail,
-      `Invoice ${invoice.invoiceNumber} from ${companyInfo?.name || "Your Company"}`,
-      html,
+      finalTo,
+      finalSubject,
+      finalBody,
       undefined,
-      [
-        {
-          filename: filename || `Invoice-${invoice.invoiceNumber}.pdf`,
-          content: Buffer.from(pdfBase64, "base64"), 
-        },
-      ]
+      attachments,
+      cc,
+      bcc
     );
 
-    if (resultWithBuffer.success) {
+    if (result.success) {
       return NextResponse.json({ success: true });
     } else {
       return NextResponse.json(
-        { success: false, error: resultWithBuffer.error },
+        { success: false, error: result.error },
         { status: 500 }
       );
     }

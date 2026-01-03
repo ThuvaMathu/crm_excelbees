@@ -73,4 +73,158 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Dark mode input borders for better visibility */
+  .dark input[type="text"],
+  .dark input[type="email"],
+  .dark input[type="number"],
+  .dark input[type="date"],
+  .dark input[type="search"],
+  .dark textarea,
+  .dark select {
+    @apply border-slate-600 bg-slate-800/50;
+  }
+  
+  .dark input[type="text"]:focus,
+  .dark input[type="email"]:focus,
+  .dark input[type="number"]:focus,
+  .dark input[type="date"]:focus,
+  .dark input[type="search"]:focus,
+  .dark textarea:focus,
+  .dark select:focus {
+    @apply border-primary ring-1 ring-primary/50;
+  }
+}
+
+/* React Big Calendar Overrides */
+@layer components {
+  .rbc-calendar {
+    @apply font-sans text-foreground p-2;
+  }
+  
+  /* Header & Grid Borders */
+  .rbc-header, .rbc-month-view, .rbc-time-view, .rbc-agenda-view, .rbc-month-row, .rbc-day-bg, .rbc-time-header-content {
+    @apply border-border;
+  }
+
+  .rbc-header {
+    @apply p-3 font-semibold text-xs uppercase tracking-wider text-muted-foreground bg-muted/40 border-b border-border;
+  }
+
+  .rbc-header + .rbc-header {
+    @apply border-l border-border;
+  }
+
+  /* Month View Cells */
+  .rbc-day-bg + .rbc-day-bg {
+    @apply border-l border-border;
+  }
+  
+  .rbc-month-row + .rbc-month-row {
+    @apply border-t border-border;
+  }
+
+  .rbc-date-cell {
+    @apply p-2 text-sm text-muted-foreground font-medium transition-colors;
+    padding-right: 8px; /* Alignment fix */
+  }
+
+  .rbc-off-range-bg {
+    @apply bg-muted/20; /* Subtle distinction for off-month dates */
+  }
+
+  /* Today Highlight */
+  .rbc-today {
+    @apply bg-primary/10; /* Low opacity primary for today background */
+  }
+
+  .rbc-now {
+    @apply text-primary font-bold;
+  }
+
+  /* Events */
+  .rbc-event {
+    @apply rounded-md shadow-sm border-0 transition-opacity hover:opacity-90 focus:ring-2 focus:ring-primary focus:ring-offset-2 outline-none;
+    max-height: 100%; /* Prevent overflow */
+  }
+  
+  .rbc-event-content {
+    @apply text-xs font-semibold px-1 truncate;
+  }
+  
+  .rbc-event-label {
+    @apply hidden; /* Hide default label to save space */
+  }
+
+  /* Time View (Week/Day) */
+  .rbc-time-view {
+    @apply bg-card rounded-md overflow-hidden;
+  }
+
+  .rbc-time-header {
+    @apply border-b border-border;
+  }
+  
+  .rbc-time-header.rbc-overflowing-header {
+    @apply border-border;
+  }
+  
+  .rbc-time-content {
+    @apply border-t-0;
+  }
+
+  .rbc-timeslot-group {
+    @apply border-b border-border bg-card;
+  }
+
+  .rbc-day-slot {
+    @apply border-l border-border;
+  }
+
+  .rbc-time-slot {
+    @apply text-xs text-muted-foreground/40;
+  }
+  
+  .rbc-label {
+     @apply text-xs text-muted-foreground font-medium py-1 px-2;
+  }
+
+  .rbc-current-time-indicator {
+    @apply bg-primary h-[2px];
+  }
+
+  /* Agenda View */
+  .rbc-agenda-view table.rbc-agenda-table {
+    @apply w-full border border-border rounded-lg bg-card text-sm border-spacing-0;
+  }
+
+  .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+    @apply border-b border-border p-3 text-left font-semibold text-muted-foreground bg-muted/20;
+  }
+
+  .rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+    @apply p-4 border-b border-border align-middle text-foreground;
+  }
+
+  .rbc-agenda-date-cell {
+    @apply font-medium whitespace-nowrap text-muted-foreground;
+  }
+
+  .rbc-agenda-time-cell {
+    @apply text-xs uppercase tracking-wide text-muted-foreground;
+  }
+
+  .rbc-agenda-event-cell {
+    @apply font-medium text-foreground;
+  }
+  
+  /* Overwrite inline styles from library that might conflict with dark mode */
+  .rbc-off-range {
+      @apply text-muted-foreground/30;
+  }
+  
+  /* Selected slot highlight */
+  .rbc-slot-selection {
+      @apply bg-primary/20 text-foreground;
+  }
 }

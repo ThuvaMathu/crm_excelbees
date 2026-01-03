@@ -150,58 +150,69 @@ export function ClientSelector({
                             placeholder="Search companies..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9"
+                            className="pl-9  dark:border-gray-700"
                         />
                     </div>
                 </div>
 
-                {/* Company Select */}
-                <div className="space-y-2">
-                    <Label htmlFor="company">Company *</Label>
-                    <Select
-                        value={selectedCompany?.id}
-                        onValueChange={handleCompanySelect}
-                    >
-                        <SelectTrigger id="company">
-                            <SelectValue placeholder="Select a company" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {filteredCompanies.map((company) => (
-                                <SelectItem key={company.id} value={company.id}>
-                                    <div className="flex items-center gap-2">
-                                        <Building2 className="h-4 w-4" />
-                                        {company.name}
-                                    </div>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Contact Select */}
-                {selectedCompany && companyContacts.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Company Select */}
                     <div className="space-y-2">
-                        <Label htmlFor="contact">Contact Person</Label>
+                        <Label htmlFor="company">Company *</Label>
                         <Select
-                            value={selectedContact?.id}
-                            onValueChange={handleContactSelect}
+                            value={selectedCompany?.id}
+                            onValueChange={handleCompanySelect}
                         >
-                            <SelectTrigger id="contact">
-                                <SelectValue placeholder="Select a contact" />
+                            <SelectTrigger id="company">
+                                <SelectValue placeholder="Select a company" />
                             </SelectTrigger>
                             <SelectContent>
-                                {companyContacts.map((contact) => (
-                                    <SelectItem key={contact.id} value={contact.id}>
+                                {filteredCompanies.map((company) => (
+                                    <SelectItem key={company.id} value={company.id}>
                                         <div className="flex items-center gap-2">
-                                            <User className="h-4 w-4" />
-                                            {contact.firstName} {contact.lastName}
+                                            <Building2 className="h-4 w-4" />
+                                            {company.name}
                                         </div>
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
-                )}
+
+                    {/* Contact Select */}
+                    <div className="space-y-2">
+                        <Label htmlFor="contact">Contact Person</Label>
+                        <Select
+                            value={selectedContact?.id}
+                            onValueChange={handleContactSelect}
+                            disabled={!selectedCompany || companyContacts.length === 0}
+                        >
+                            <SelectTrigger id="contact">
+                                <SelectValue placeholder={
+                                    !selectedCompany
+                                        ? "Select company first"
+                                        : companyContacts.length === 0
+                                            ? "No contacts found"
+                                            : "Select a contact"
+                                } />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {companyContacts.length > 0 ? (
+                                    companyContacts.map((contact) => (
+                                        <SelectItem key={contact.id} value={contact.id}>
+                                            <div className="flex items-center gap-2">
+                                                <User className="h-4 w-4" />
+                                                {contact.firstName} {contact.lastName}
+                                            </div>
+                                        </SelectItem>
+                                    ))
+                                ) : (
+                                    <SelectItem value="no_contacts" disabled>No contacts available</SelectItem>
+                                )}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
 
                 {/* Selected Client Info Display */}
                 {selectedCompany && (

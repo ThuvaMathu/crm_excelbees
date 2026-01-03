@@ -26,6 +26,8 @@ import {
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
+import { ProjectFinancialsCard } from "@/components/projects/ProjectFinancialsCard";
+import { ProjectStatusControl } from "@/components/projects/ProjectStatusControl";
 
 export default function ProjectDetailPage() {
     const params = useParams();
@@ -112,6 +114,12 @@ export default function ProjectDetailPage() {
                 }
             />
 
+
+// ... inside component ...
+            <div className="mb-6">
+                <ProjectStatusControl project={project} onUpdate={fetchData} />
+            </div>
+
             <Tabs defaultValue="overview" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="overview" className="gap-2">
@@ -121,6 +129,10 @@ export default function ProjectDetailPage() {
                     <TabsTrigger value="tasks" className="gap-2">
                         <CheckSquare className="h-4 w-4" />
                         Tasks
+                    </TabsTrigger>
+                    <TabsTrigger value="financials" className="gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Financials
                     </TabsTrigger>
                     <TabsTrigger value="team" className="gap-2">
                         <Users className="h-4 w-4" />
@@ -136,31 +148,11 @@ export default function ProjectDetailPage() {
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Status</CardTitle>
-                                <Briefcase className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{project.status}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Progress</CardTitle>
                                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{project.progress}%</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Budget</CardTitle>
-                                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">
-                                    ${project.budget?.toLocaleString() || "0"}
-                                </div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -177,7 +169,6 @@ export default function ProjectDetailPage() {
                             </CardContent>
                         </Card>
                     </div>
-
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                         <Card className="col-span-4">
                             <CardHeader>
@@ -219,6 +210,35 @@ export default function ProjectDetailPage() {
                                         <p className="text-sm text-muted-foreground">
                                             {project.priority}
                                         </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent >
+
+                <TabsContent value="financials">
+                    <div className="space-y-4">
+                        <ProjectFinancialsCard project={project} onUpdate={fetchData} />
+
+                        {/* Detailed Budget Breakdown (Future) */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Budget Overview</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground mb-1">Total Budget</p>
+                                        <p className="text-2xl font-bold">${project.budget?.toLocaleString() || "0"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground mb-1">Spent (Coming Soon)</p>
+                                        <p className="text-2xl font-bold text-muted-foreground">$0</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-muted-foreground mb-1">Remaining</p>
+                                        <p className="text-2xl font-bold">${project.budget?.toLocaleString() || "0"}</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -325,7 +345,7 @@ export default function ProjectDetailPage() {
                         </CardContent>
                     </Card>
                 </TabsContent>
-            </Tabs>
+            </Tabs >
 
             <CreateTaskDialog
                 open={createTaskOpen}
@@ -333,6 +353,6 @@ export default function ProjectDetailPage() {
                 defaultProjectId={project.id}
                 onSuccess={fetchData}
             />
-        </div>
+        </div >
     );
 }

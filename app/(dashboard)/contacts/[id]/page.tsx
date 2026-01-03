@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getContact, deleteContact } from "@/lib/firestore/contacts";
 import { getActivities, type Activity } from "@/lib/firestore/activities";
+
 import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 import { EmailComposeModal } from "@/components/email/EmailComposeModal";
+import { EditContactDialog } from "@/components/contacts/EditContactDialog";
 import type { Contact } from "@/types/crm";
 import {
     ArrowLeft,
@@ -40,6 +42,7 @@ export default function ContactDetailPage({
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
     const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
 
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || contact?.ownerId === user?.uid;
@@ -100,6 +103,14 @@ export default function ContactDetailPage({
         }
     };
 
+    const handleCall = () => {
+        if (!contact?.phone) {
+            toast.error("No phone number available");
+            return;
+        }
+        window.location.href = `tel:${contact.phone}`;
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -124,7 +135,11 @@ export default function ContactDetailPage({
                 action={
                     <div className="flex gap-2">
                         {canEdit && (
-                            <Button variant="outline" size="sm">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditModalOpen(true)}
+                            >
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
                             </Button>
@@ -274,7 +289,12 @@ export default function ContactDetailPage({
                                 <Mail className="h-4 w-4 mr-2" />
                                 Send Email
                             </Button>
-                            <Button className="w-full justify-start" variant="outline" disabled={!canEdit}>
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit || !contact.phone}
+                                onClick={handleCall}
+                            >
                                 <Phone className="h-4 w-4 mr-2" />
                                 Make Call
                             </Button>
@@ -302,6 +322,16 @@ export default function ContactDetailPage({
                     </Button>
                 </Link>
             </div>
+
+            {/* Edit Contact Dialog */}
+            {contact && (
+                <EditContactDialog
+                    open={editModalOpen}
+                    onOpenChange={setEditModalOpen}
+                    contact={contact}
+                    onSuccess={fetchContactData}
+                />
+            )}
 
             {/* Email Compose Modal */}
             <EmailComposeModal

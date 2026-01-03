@@ -61,7 +61,7 @@ export function Sidebar() {
             toast.error("Failed to sign out");
         } else {
             toast.success("Signed out successfully");
-            // AuthGate will automatically redirect to /login when user becomes null
+            router.replace("/login");
         }
     };
 

@@ -15,7 +15,7 @@ export class GeminiService implements AIService {
 
   async generateText(request: AICompletionRequest): Promise<AICompletionResponse> {
     try {
-      const modelName = request.model || "gemini-1.5-flash"; // Default to Flash if not specified
+      const modelName = request.model || "gemini-2.0-flash"; // Default to Flash if not specified
       const model = this.client.getGenerativeModel({ model: modelName });
 
       const result = await model.generateContent({
@@ -49,7 +49,7 @@ export class GeminiService implements AIService {
     try {
         const jsonPrompt = `${request.prompt}\n\nIMPORTANT: Respond ONLY with valid JSON. Do not include markdown code blocks.`;
         
-        const modelName = request.model || "gemini-1.5-flash";
+        const modelName = request.model || "gemini-2.0-flash";
         const model = this.client.getGenerativeModel({ model: modelName });
 
         const result = await model.generateContent({

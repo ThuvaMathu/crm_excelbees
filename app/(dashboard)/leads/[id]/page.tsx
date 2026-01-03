@@ -41,6 +41,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { scoreLead, enrichLead } from "@/app/actions/ai_leads";
 import { aiConfig } from "@/lib/ai/config";
+import { EmailComposeModal } from "@/components/email/EmailComposeModal";
 
 export default function LeadDetailPage({
     params,
@@ -57,6 +58,7 @@ export default function LeadDetailPage({
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
+    const [isEmailOpen, setIsEmailOpen] = useState(false);
 
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || lead?.ownerId === user?.uid;
@@ -123,7 +125,9 @@ export default function LeadDetailPage({
         const toastId = toast.loading("Analyzing lead profile...");
 
         try {
-            const { success, data, error } = await scoreLead(lead);
+            // Serialize lead to plain object to avoid passing complex Firestore types (Timestamps) to Server Action
+            const plainLead = JSON.parse(JSON.stringify(lead));
+            const { success, data, error } = await scoreLead(plainLead as any);
 
             if (success && data) {
                 toast.success("Lead qualification complete", { id: toastId });
@@ -191,6 +195,28 @@ export default function LeadDetailPage({
         } else {
             toast.error(error || "Failed to delete lead");
         }
+    };
+
+
+
+    const handleEmail = () => {
+        if (!lead?.email) {
+            toast.error("No email address available");
+            return;
+        }
+        setIsEmailOpen(true);
+    };
+
+    const handleCall = () => {
+        if (!lead?.phone) {
+            toast.error("No phone number available");
+            return;
+        }
+        window.location.href = `tel:${lead.phone}`;
+    };
+
+    const handleConvert = () => {
+        toast.info("Lead conversion workflow coming soon!");
     };
 
     if (loading) {
@@ -488,15 +514,30 @@ export default function LeadDetailPage({
                             <CardTitle>Quick Actions</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                            <Button className="w-full justify-start" variant="outline" disabled={!canEdit}>
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit || !lead.email}
+                                onClick={handleEmail}
+                            >
                                 <Mail className="h-4 w-4 mr-2" />
                                 Send Email
                             </Button>
-                            <Button className="w-full justify-start" variant="outline" disabled={!canEdit}>
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit || !lead.phone}
+                                onClick={handleCall}
+                            >
                                 <Phone className="h-4 w-4 mr-2" />
                                 Make Call
                             </Button>
-                            <Button className="w-full justify-start" variant="outline" disabled={!canEdit}>
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit}
+                                onClick={handleConvert}
+                            >
                                 <Briefcase className="h-4 w-4 mr-2" />
                                 Convert to Contact
                             </Button>
@@ -524,6 +565,29 @@ export default function LeadDetailPage({
                     </Button>
                 </Link>
             </div>
+
+            {/* Email Modal */}
+            {lead && (
+                <EmailComposeModal
+                    isOpen={isEmailOpen}
+                    onClose={() => setIsEmailOpen(false)}
+                    initialRecipients={[{
+                        email: lead.email,
+                        name: `${lead.firstName} ${lead.lastName}`,
+                        isValid: true
+                    }]}
+                    context={{
+                        type: "lead",
+                        relatedRecordId: lead.id,
+                        relatedRecordName: `${lead.firstName} ${lead.lastName}`,
+                        to: [{
+                            email: lead.email,
+                            name: `${lead.firstName} ${lead.lastName}`,
+                            isValid: true
+                        }]
+                    }}
+                />
+            )}
         </div>
     );
 }

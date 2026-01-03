@@ -38,7 +38,7 @@ export function Header() {
 
     const handleSignOut = async () => {
         await signOut();
-        // AuthGate will automatically redirect to /login when user becomes null
+        router.replace("/login");
     };
 
     const handleSearchClick = (e: React.MouseEvent) => {

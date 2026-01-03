@@ -37,7 +37,9 @@ export async function sendEmail(
   subject: string,
   html: string,
   from?: string,
-  attachments?: Array<{ filename: string; path?: string; content?: string | Buffer }>
+  attachments?: Array<{ filename: string; path?: string; content?: string | Buffer }>,
+  cc?: string | string[],
+  bcc?: string | string[]
 ): Promise<{ success: boolean; error: string | null }> {
   try {
     const fromEmail = from || process.env.FROM_EMAIL || process.env.SMTP_USER;
@@ -50,6 +52,8 @@ export async function sendEmail(
     const info = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to: Array.isArray(to) ? to.join(", ") : to,
+      cc: cc ? (Array.isArray(cc) ? cc.join(", ") : cc) : undefined,
+      bcc: bcc ? (Array.isArray(bcc) ? bcc.join(", ") : bcc) : undefined,
       subject,
       html,
       attachments,

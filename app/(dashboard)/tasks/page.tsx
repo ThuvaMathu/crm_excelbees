@@ -83,131 +83,135 @@ export default function TasksPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <PageHeader
-                title="Tasks"
-                breadcrumbs={[
-                    { label: "Dashboard", href: "/dashboard" },
-                    { label: "Tasks" },
-                ]}
-                description="Manage your tasks and to-dos"
-                action={
-                    <div className="flex items-center gap-2">
-                        <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")}>
-                            <TabsList>
-                                <TabsTrigger value="list" className="gap-2">
-                                    <LayoutGrid className="h-4 w-4" />
-                                    List
-                                </TabsTrigger>
-                                <TabsTrigger value="calendar" className="gap-2">
-                                    <CalendarIcon className="h-4 w-4" />
-                                    Calendar
-                                </TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                        <Button
-                            onClick={() => setCreateOpen(true)}
-                            className="bg-primary hover:bg-primary/90 gap-2"
-                        >
-                            <Plus className="h-4 w-4" />
-                            New Task
-                        </Button>
-                    </div>
-                }
-            />
-
-            {tasks.length === 0 ? (
-                <Card>
-                    <CardContent className="flex flex-col items-center justify-center py-16">
-                        <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No tasks yet</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Create your first task to get started
-                        </p>
-                        <Button
-                            onClick={() => setCreateOpen(true)}
-                            className="gap-2"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Create Task
-                        </Button>
-                    </CardContent>
-                </Card>
-            ) : view === "calendar" ? (
-                <TaskCalendar
-                    tasks={tasks}
-                    onSelectTask={setSelectedTask}
+        <div className="h-[calc(100vh-9rem)] flex flex-col gap-6">
+            <div className="flex-none">
+                <PageHeader
+                    title="Tasks"
+                    breadcrumbs={[
+                        { label: "Dashboard", href: "/dashboard" },
+                        { label: "Tasks" },
+                    ]}
+                    description="Manage your tasks and to-dos"
+                    action={
+                        <div className="flex items-center gap-2">
+                            <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")}>
+                                <TabsList>
+                                    <TabsTrigger value="list" className="gap-2">
+                                        <LayoutGrid className="h-4 w-4" />
+                                        List
+                                    </TabsTrigger>
+                                    <TabsTrigger value="calendar" className="gap-2">
+                                        <CalendarIcon className="h-4 w-4" />
+                                        Calendar
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                            <Button
+                                onClick={() => setCreateOpen(true)}
+                                className="bg-primary hover:bg-primary/90 gap-2"
+                            >
+                                <Plus className="h-4 w-4" />
+                                New Task
+                            </Button>
+                        </div>
+                    }
                 />
-            ) : (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                    {Object.entries(groupedTasks).map(([status, statusTasks]) => (
-                        <div key={status} className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                {getStatusIcon(status)}
-                                <h3 className="font-semibold text-sm">
-                                    {status} ({statusTasks.length})
-                                </h3>
-                            </div>
+            </div>
 
-                            <div className="space-y-2">
-                                {statusTasks.map((task) => (
-                                    <Card
-                                        key={task.id}
-                                        onClick={() => setSelectedTask(task)}
-                                        className="p-3 hover:shadow-md transition-shadow cursor-pointer"
-                                    >
-                                        <div className="space-y-2">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <h4 className="font-medium text-sm line-clamp-2 flex-1">
-                                                    {task.title}
-                                                </h4>
-                                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${getTypeColor(task.type)}`}>
-                                                    {task.type}
-                                                </span>
-                                            </div>
+            <div className="flex-1 overflow-y-auto min-h-0 pr-2">
+                {tasks.length === 0 ? (
+                    <Card>
+                        <CardContent className="flex flex-col items-center justify-center py-16">
+                            <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">No tasks yet</h3>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Create your first task to get started
+                            </p>
+                            <Button
+                                onClick={() => setCreateOpen(true)}
+                                className="gap-2"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Create Task
+                            </Button>
+                        </CardContent>
+                    </Card>
+                ) : view === "calendar" ? (
+                    <TaskCalendar
+                        tasks={tasks}
+                        onSelectTask={setSelectedTask}
+                    />
+                ) : (
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 pb-6">
+                        {Object.entries(groupedTasks).map(([status, statusTasks]) => (
+                            <div key={status} className="space-y-3">
+                                <div className="flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur z-10 py-2">
+                                    {getStatusIcon(status)}
+                                    <h3 className="font-semibold text-sm">
+                                        {status} ({statusTasks.length})
+                                    </h3>
+                                </div>
 
-                                            {task.description && (
-                                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                                    {task.description}
-                                                </p>
-                                            )}
-
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className={getPriorityColor(task.priority)}>
-                                                    {task.priority}
-                                                </span>
-                                                {task.dueDate && (
-                                                    <span className="text-muted-foreground">
-                                                        {format(task.dueDate.toDate(), "MMM d")}
+                                <div className="space-y-2">
+                                    {statusTasks.map((task) => (
+                                        <Card
+                                            key={task.id}
+                                            onClick={() => setSelectedTask(task)}
+                                            className="p-3 hover:shadow-md transition-shadow cursor-pointer"
+                                        >
+                                            <div className="space-y-2">
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <h4 className="font-medium text-sm line-clamp-2 flex-1">
+                                                        {task.title}
+                                                    </h4>
+                                                    <span className={`px-2 py-0.5 text-xs font-medium rounded ${getTypeColor(task.type)}`}>
+                                                        {task.type}
                                                     </span>
+                                                </div>
+
+                                                {task.description && (
+                                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                                        {task.description}
+                                                    </p>
+                                                )}
+
+                                                <div className="flex items-center justify-between text-xs">
+                                                    <span className={getPriorityColor(task.priority)}>
+                                                        {task.priority}
+                                                    </span>
+                                                    {task.dueDate && (
+                                                        <span className="text-muted-foreground">
+                                                            {format(task.dueDate.toDate(), "MMM d")}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {task.projectName && (
+                                                    <div className="text-xs text-muted-foreground">
+                                                        📁 {task.projectName}
+                                                    </div>
+                                                )}
+
+                                                {task.assigneeName && (
+                                                    <div className="text-xs text-muted-foreground">
+                                                        👤 {task.assigneeName}
+                                                    </div>
                                                 )}
                                             </div>
+                                        </Card>
+                                    ))}
 
-                                            {task.projectName && (
-                                                <div className="text-xs text-muted-foreground">
-                                                    📁 {task.projectName}
-                                                </div>
-                                            )}
-
-                                            {task.assigneeName && (
-                                                <div className="text-xs text-muted-foreground">
-                                                    👤 {task.assigneeName}
-                                                </div>
-                                            )}
+                                    {statusTasks.length === 0 && (
+                                        <div className="text-xs text-muted-foreground text-center py-4">
+                                            No {status.toLowerCase()} tasks
                                         </div>
-                                    </Card>
-                                ))}
-
-                                {statusTasks.length === 0 && (
-                                    <div className="text-xs text-muted-foreground text-center py-4">
-                                        No {status.toLowerCase()} tasks
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+                        ))}
+                    </div>
+                )}
+            </div>
 
             <CreateTaskDialog
                 open={createOpen}

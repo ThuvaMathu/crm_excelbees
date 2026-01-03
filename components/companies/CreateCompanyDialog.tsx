@@ -35,6 +35,7 @@ import { companySchema, type CompanyFormData } from "@/lib/validations/company";
 import { createCompany } from "@/lib/firestore/companies";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { AITextarea } from "../ui/ai-textarea";
 
 interface CreateCompanyDialogProps {
     open: boolean;
@@ -55,10 +56,17 @@ export function CreateCompanyDialog({
         resolver: zodResolver(companySchema),
         defaultValues: {
             name: "",
+            email: "",
             domain: "",
             industry: "",
-            size: undefined,
+            size: undefined, // Kept as undefined because Select handles it, but maybe safer as null?
+            // Actually, for Select, undefined is fine if the component handles it.
+            // But the warning is about 'input'.
+            // Let's modify all inputs to ensure they fallback to "" in the render method if logic is complex.
+            // But here, I will verify defaultValues.
             annualRevenue: "",
+            phone: "",
+            description: "",
             notes: "",
             billingStreet: "",
             billingCity: "",
@@ -76,10 +84,13 @@ export function CreateCompanyDialog({
         // Transform form data to match Company interface
         const companyData: any = {
             name: data.name,
+            email: data.email,
             domain: data.domain,
             industry: data.industry,
             size: data.size,
             annualRevenue: data.annualRevenue ? Number(data.annualRevenue) : undefined,
+            phone: data.phone,
+            description: data.description,
             notes: data.notes,
             billingAddress: {
                 street: data.billingStreet,
@@ -119,29 +130,16 @@ export function CreateCompanyDialog({
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Company Name *</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Acme Inc." {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-medium">Company Details</h3>
                             <FormField
                                 control={form.control}
-                                name="domain"
+                                name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Website</FormLabel>
+                                        <FormLabel>Company Name *</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="acme.com" {...field} />
+                                            <Input placeholder="Acme Inc." {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -150,45 +148,89 @@ export function CreateCompanyDialog({
 
                             <FormField
                                 control={form.control}
-                                name="industry"
+                                name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Industry</FormLabel>
+                                        <FormLabel>Company Email</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Technology" {...field} />
+                                            <Input type="email" placeholder="contact@acme.com" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="size"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Company Size</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="domain"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Website</FormLabel>
                                             <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select size" />
-                                                </SelectTrigger>
+                                                <Input placeholder="acme.com" {...field} />
                                             </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="1-10">1-10 employees</SelectItem>
-                                                <SelectItem value="11-50">11-50 employees</SelectItem>
-                                                <SelectItem value="51-200">51-200 employees</SelectItem>
-                                                <SelectItem value="201-500">201-500 employees</SelectItem>
-                                                <SelectItem value="501-1000">501-1000 employees</SelectItem>
-                                                <SelectItem value="1000+">1000+ employees</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="industry"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Industry</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Technology" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="phone"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Phone</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="+1 (555) 000-0000" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="size"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Company Size</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select size" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="1-10">1-10 employees</SelectItem>
+                                                    <SelectItem value="11-50">11-50 employees</SelectItem>
+                                                    <SelectItem value="51-200">51-200 employees</SelectItem>
+                                                    <SelectItem value="201-500">201-500 employees</SelectItem>
+                                                    <SelectItem value="501-1000">501-1000 employees</SelectItem>
+                                                    <SelectItem value="1000+">1000+ employees</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
 
                             <FormField
                                 control={form.control}
@@ -210,7 +252,7 @@ export function CreateCompanyDialog({
                             />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <h3 className="text-sm font-medium">Billing Address</h3>
                             <div className="grid gap-4">
                                 <FormField
@@ -284,24 +326,36 @@ export function CreateCompanyDialog({
                             </div>
                         </div>
 
-                        <FormField
-                            control={form.control}
-                            name="notes"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Notes</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Add any additional notes about this company..."
-                                            className="resize-none"
-                                            rows={3}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-medium">Additional Information</h3>
+
+
+
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={({ field }) => (
+                                    <AITextarea
+                                        label="Description"
+                                        minWords={5}
+                                        placeholder="Brief company description..."
+                                        {...field}
+                                    />
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="notes"
+                                render={({ field }) => (
+                                    <AITextarea
+                                        label="Internal Notes"
+                                        minWords={5}
+                                        placeholder="Add any internal notes..."
+                                        {...field}
+                                    />
+                                )}
+                            />
+                        </div>
 
                         <DialogFooter>
                             <Button

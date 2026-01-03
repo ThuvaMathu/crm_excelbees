@@ -19,6 +19,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import {
     Select,
     SelectContent,
@@ -132,12 +133,19 @@ export function CreateTaskDialog({
             const assignee = users.find(u => u.uid === data.assigneeId);
             const project = projects.find(p => p.id === data.projectId);
 
-            const taskData = {
+            const taskData: any = {
                 ...data,
                 assigneeName: assignee?.displayName || undefined,
                 projectName: project?.name || undefined,
                 dueDate: data.dueDate ? Timestamp.fromDate(data.dueDate) : undefined,
+                // Handle "none" values from Select
+                projectId: data.projectId === "none" ? undefined : data.projectId,
+                dealId: data.dealId === "none" ? undefined : data.dealId,
+                assigneeId: data.assigneeId === "none" ? undefined : data.assigneeId,
             };
+
+            // Remove undefined fields
+            Object.keys(taskData).forEach(key => taskData[key] === undefined && delete taskData[key]);
 
             const { success, error } = await createTask(taskData, user.uid);
 
@@ -317,6 +325,7 @@ export function CreateTaskDialog({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
+                                                <SelectItem value="none">None</SelectItem>
                                                 {users.map((u) => (
                                                     <SelectItem key={u.uid} value={u.uid}>
                                                         {u.displayName || u.email}
@@ -346,6 +355,7 @@ export function CreateTaskDialog({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
+                                                <SelectItem value="none">None</SelectItem>
                                                 {projects.map((p) => (
                                                     <SelectItem key={p.id} value={p.id}>
                                                         {p.name}
@@ -374,6 +384,7 @@ export function CreateTaskDialog({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
+                                                <SelectItem value="none">None</SelectItem>
                                                 {deals.map((d) => (
                                                     <SelectItem key={d.id} value={d.id}>
                                                         {d.title}
@@ -392,47 +403,12 @@ export function CreateTaskDialog({
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <FormLabel>Description</FormLabel>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-6 px-2 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                            title={`Powered by ${aiConfig.tasks.model}`}
-                                            onClick={async () => {
-                                                const title = form.getValues("title");
-                                                if (!title) {
-                                                    toast.error("Please enter a title first");
-                                                    return;
-                                                }
-                                                const currentDesc = form.getValues("description");
-                                                const toastId = toast.loading("Generating description...");
-
-                                                try {
-                                                    const prompt = `Generate a concise and professional description for a task titled: "${title}". ${currentDesc ? `Current context: ${currentDesc}` : ""}`;
-                                                    const { success, data } = await generateText(prompt);
-
-                                                    if (success && data) {
-                                                        form.setValue("description", data);
-                                                        toast.success("Description generated", { id: toastId });
-                                                    } else {
-                                                        toast.error("Failed to generate", { id: toastId });
-                                                    }
-                                                } catch (err) {
-                                                    toast.error("AI Error", { id: toastId });
-                                                }
-                                            }}
-                                        >
-                                            <Sparkles className="h-3 w-3 mr-1" />
-                                            AI Assist
-                                        </Button>
-                                    </div>
                                     <FormControl>
-                                        <Textarea
+                                        <AITextarea
+                                            label="Description"
                                             placeholder="Task details..."
-                                            className="resize-none"
-                                            rows={4}
+                                            className="min-h-[120px]"
+                                            minWords={5}
                                             {...field}
                                         />
                                     </FormControl>

@@ -9,6 +9,7 @@ export interface User {
   displayName: string | null;
   photoURL: string | null;
   role?: UserRole;
+  invoiceSettings?: InvoiceUserSettings;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -36,6 +37,7 @@ export interface Lead {
   aiScore?: number;
   aiReasoning?: string[];
   aiLastUpdated?: Timestamp;
+  lastContactedAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -73,6 +75,7 @@ export interface Company {
   id: string;
   name: string;
   domain?: string;
+  email?: string;
   phone?: string;
   description?: string;
   industry?: string;
@@ -151,8 +154,23 @@ export interface Deal {
 }
 
 // Project Types
-export type ProjectStatus = "Planning" | "Active" | "On Hold" | "Completed" | "Cancelled";
+export type ProjectStatus = "Planning" | "Development" | "Active" | "On Hold" | "Completed" | "Management" | "Cancelled";
 export type ProjectPriority = "Low" | "Medium" | "High" | "Critical";
+export type ManagementBillingCycle = "Quarterly" | "Semi-Annual" | "None";
+
+export interface ProjectFinancials {
+  initialCost?: number;
+  annualRecurringCost?: number;
+  managementBillingCycle?: ManagementBillingCycle;
+  nextBillingDate?: Timestamp;
+  isRecurringEnabled: boolean;
+}
+
+export interface ProjectNotificationSettings {
+  enabled: boolean;
+  emailEnabled: boolean;
+  lastNotificationSent?: Timestamp;
+}
 
 export interface Project {
   id: string;
@@ -162,7 +180,12 @@ export interface Project {
   priority: ProjectPriority;
   startDate: Timestamp;
   endDate?: Timestamp;
-  budget?: number;
+  
+  // Financials & Lifecycle
+  financials?: ProjectFinancials;
+  notificationSettings?: ProjectNotificationSettings;
+
+  budget?: number; // Legacy/Total budget
   companyId?: string;
   companyName?: string;
   dealId?: string;
@@ -210,8 +233,20 @@ export interface Task {
 
 // Invoice Types
 export type InvoiceStatus = "Draft" | "Sent" | "Paid" | "Overdue" | "Cancelled";
-export type PaymentTerms = "Net 15" | "Net 30" | "Net 60" | "Custom";
-export type InvoiceTemplate = "standard" | "project" | "recurring";
+export type PaymentTerms = "Net 15" | "Net 30" | "Net 60" | "Due on Receipt" | "Custom";
+export type InvoiceTemplate = "standard" | "professional" | "creative";
+export type InvoiceColorTheme = string; // Hex color code (e.g., "#3B82F6")
+
+export interface InvoiceUserSettings {
+  template: InvoiceTemplate;
+  companyName: string;
+  fromName: string;
+  fromEmail: string;
+  logoUrl?: string;
+  colorTheme: InvoiceColorTheme; // Hex color
+  invoicePrefix: string; // e.g., "INV-", "EB-"
+  nextInvoiceNumber: number; // Auto-incrementing counter
+}
 
 export interface InvoiceLineItem {
   id: string;
@@ -234,17 +269,21 @@ export interface Invoice {
   contactName?: string;
   clientEmail?: string;
   billingAddress?: string;
-  // Deal/Project Linking
+  shippingAddress?: string;
+  
+  // Deal/Project Linking (Nullable/Optional)
   dealId?: string;
   dealName?: string;
   projectId?: string;
   projectName?: string;
+  
   // Invoice Details
   issueDate: Timestamp;
   dueDate: Timestamp;
   paidDate?: Timestamp;
   paymentTerms: PaymentTerms;
   currency: string; // e.g., "USD", "EUR"
+  
   // Line Items & Calculations
   lineItems: InvoiceLineItem[];
   subtotal: number;
@@ -252,9 +291,35 @@ export interface Invoice {
   taxRate: number; // Percentage
   discount: number; // Fixed amount
   total: number;
+  
   // Additional Info
   notes?: string;
   terms?: string;
+  customFields?: Record<string, string>;
+  
+  // Recurring Settings
+  isRecurring?: boolean;
+  recurring?: {
+    frequency: "weekly" | "monthly" | "quarterly" | "yearly";
+    interval: number; // e.g. every 2 weeks
+    startDate: Timestamp;
+    endDate?: Timestamp;
+    lastGenerated?: Timestamp;
+    nextGenerationDate?: Timestamp;
+    status: "active" | "paused" | "ended";
+  };
+
+  // Compliance & Audit
+  taxProfileId?: string; // For linking to global tax configurations
+  clientTaxId?: string; // VAT/GST
+  auditTrail?: {
+    action: string;
+    userId: string;
+    userName: string;
+    timestamp: Timestamp;
+    details?: string;
+  }[];
+
   // Metadata
   ownerId: string;
   ownerName?: string;
@@ -262,6 +327,7 @@ export interface Invoice {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   sentAt?: Timestamp;
+  voidedAt?: Timestamp;
 }
 
 // Notification Types

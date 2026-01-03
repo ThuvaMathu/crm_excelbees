@@ -279,3 +279,37 @@ export async function deleteUser(uid: string) {
         return { success: false, error: error.message };
     }
 }
+
+// Get User Invoice Settings
+export async function getUserInvoiceSettings(uid: string) {
+    try {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            return {
+                settings: userData.invoiceSettings || null,
+                error: null,
+            };
+        } else {
+            return { settings: null, error: "User not found" };
+        }
+    } catch (error: any) {
+        return { settings: null, error: error.message };
+    }
+}
+
+// Set User Invoice Settings
+export async function setUserInvoiceSettings(uid: string, settings: any) {
+    try {
+        const userRef = doc(db, "users", uid);
+        await updateDoc(userRef, {
+            invoiceSettings: settings,
+            updatedAt: serverTimestamp(),
+        });
+        return { success: true, error: null };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

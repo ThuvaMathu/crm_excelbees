@@ -5,6 +5,7 @@ import type { Invoice } from "@/types/crm";
 export async function sendInvoiceEmail(
   invoice: Invoice,
   recipientEmail: string,
+  userId?: string,
   companyInfo?: {
     name: string;
     address: string;
@@ -13,8 +14,8 @@ export async function sendInvoiceEmail(
   }
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    // Generate PDF
-    const pdfBlob = getInvoicePDFBlob(invoice, companyInfo);
+    // Generate PDF with user settings
+    const pdfBlob = await getInvoicePDFBlob(invoice, userId, companyInfo);
     
     // Convert blob to base64
     const reader = new FileReader();
