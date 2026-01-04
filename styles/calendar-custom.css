@@ -1,0 +1,46 @@
+/* Dark mode overrides for react-big-calendar */
+.rbc-dark-mode .rbc-off-range-bg {
+    background: #1f2937; /* gray-800 */
+}
+
+.rbc-dark-mode .rbc-header {
+    border-bottom: 1px solid #374151; /* gray-700 */
+}
+
+.rbc-dark-mode .rbc-month-view,
+.rbc-dark-mode .rbc-time-view,
+.rbc-dark-mode .rbc-agenda-view {
+    border: 1px solid #374151; /* gray-700 */
+}
+
+.rbc-dark-mode .rbc-day-bg + .rbc-day-bg,
+.rbc-dark-mode .rbc-month-row + .rbc-month-row {
+    border-left: 1px solid #374151;
+    border-top: 1px solid #374151;
+}
+
+.rbc-dark-mode .rbc-day-bg {
+    border-left: 1px solid #374151;
+}
+
+.rbc-dark-mode .rbc-today {
+    background-color: #374151; /* gray-700 */
+}
+
+.rbc-dark-mode .rbc-event {
+    background-color: #3b82f6;
+}
+
+.rbc-dark-mode .rbc-toolbar button {
+    color: #e5e7eb; /* gray-200 */
+    border: 1px solid #4b5563; /* gray-600 */
+}
+
+.rbc-dark-mode .rbc-toolbar button:hover {
+    background-color: #374151;
+}
+
+.rbc-dark-mode .rbc-toolbar button.rbc-active {
+    background-color: #1f2937; /* gray-800 */
+    box-shadow: none;
+}

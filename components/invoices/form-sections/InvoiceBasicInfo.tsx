@@ -173,7 +173,7 @@ export function InvoiceBasicInfo() {
                                                 </p>
                                             </>
                                         ) : (
-                                            <p>{selectedCompany.billingAddress as string || "No address on file"}</p>
+                                            <p>{(selectedCompany.billingAddress as any) || "No address on file"}</p>
                                         )}
                                     </div>
                                 </div>

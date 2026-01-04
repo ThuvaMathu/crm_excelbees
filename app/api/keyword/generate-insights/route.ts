@@ -1,0 +1,139 @@
+/**
+ * API Route: Generate Insights (Step 9)
+ * POST /api/keyword/generate-insights
+ * 
+ * Generates comprehensive strategy report from selected keywords
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getStrategyGenerationPrompt } from '@/lib/keyword/prompts';
+import { adminDb as db } from '@/lib/firebase-admin';
+import type {
+  GenerateInsightsRequest,
+  GenerateInsightsResponse,
+  StrategyReport,
+} from '@/types/keyword-research';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const body: GenerateInsightsRequest = await request.json();
+    const { researchId, selectedKeywords, allResearchData } = body;
+
+    if (!researchId || !selectedKeywords || !allResearchData) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    console.log(`🚀 [Keyword API] Generate Insights: ${selectedKeywords.length} keywords`);
+
+    // Generate strategy with GPT-4o
+    const strategyPrompt = getStrategyGenerationPrompt({
+      businessContext: allResearchData.businessContext,
+      competitors: allResearchData.competitors,
+      totalPagesScraped: allResearchData.totalPagesScraped,
+      totalKeywordsExtracted: allResearchData.totalKeywordsExtracted,
+      selectedKeywords,
+    });
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an SEO strategy consultant. Create comprehensive, actionable keyword strategies. Return valid JSON only.',
+        },
+        {
+          role: 'user',
+          content: strategyPrompt,
+        },
+      ],
+      temperature: 0.5,
+      response_format: { type: 'json_object' },
+    });
+
+    const result = completion.choices[0].message.content;
+    if (!result) {
+      throw new Error('No strategy result');
+    }
+
+    const parsed = JSON.parse(result);
+
+    // Organize keywords by strategic value
+    const quickWins = selectedKeywords.filter(kw => kw.strategicValue === 'quick-win');
+    const coreTargets = selectedKeywords.filter(kw => kw.strategicValue === 'core-target');
+    const longTermGoals = selectedKeywords.filter(kw => kw.strategicValue === 'long-term-goal');
+
+    const strategyReport: StrategyReport = {
+      generatedAt: new Date(),
+      executiveSummary: parsed.executiveSummary || '',
+      keywordBreakdown: {
+        quickWins,
+        coreTargets,
+        longTermGoals,
+      },
+      keywordFamilies: parsed.keywordFamilies || [],
+      competitorInsights: parsed.competitorInsights || {
+        allCompetitorsTarget: [],
+        someCompetitorsTarget: [],
+        noCompetitorsTarget: [],
+        competitiveGaps: [],
+      },
+      contentRecommendations: parsed.contentRecommendations || [],
+      searchIntentDistribution: parsed.searchIntentDistribution || {
+        informational: { count: 0, strategy: '' },
+        commercial: { count: 0, strategy: '' },
+        transactional: { count: 0, strategy: '' },
+      },
+      priorityActionPlan: parsed.priorityActionPlan || {
+        month1: [],
+        month2to3: [],
+        month4to6: [],
+      },
+      successMetrics: parsed.successMetrics || {
+        expectedTrafficIncrease: '',
+        targetRankings: '',
+        conversionPotential: '',
+      },
+      riskAssessment: parsed.riskAssessment || {
+        cannibalizationRisks: [],
+        optimizationWarnings: [],
+        competitiveThreats: [],
+      },
+      nextSteps: parsed.nextSteps || [],
+    };
+
+    // Store in Firestore
+    await db
+      .collection(`marketing/keyword/researches/${researchId}/strategy_report`)
+      .doc('main')
+      .set(strategyReport);
+
+    // Update research document to complete
+    await db.collection('marketing/keyword/researches').doc(researchId).update({
+      status: 'complete',
+      currentStep: 9,
+      updatedAt: new Date(),
+    });
+
+    console.log(`✅ [Keyword API] Strategy generation complete`);
+
+    const response: GenerateInsightsResponse = {
+      strategyReport,
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('Error generating insights:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to generate insights',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
+  }
+}

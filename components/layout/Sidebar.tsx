@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
@@ -23,11 +25,15 @@ import {
     ChevronLeft,
     ChevronRight,
     LogOut,
+    Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    // ... (omitting unchanged lines for brevity if possible, but replace_file_content needs context)
+    // Actually, I will just do two chunks to be safe and accurate.
+
     { name: "Leads", href: "/leads", icon: Users },
     { name: "Contacts", href: "/contacts", icon: Users },
     { name: "Companies", href: "/companies", icon: Building2 },
@@ -65,6 +71,32 @@ export function Sidebar() {
         }
     };
 
+    // Marketing Submenu State
+    const [marketingOpen, setMarketingOpen] = useState(false);
+    const isMarketingActive = pathname?.startsWith("/marketing");
+
+    // Auto-open marketing menu if active
+    useEffect(() => {
+        if (isMarketingActive && !sidebarCollapsed) {
+            setMarketingOpen(true);
+        }
+    }, [isMarketingActive, sidebarCollapsed]);
+
+    // Marketing Items
+    const marketingItems = [
+        { name: "Dashboard", href: "/marketing" },
+        { name: "Competitors", href: "/marketing/competitors" },
+        { name: "SEO Analyzer", href: "/marketing/seo" },
+        { name: "Keyword Research", href: "/marketing/keyword" },
+        { name: "Blog Writer", href: "/marketing/blog" },
+        { name: "Email Campaigns", href: "/marketing/email" },
+        { name: "Social Media", href: "/marketing/social" },
+        { name: "Ad Copy", href: "/marketing/ads" },
+        { name: "Calendar", href: "/marketing/calendar" },
+        { name: "Landing Pages", href: "/marketing/landing-pages" },
+        { name: "Analytics", href: "/marketing/analytics" },
+    ];
+
     return (
         <div
             className={cn(
@@ -90,7 +122,7 @@ export function Sidebar() {
             <nav className="flex-1 overflow-y-auto py-4 px-2">
                 <ul className="space-y-1">
                     {navigation.map((item) => {
-                        const isActive = pathname === item.href || pathname?.startsWith(item.href + "/");
+                        const isActive = pathname === item.href || (pathname?.startsWith(item.href + "/") && item.href !== "/dashboard"); // Simple active check
                         return (
                             <li key={item.name}>
                                 <Link
@@ -115,6 +147,57 @@ export function Sidebar() {
                             </li>
                         );
                     })}
+
+                    {/* Marketing Dropdown (Custom implementation for simplicity) */}
+                    <li>
+                        <button
+                            onClick={() => !sidebarCollapsed && setMarketingOpen(!marketingOpen)}
+                            className={cn(
+                                "w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all group relative",
+                                isMarketingActive
+                                    ? "bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground" // Subtle highlight for parent when child active
+                                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary-800 hover:text-gray-900 dark:hover:text-white"
+                            )}
+                        >
+                            <div className="flex items-center gap-3">
+                                <Zap className="h-5 w-5 flex-shrink-0 text-yellow-500" />
+                                {!sidebarCollapsed && <span className="text-sm font-medium">Marketing AI</span>}
+                            </div>
+                            {!sidebarCollapsed && (
+                                <ChevronRight className={cn("h-4 w-4 transition-transform", marketingOpen && "rotate-90")} />
+                            )}
+
+                            {sidebarCollapsed && (
+                                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 dark:bg-secondary-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                                    Marketing AI
+                                </div>
+                            )}
+                        </button>
+
+                        {/* Submenu */}
+                        {!sidebarCollapsed && marketingOpen && (
+                            <ul className="mt-1 ml-4 border-l-2 border-gray-200 dark:border-secondary-800 pl-2 space-y-1">
+                                {marketingItems.map((subItem) => {
+                                    const isSubActive = pathname === subItem.href;
+                                    return (
+                                        <li key={subItem.name}>
+                                            <Link
+                                                href={subItem.href}
+                                                className={cn(
+                                                    "block px-3 py-2 rounded-md text-sm transition-colors",
+                                                    isSubActive
+                                                        ? "text-primary font-medium bg-primary/5 dark:bg-primary/10"
+                                                        : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-secondary-800/50"
+                                                )}
+                                            >
+                                                {subItem.name}
+                                            </Link>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        )}
+                    </li>
 
                     {/* Admin/Manager Navigation */}
                     {hasAdminAccess && (
