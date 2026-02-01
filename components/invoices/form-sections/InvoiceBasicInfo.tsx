@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { Label } from "@/components/ui/label";
 import { DealProjectLinker } from "../DealProjectLinker";
 import { getCompanies } from "@/lib/firestore/companies";
@@ -427,7 +427,7 @@ export function InvoiceBasicInfo() {
                             <FormItem>
                                 <FormLabel>Billing Address</FormLabel>
                                 <FormControl>
-                                    <Textarea {...field} placeholder="Bill to..." className="min-h-[100px]" />
+                                    <AITextarea {...field} placeholder="Bill to..." className="min-h-[100px]" minWords={5} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -440,7 +440,7 @@ export function InvoiceBasicInfo() {
                             <FormItem>
                                 <FormLabel>Shipping Address (Optional)</FormLabel>
                                 <FormControl>
-                                    <Textarea {...field} placeholder="Ship to..." className="min-h-[100px]" />
+                                    <AITextarea {...field} placeholder="Ship to..." className="min-h-[100px]" minWords={5} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

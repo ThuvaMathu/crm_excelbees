@@ -17,12 +17,7 @@ import {
     ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
-import { getLeads } from "@/lib/firestore/leads";
-import { getDeals } from "@/lib/firestore/deals";
-import { getCompanies } from "@/lib/firestore/companies";
-import { getProjects } from "@/lib/firestore/projects";
-import { getTasks } from "@/lib/firestore/tasks";
-import { getInvoiceStats } from "@/lib/firestore/invoices";
+import { getCachedDashboardStats } from "@/app/actions/dashboard";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 
 export default function DashboardPage() {
@@ -43,57 +38,33 @@ export default function DashboardPage() {
         const fetchDashboardData = async () => {
             console.log("📈 Dashboard: Starting data fetch...");
             try {
-                const [
-                    leadsResult,
-                    dealsResult,
-                    companiesResult,
-                    projectsResult,
-                    tasksResult,
-                    invoiceStatsResult,
-                ] = await Promise.all([
-                    getLeads(),
-                    getDeals(),
-                    getCompanies(),
-                    getProjects(),
-                    getTasks({ assigneeId: user?.uid }),
-                    getInvoiceStats(),
-                ]);
+                // Fetch all dashboard stats from our cached server action
+                const data = await getCachedDashboardStats(user?.uid || "");
 
-                console.log("✅ Dashboard: Data fetched successfully");
+                if (data) {
+                    console.log("✅ Dashboard: Data fetched successfully");
 
-                // Calculate stats
-                const activeDeals = dealsResult.deals.filter(
-                    (d) => d.stage !== "Won" && d.stage !== "Lost"
-                );
+                    setStats({
+                        totalLeads: data.totalLeads,
+                        activeDeals: data.activeDeals,
+                        totalCompanies: data.totalCompanies,
+                        totalRevenue: data.totalRevenue,
+                        activeProjects: data.activeProjects,
+                        pendingTasks: data.pendingTasks,
+                    });
 
-                const activeProjects = projectsResult.projects.filter(
-                    (p) => p.status === "Active"
-                );
+                    // Parse dates back to Date objects for the UI helpers if needed, 
+                    // or helpers will need adjustment. 
+                    // Let's adjust helper usage or map them back.
+                    // The 'isOverdue' and 'isDueToday' helpers assume .toDate() exists or it's a date.
+                    // Server action returns strings for dates.
+                    const upcoming = data.upcomingTasks.map((t: any) => ({
+                        ...t,
+                        dueDate: t.dueDate ? { toDate: () => new Date(t.dueDate) } : null
+                    }));
 
-                const pendingTasks = tasksResult.tasks.filter(
-                    (t) => t.status !== "Done"
-                );
-
-                // Get upcoming tasks (next 5, not done)
-                const upcoming = tasksResult.tasks
-                    .filter((t) => t.status !== "Done")
-                    .sort((a, b) => {
-                        if (!a.dueDate) return 1;
-                        if (!b.dueDate) return -1;
-                        return a.dueDate.toMillis() - b.dueDate.toMillis();
-                    })
-                    .slice(0, 5);
-
-                setStats({
-                    totalLeads: leadsResult.leads.length,
-                    activeDeals: activeDeals.length,
-                    totalCompanies: companiesResult.companies.length,
-                    totalRevenue: invoiceStatsResult.stats?.totalRevenue || 0,
-                    activeProjects: activeProjects.length,
-                    pendingTasks: pendingTasks.length,
-                });
-
-                setUpcomingTasks(upcoming);
+                    setUpcomingTasks(upcoming);
+                }
             } catch (error) {
                 console.error("❌ Dashboard: Error fetching data:", error);
             } finally {

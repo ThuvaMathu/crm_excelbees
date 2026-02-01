@@ -1,226 +1,240 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { MarketingLayout } from "@/components/marketing/shared/MarketingLayout";
-import { MarketingFeatureCard } from "@/components/marketing/shared/MarketingFeatureCard";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Sparkles, FileText, CheckCircle2, ChevronRight, PenTool } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { PenTool, Eye, Trash2, Clock, FileText, Plus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
 
-interface BlogOutline {
+interface Blog {
+    id: string;
     title: string;
-    headings: string[];
-    keywords: string[];
+    status: string;
+    actualWordCount: number;
+    seoScore: number;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export default function BlogWriterPage() {
+    const router = useRouter();
     const { user } = useAuth();
-    const [step, setStep] = useState<1 | 2 | 3>(1);
-    const [isLoading, setIsLoading] = useState(false);
+    const [blogs, setBlogs] = useState<Blog[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Form Data
-    const [topic, setTopic] = useState("");
-    const [tone, setTone] = useState("professional");
-    const [outline, setOutline] = useState<BlogOutline | null>(null);
-    const [draft, setDraft] = useState("");
+    useEffect(() => {
+        if (!user) return;
 
-    // Step 1: Generate Outline
-    const handleGenerateOutline = async () => {
-        if (!topic) return toast.error("Enter a topic");
-        setIsLoading(true);
+        const loadBlogs = async () => {
+            try {
+                const response = await fetch(`/api/blog-writer/library?userId=${user.uid}`);
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error("Fetch library failed:", response.status, errorData);
+                    throw new Error(errorData.details || errorData.error || "Failed to fetch blogs");
+                }
+
+                const data = await response.json();
+                setBlogs(data.blogs || []);
+            } catch (error: any) {
+                console.error("Error loading blogs:", error);
+                toast.error(error.message || "Failed to load blogs");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadBlogs();
+    }, [user]);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this blog?")) return;
+
         try {
-            const res = await fetch("/api/marketing/blog", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "generate_outline",
-                    prompt: "ignored",
-                    context: { topic, tone },
-                    userId: user?.uid,
-                    workspaceId: "demo"
-                })
+            const response = await fetch(`/api/blog-writer/${id}?userId=${user?.uid}`, {
+                method: "DELETE",
             });
-            const data = await res.json();
-            const result = JSON.parse(data.content);
-            setOutline(result);
-            setStep(2);
-        } catch (e) {
-            console.error(e);
-            toast.error("Failed to generate outline");
-        } finally {
-            setIsLoading(false);
+
+            if (!response.ok) throw new Error("Failed to delete");
+
+            setBlogs(blogs.filter((b) => b.id !== id));
+            toast.success("Blog deleted");
+        } catch (error) {
+            toast.error("Failed to delete blog");
         }
     };
 
-    // Step 2: Generate Draft
-    const handleGenerateDraft = async () => {
-        if (!outline) return;
-        setIsLoading(true);
-        try {
-            // In a real app, we'd allow editing the outline here before sending
-            const res = await fetch("/api/marketing/blog", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "generate_draft",
-                    prompt: "ignored",
-                    context: { outline, tone },
-                    userId: user?.uid,
-                    workspaceId: "demo"
-                })
-            });
-            const data = await res.json();
-            setDraft(data.content); // Markdown content
-            setStep(3);
-        } catch (e) {
-            console.error(e);
-            toast.error("Failed to write draft");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    if (loading) {
+        return (
+            <MarketingLayout title="AI Blog Writer">
+                <div className="flex items-center justify-center h-96">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+                        <p className="text-muted-foreground">Loading blogs...</p>
+                    </div>
+                </div>
+            </MarketingLayout>
+        );
+    }
 
     return (
         <MarketingLayout
             title="AI Blog Writer"
-            description="Create SEO-optimized articles in minutes."
+            description="Create SEO-optimized blog posts with AI assistance"
+            actions={
+                <Button onClick={() => router.push("/marketing/blog/new/select-keywords")}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create New Blog
+                </Button>
+            }
         >
-            <div className="max-w-4xl mx-auto">
-                {/* Progress Indicators */}
-                <div className="flex justify-between mb-8 max-w-sm mx-auto">
-                    {[1, 2, 3].map((s) => (
-                        <div key={s} className="flex flex-col items-center">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 
-                                ${step >= s ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-muted"}`}
-                            >
-                                {step > s ? <CheckCircle2 className="h-5 w-5" /> : s}
+            <div className="space-y-6">
+                {/* Quick Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Total Blogs
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{blogs.length}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Drafts
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {blogs.filter((b) => b.status === "draft").length}
                             </div>
-                            <span className="text-xs mt-1 text-muted-foreground">
-                                {s === 1 ? "Topic" : s === 2 ? "Outline" : "Draft"}
-                            </span>
-                        </div>
-                    ))}
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                In Progress
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {blogs.filter((b) => b.status === "in_progress").length}
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Complete
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {blogs.filter((b) => b.status === "complete").length}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
-                {/* Step 1: Input */}
-                {step === 1 && (
+                {/* Blog List */}
+                {blogs.length === 0 ? (
                     <Card>
-                        <CardHeader>
-                            <CardTitle>What should we write about?</CardTitle>
-                            <CardDescription>Tell us your topic and we'll create an outline.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Blog Topic / Title Idea</Label>
-                                <Input
-                                    placeholder="e.g. The Future of AI in Marketing"
-                                    value={topic}
-                                    onChange={(e) => setTopic(e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Tone of Voice</Label>
-                                <Select value={tone} onValueChange={setTone}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="professional">Professional</SelectItem>
-                                        <SelectItem value="casual">Casual & Friendly</SelectItem>
-                                        <SelectItem value="authoritative">Authoritative</SelectItem>
-                                        <SelectItem value="funny">Humorous</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-end">
-                            <Button onClick={handleGenerateOutline} disabled={isLoading}>
-                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Generate Outline
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">No blogs yet</h3>
+                            <p className="text-muted-foreground text-center mb-4">
+                                Create your first AI-powered blog post
+                            </p>
+                            <Button onClick={() => router.push("/marketing/blog/new/select-keywords")}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create New Blog
                             </Button>
-                        </CardFooter>
+                        </CardContent>
                     </Card>
-                )}
-
-                {/* Step 2: Outline */}
-                {step === 2 && outline && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Review Outline</CardTitle>
-                            <CardDescription>Generated for "{topic}". You can proceed or go back.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="p-4 border rounded-lg bg-muted/50">
-                                <h3 className="text-xl font-bold mb-4 text-primary">{outline.title}</h3>
-                                <div className="space-y-2">
-                                    <Label className="uppercase text-xs font-bold text-muted-foreground">Keywords</Label>
-                                    <div className="flex gap-2 flex-wrap">
-                                        {outline.keywords.map(k => (
-                                            <span key={k} className="bg-primary/10 text-primary px-2 py-1 rounded text-xs">{k}</span>
-                                        ))}
+                ) : (
+                    <div className="grid gap-4">
+                        {blogs.map((blog) => (
+                            <Card key={blog.id}>
+                                <CardHeader>
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <CardTitle className="flex items-center gap-2">
+                                                {blog.title}
+                                                <Badge
+                                                    variant={
+                                                        blog.status === "complete"
+                                                            ? "default"
+                                                            : blog.status === "in_progress"
+                                                                ? "secondary"
+                                                                : "outline"
+                                                    }
+                                                >
+                                                    {blog.status}
+                                                </Badge>
+                                            </CardTitle>
+                                            <CardDescription className="mt-2">
+                                                <div className="flex items-center gap-4 text-sm">
+                                                    <span className="flex items-center gap-1">
+                                                        <Clock className="h-3 w-3" />
+                                                        {new Date(blog.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <FileText className="h-3 w-3" />
+                                                        {blog.actualWordCount} words
+                                                    </span>
+                                                    {blog.seoScore > 0 && (
+                                                        <span className="flex items-center gap-1">
+                                                            SEO: {blog.seoScore}/100
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </CardDescription>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    if (blog.status === "draft") {
+                                                        router.push(`/marketing/blog/${blog.id}/outline`);
+                                                    } else {
+                                                        router.push(`/marketing/blog/${blog.id}/edit`);
+                                                    }
+                                                }}
+                                            >
+                                                <PenTool className="h-4 w-4 mr-2" />
+                                                Edit
+                                            </Button>
+                                            {blog.status !== "draft" && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => router.push(`/marketing/blog/${blog.id}/preview`)}
+                                                >
+                                                    <Eye className="h-4 w-4 mr-2" />
+                                                    Preview
+                                                </Button>
+                                            )}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDelete(blog.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="space-y-2 mt-4">
-                                    <Label className="uppercase text-xs font-bold text-muted-foreground">Sections</Label>
-                                    <ul className="list-decimal pl-5 space-y-1">
-                                        {outline.headings.map(h => <li key={h} className="text-sm">{h}</li>)}
-                                    </ul>
-                                </div>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-between">
-                            <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                            <Button onClick={handleGenerateDraft} disabled={isLoading}>
-                                {isLoading ? (
-                                    <>
-                                        <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                                        Writing Magic...
-                                    </>
-                                ) : (
-                                    <>
-                                        <PenTool className="mr-2 h-4 w-4" />
-                                        Write Full Article
-                                    </>
-                                )}
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                )}
-
-                {/* Step 3: Draft Output */}
-                {step === 3 && (
-                    <Card className="h-[75vh] flex flex-col">
-                        <CardHeader>
-                            <CardTitle>Your Draft is Ready!</CardTitle>
-                            <CardDescription>Review the content below. You can copy or save it.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-1 overflow-y-auto border-t border-b bg-muted/10 p-6">
-                            <article className="prose dark:prose-invert max-w-none">
-                                <ReactMarkdown>{draft}</ReactMarkdown>
-                            </article>
-                        </CardContent>
-                        <CardFooter className="flex justify-between py-4">
-                            <Button variant="outline" onClick={() => setStep(2)}>Back to Outline</Button>
-                            <div className="flex gap-2">
-                                <Button variant="secondary" onClick={() => {
-                                    navigator.clipboard.writeText(draft);
-                                    toast.success("Copied to clipboard");
-                                }}>
-                                    Copy Text
-                                </Button>
-                                <Button onClick={() => toast.success("Saved to Content Calendar!")}>
-                                    Save to Calendar
-                                </Button>
-                            </div>
-                        </CardFooter>
-                    </Card>
+                                </CardHeader>
+                            </Card>
+                        ))}
+                    </div>
                 )}
             </div>
         </MarketingLayout>

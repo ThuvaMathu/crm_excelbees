@@ -1,6 +1,7 @@
 "use client";
 
 import { MarketingFeatureCard } from "@/components/marketing/shared/MarketingFeatureCard";
+import { MarketingLayout } from "@/components/marketing/shared/MarketingLayout";
 import {
     Search,
     BarChart,
@@ -45,15 +46,20 @@ export default function MarketingDashboardPage() {
     ];
 
     return (
-        <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {features.map((feature) => (
-                    <MarketingFeatureCard
-                        key={feature.title}
-                        {...feature}
-                    />
-                ))}
+        <MarketingLayout
+            title="Marketing Suite"
+            description="AI-powered tools to supercharge your growth engine."
+        >
+            <div className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {features.map((feature) => (
+                        <MarketingFeatureCard
+                            key={feature.title}
+                            {...feature}
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
+        </MarketingLayout>
     );
 }

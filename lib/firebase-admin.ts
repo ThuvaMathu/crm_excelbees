@@ -42,4 +42,12 @@ try {
 
 // FIXED: Use default database instead of specific database name
 export const adminDb = getFirestore(adminApp);
+
+try {
+  adminDb.settings({ ignoreUndefinedProperties: true });
+} catch (error) {
+  // Ignore error if settings are already locked/initialized
+  console.log("Firestore settings already initialized, skipping.");
+}
+
 export const adminStorage = getStorage(adminApp);

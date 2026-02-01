@@ -124,7 +124,7 @@ export default function KeywordResultsPage() {
             description={`Analysis complete • ${keywords.length} keywords found`}
             actions={
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => router.push("/marketing/keyword")}>
+                    <Button variant="outline" onClick={() => router.push("/marketing/keyword/new")}>
                         New Research
                     </Button>
                     <Button onClick={() => toast.info("Export feature coming soon")}>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -310,12 +310,13 @@ export default function NewCompetitorAnalysisPage() {
 
                         <div className="space-y-2">
                             <Label htmlFor="knownCompetitors">Known Competitors to Include</Label>
-                            <Textarea
+                            <AITextarea
                                 id="knownCompetitors"
                                 placeholder="https://competitor1.com, https://competitor2.com"
                                 rows={2}
                                 value={knownCompetitors}
                                 onChange={(e) => setKnownCompetitors(e.target.value)}
+                                minWords={5}
                             />
                             <p className="text-xs text-muted-foreground">
                                 Comma-separated URLs of competitors you want to include
@@ -324,12 +325,13 @@ export default function NewCompetitorAnalysisPage() {
 
                         <div className="space-y-2">
                             <Label htmlFor="excludeCompetitors">Competitors to Exclude</Label>
-                            <Textarea
+                            <AITextarea
                                 id="excludeCompetitors"
                                 placeholder="https://notacompetitor.com"
                                 rows={2}
                                 value={excludeCompetitors}
                                 onChange={(e) => setExcludeCompetitors(e.target.value)}
+                                minWords={5}
                             />
                             <p className="text-xs text-muted-foreground">
                                 Comma-separated URLs to exclude from analysis

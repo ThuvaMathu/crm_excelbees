@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { contactSchema, type ContactFormData } from "@/lib/validations/contact";
 import { updateContact } from "@/lib/firestore/contacts";
@@ -178,11 +178,12 @@ export function EditContactDialog({
                                 <FormItem>
                                     <FormLabel>Notes</FormLabel>
                                     <FormControl>
-                                        <Textarea
+                                        <AITextarea
                                             placeholder="Add any additional notes about this contact..."
                                             className="resize-none"
                                             rows={3}
                                             {...field}
+                                            minWords={5}
                                         />
                                     </FormControl>
                                     <FormMessage />

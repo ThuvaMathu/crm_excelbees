@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Sparkles, Copy, Linkedin, Twitter, Instagram } from "lucide-react";
@@ -80,11 +80,12 @@ export default function SocialMediaPage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label>Topic or URL</Label>
-                            <Textarea
+                            <AITextarea
                                 placeholder="Paste a link to your new blog post or describe an announcement..."
                                 className="h-32"
                                 value={topic}
                                 onChange={e => setTopic(e.target.value)}
+                                minWords={5}
                             />
                         </div>
 

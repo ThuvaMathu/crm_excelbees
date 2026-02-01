@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { createDeal } from "@/lib/firestore/deals";
 import { getCompanies } from "@/lib/firestore/companies";
@@ -308,10 +308,11 @@ export function CreateDealDialog({
                                 <FormItem>
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
-                                        <Textarea
+                                        <AITextarea
                                             placeholder="Brief description of the deal..."
                                             rows={3}
                                             {...field}
+                                            minWords={5}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -326,10 +327,11 @@ export function CreateDealDialog({
                                 <FormItem>
                                     <FormLabel>Notes</FormLabel>
                                     <FormControl>
-                                        <Textarea
+                                        <AITextarea
                                             placeholder="Additional notes..."
                                             rows={2}
                                             {...field}
+                                            minWords={5}
                                         />
                                     </FormControl>
                                     <FormMessage />

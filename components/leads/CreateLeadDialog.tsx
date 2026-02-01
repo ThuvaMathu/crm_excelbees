@@ -29,7 +29,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { leadSchema, type LeadFormData } from "@/lib/validations/lead";
 import { createLead } from "@/lib/firestore/leads";
@@ -286,11 +286,12 @@ export function CreateLeadDialog({
                                 <FormItem>
                                     <FormLabel>Notes</FormLabel>
                                     <FormControl>
-                                        <Textarea
+                                        <AITextarea
                                             placeholder="Add any additional notes about this lead..."
                                             className="resize-none"
                                             rows={3}
                                             {...field}
+                                            minWords={5}
                                         />
                                     </FormControl>
                                     <FormMessage />

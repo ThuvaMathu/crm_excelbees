@@ -115,5 +115,32 @@ service cloud.firestore {
     match /invoices/{invoiceId} {
       allow read, write: if isAuthenticated() && isApproved();
     }
+
+    // ============================================================================
+    // MARKETING AI - CALENDAR COLLECTIONS
+    // ============================================================================
+    
+    // Calendar collections - user-specific data
+    match /marketing/calendar/users/{userId}/calendars/{calendarId} {
+      allow read, write: if isOwner(userId) && isApproved();
+    }
+    
+    match /marketing/calendar/users/{userId}/plans/{planId} {
+      allow read, write: if isOwner(userId) && isApproved();
+    }
+    
+    // Calendar templates - read by all, write by owner
+    match /marketing/calendar/templates/{templateId} {
+      allow read: if isAuthenticated() && isApproved();
+      allow create: if isAuthenticated() && isApproved() && 
+                      request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && isApproved() && 
+                              resource.data.userId == request.auth.uid;
+    }
+    
+    // Marketing AI - Blog Writer collections (existing)
+    match /marketing/blog-writer/users/{userId}/blogs/{blogId} {
+      allow read, write: if isOwner(userId) && isApproved();
+    }
   }
 }

@@ -20,6 +20,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import "./rich-text-editor.css";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 interface RichTextEditorProps {
     value: string;
@@ -30,6 +37,8 @@ interface RichTextEditorProps {
     attachments?: File[];
     onRemoveAttachment?: (index: number) => void;
     disabled?: boolean;
+    className?: string;
+    editorClassName?: string;
 }
 
 export function RichTextEditor({
@@ -41,6 +50,8 @@ export function RichTextEditor({
     attachments = [],
     onRemoveAttachment,
     disabled = false,
+    className,
+    editorClassName,
 }: RichTextEditorProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,31 +59,17 @@ export function RichTextEditor({
         extensions: [
             StarterKit.configure({
                 heading: {
-                    levels: [1, 2, 3],
+                    levels: [1, 2, 3, 4],
                 },
             }),
-            Placeholder.configure({
-                placeholder,
-            }),
-            Link.configure({
-                openOnClick: false,
-                HTMLAttributes: {
-                    class: "text-primary underline",
-                },
-            }),
+            // ... other extensions ...
         ],
-        content: value,
-        editable: !disabled,
-        onUpdate: ({ editor }) => {
-            const html = editor.getHTML();
-            onChange(html);
-        },
-        onBlur: ({ editor }) => {
-            // Ensure final state is captured when user leaves editor
-            const html = editor.getHTML();
-            onChange(html);
-        },
+        // ... options ...,
+        // ... options ...,
         immediatelyRender: false,
+        onUpdate: ({ editor }) => {
+            onChange(editor.getHTML());
+        },
     });
 
     // Sync external changes to editor (e.g., from AI Assistant or templates)
@@ -132,10 +129,44 @@ export function RichTextEditor({
         );
     }
 
+    const getActiveStyle = () => {
+        if (editor.isActive("heading", { level: 1 })) return "h1";
+        if (editor.isActive("heading", { level: 2 })) return "h2";
+        if (editor.isActive("heading", { level: 3 })) return "h3";
+        if (editor.isActive("heading", { level: 4 })) return "h4";
+        return "p";
+    };
+
     return (
-        <div className="space-y-3">
+        <div className={`space-y-3 ${className || ""}`}>
             {/* Toolbar */}
-            <div className="border rounded-md p-2 flex flex-wrap gap-1 bg-muted/30">
+            <div className="border rounded-md p-2 flex flex-wrap gap-1 bg-muted/30 items-center">
+                <Select
+                    value={getActiveStyle()}
+                    onValueChange={(value) => {
+                        if (value === "p") {
+                            editor.chain().focus().clearNodes().run();
+                        } else if (value.startsWith("h")) {
+                            const level = parseInt(value.replace("h", "")) as 1 | 2 | 3 | 4;
+                            editor.chain().focus().toggleHeading({ level }).run();
+                        }
+                    }}
+                    disabled={disabled}
+                >
+                    <SelectTrigger className="w-[120px] h-8 mr-1">
+                        <SelectValue placeholder="Style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="p">Normal</SelectItem>
+                        <SelectItem value="h1">Heading 1</SelectItem>
+                        <SelectItem value="h2">Heading 2</SelectItem>
+                        <SelectItem value="h3">Heading 3</SelectItem>
+                        <SelectItem value="h4">Heading 4</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <div className="w-[1px] h-6 bg-border mx-1" />
+
                 <Button
                     type="button"
                     variant="ghost"
@@ -146,6 +177,7 @@ export function RichTextEditor({
                 >
                     <Bold className="h-4 w-4" />
                 </Button>
+                {/* ... rest of buttons ... */}
                 <Button
                     type="button"
                     variant="ghost"
@@ -218,7 +250,7 @@ export function RichTextEditor({
             </div>
 
             {/* Editor */}
-            <div className="border rounded-md min-h-[150px] p-3 bg-background">
+            <div className={`border rounded-md min-h-[150px] p-3 bg-background ${editorClassName || ""}`}>
                 <EditorContent editor={editor} />
             </div>
 

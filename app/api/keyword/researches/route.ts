@@ -11,17 +11,33 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
     }
 
+    console.log(`🔍 Fetching keyword researches for user: ${userId}`);
     const snapshot = await db
       .collection('marketing/keyword/researches')
       .where('userId', '==', userId)
       .get();
+      
+    console.log(`✅ Found ${snapshot.size} researches`);
+
+    // Helper to safely convert to Date
+    const toDate = (val: any) => {
+      if (!val) return new Date();
+      if (val.toDate && typeof val.toDate === 'function') return val.toDate();
+      if (val instanceof Date) return val;
+      if (typeof val === 'string') return new Date(val);
+      return new Date();
+    };
 
     const researches = snapshot.docs
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(doc.data().createdAt),
-      }))
+      .map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
+        };
+      })
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return NextResponse.json({ researches });

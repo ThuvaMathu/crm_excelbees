@@ -29,7 +29,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { companySchema, type CompanyFormData } from "@/lib/validations/company";
 import { updateCompany } from "@/lib/firestore/companies";
@@ -332,11 +332,12 @@ export function EditCompanyDialog({
                                     <FormItem>
                                         <FormLabel>Description</FormLabel>
                                         <FormControl>
-                                            <Textarea
+                                            <AITextarea
                                                 placeholder="Brief company description..."
                                                 className="resize-none"
                                                 rows={3}
                                                 {...field}
+                                                minWords={5}
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -351,11 +352,12 @@ export function EditCompanyDialog({
                                     <FormItem>
                                         <FormLabel>Internal Notes</FormLabel>
                                         <FormControl>
-                                            <Textarea
+                                            <AITextarea
                                                 placeholder="Add any internal notes..."
                                                 className="resize-none"
                                                 rows={2}
                                                 {...field}
+                                                minWords={5}
                                             />
                                         </FormControl>
                                         <FormMessage />

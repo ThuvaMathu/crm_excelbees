@@ -86,15 +86,15 @@ export function Sidebar() {
     const marketingItems = [
         { name: "Dashboard", href: "/marketing" },
         { name: "Competitors", href: "/marketing/competitors" },
-        { name: "SEO Analyzer", href: "/marketing/seo" },
+        // { name: "SEO Analyzer", href: "/marketing/seo" },
         { name: "Keyword Research", href: "/marketing/keyword" },
         { name: "Blog Writer", href: "/marketing/blog" },
-        { name: "Email Campaigns", href: "/marketing/email" },
-        { name: "Social Media", href: "/marketing/social" },
-        { name: "Ad Copy", href: "/marketing/ads" },
+        { name: "Email Campaigns", href: "/marketing/email-campaigns" },
+        // { name: "Social Media", href: "/marketing/social" },
+        //{ name: "Ad Copy", href: "/marketing/ads" },
         { name: "Calendar", href: "/marketing/calendar" },
-        { name: "Landing Pages", href: "/marketing/landing-pages" },
-        { name: "Analytics", href: "/marketing/analytics" },
+        //{ name: "Landing Pages", href: "/marketing/landing-pages" },
+        //{ name: "Analytics", href: "/marketing/analytics" },
     ];
 
     return (

@@ -13,6 +13,7 @@ import {
   QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { redis } from "../redis";
 import type { Company, CompanyInput, CompanyFilters, Address } from "@/types/crm";
 
 const COLLECTION_NAME = "companies";
@@ -33,6 +34,12 @@ export async function createCompany(data: CompanyInput, userId: string): Promise
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), companyData);
     
+    // Invalidate cache
+    await redis.del("companies:list:all");
+    if (userId) {
+        await redis.del(`dashboard:stats:${userId}`);
+    }
+
     return {
       success: true,
       id: docRef.id,
@@ -75,6 +82,24 @@ export async function getCompanies(filters?: CompanyFilters): Promise<{
     const q = constraints.length > 0
       ? query(collection(db, COLLECTION_NAME), ...constraints)
       : collection(db, COLLECTION_NAME);
+
+    // Try Cache for unfiltered requests
+    const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.search === "");
+    const cacheKey = "companies:list:all";
+    
+    if (isUnfiltered) {
+        const cached = await redis.get<Company[]>(cacheKey);
+        if (cached) {
+             console.log("⚡ HIT: Companies list from Redis");
+             // Rehydrate Timestamps
+             const hydrated = cached.map((c: any) => ({
+                ...c,
+                createdAt: c.createdAt ? new Timestamp(c.createdAt.seconds || 0, c.createdAt.nanoseconds || 0) : null,
+                updatedAt: c.updatedAt ? new Timestamp(c.updatedAt.seconds || 0, c.updatedAt.nanoseconds || 0) : null,
+             }));
+             return { companies: hydrated, error: null };
+        }
+    }
       
     const querySnapshot = await getDocs(q);
     console.log("Companies fetched:", querySnapshot.size);
@@ -83,6 +108,10 @@ export async function getCompanies(filters?: CompanyFilters): Promise<{
     querySnapshot.forEach((doc) => {
       companies.push({ id: doc.id, ...doc.data() } as Company);
     });
+
+    if (companies.length > 0 && isUnfiltered) {
+        await redis.set(cacheKey, companies, { ex: 300 });
+    }
 
     // Sort by createdAt on client side
     companies.sort((a, b) => {
@@ -156,6 +185,9 @@ export async function updateCompany(id: string, data: Partial<CompanyInput>): Pr
       updatedAt: Timestamp.now(),
     });
 
+    // Invalidate cache
+    await redis.del("companies:list:all");
+
     return {
       success: true,
       error: null,
@@ -176,6 +208,9 @@ export async function deleteCompany(id: string): Promise<{
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await deleteDoc(docRef);
+
+    // Invalidate cache
+    await redis.del("companies:list:all");
 
     return {
       success: true,

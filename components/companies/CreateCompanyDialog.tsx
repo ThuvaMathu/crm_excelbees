@@ -29,7 +29,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { companySchema, type CompanyFormData } from "@/lib/validations/company";
 import { createCompany } from "@/lib/firestore/companies";
@@ -334,25 +334,34 @@ export function CreateCompanyDialog({
                             <FormField
                                 control={form.control}
                                 name="description"
-                                render={({ field }) => (
+                                    <FormItem>
+                                <FormLabel>Description</FormLabel>
+                                <FormControl>
                                     <AITextarea
-                                        label="Description"
                                         minWords={5}
                                         placeholder="Brief company description..."
                                         {...field}
                                     />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
                                 )}
                             />
                             <FormField
                                 control={form.control}
                                 name="notes"
                                 render={({ field }) => (
-                                    <AITextarea
-                                        label="Internal Notes"
-                                        minWords={5}
-                                        placeholder="Add any internal notes..."
-                                        {...field}
-                                    />
+                                    <FormItem>
+                                        <FormLabel>Internal Notes</FormLabel>
+                                        <FormControl>
+                                            <AITextarea
+                                                minWords={5}
+                                                placeholder="Add any internal notes..."
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}
                             />
                         </div>

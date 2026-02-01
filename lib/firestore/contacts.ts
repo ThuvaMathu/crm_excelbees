@@ -13,6 +13,7 @@ import {
   QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { redis } from "../redis";
 import type { Contact, ContactInput, ContactFilters } from "@/types/crm";
 
 const COLLECTION_NAME = "contacts";
@@ -29,6 +30,9 @@ export async function createContact(data: ContactInput, userId: string) {
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), contactData);
     
+    // Invalidate cache
+    await redis.del("contacts:list:all");
+
     return {
       success: true,
       id: docRef.id,
@@ -65,6 +69,24 @@ export async function getContacts(filters?: ContactFilters) {
     const q = constraints.length > 0 
       ? query(collection(db, COLLECTION_NAME), ...constraints)
       : collection(db, COLLECTION_NAME);
+
+    // Try Cache
+    const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.search === "");
+    const cacheKey = "contacts:list:all";
+
+    if (isUnfiltered) {
+        const cached = await redis.get<Contact[]>(cacheKey);
+        if (cached) {
+             console.log("⚡ HIT: Contacts list from Redis");
+             const hydrated = cached.map((c: any) => ({
+                ...c,
+                createdAt: c.createdAt ? new Timestamp(c.createdAt.seconds || 0, c.createdAt.nanoseconds || 0) : null,
+                updatedAt: c.updatedAt ? new Timestamp(c.updatedAt.seconds || 0, c.updatedAt.nanoseconds || 0) : null,
+                lastContactedAt: c.lastContactedAt ? new Timestamp(c.lastContactedAt.seconds || 0, c.lastContactedAt.nanoseconds || 0) : null,
+             }));
+             return { contacts: hydrated, error: null };
+        }
+    }
       
     const querySnapshot = await getDocs(q);
     console.log("Contacts fetched:", querySnapshot.size);
@@ -73,6 +95,10 @@ export async function getContacts(filters?: ContactFilters) {
     querySnapshot.forEach((doc) => {
       contacts.push({ id: doc.id, ...doc.data() } as Contact);
     });
+    
+    if (contacts.length > 0 && isUnfiltered) {
+        await redis.set(cacheKey, contacts, { ex: 300 });
+    }
 
     // Sort by createdAt on client side
     contacts.sort((a, b) => {
@@ -141,6 +167,9 @@ export async function updateContact(id: string, data: Partial<ContactInput>) {
       updatedAt: Timestamp.now(),
     });
 
+    // Invalidate cache
+    await redis.del("contacts:list:all");
+
     return {
       success: true,
       error: null,
@@ -158,6 +187,9 @@ export async function deleteContact(id: string) {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await deleteDoc(docRef);
+
+    // Invalidate cache
+    await redis.del("contacts:list:all");
 
     return {
       success: true,

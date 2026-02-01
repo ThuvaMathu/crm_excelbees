@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Loader2, Send, X, Paperclip, FileText } from "lucide-react";
@@ -221,7 +221,7 @@ export function InvoiceEmailComposeModal({
                                     contextType="compose"
                                 />
                             </div>
-                            <Textarea
+                            <AITextarea
                                 id="body"
                                 value={body}
                                 onChange={(e) => setBody(e.target.value)}
@@ -229,6 +229,7 @@ export function InvoiceEmailComposeModal({
                                 rows={12}
                                 className="font-mono text-sm"
                                 required
+                                minWords={5}
                             />
                         </div>
 

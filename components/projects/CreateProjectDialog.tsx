@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { createProject } from "@/lib/firestore/projects";
 import { getCompanies } from "@/lib/firestore/companies";
@@ -397,10 +397,11 @@ export function CreateProjectDialog({
                                 <FormItem>
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
-                                        <Textarea
+                                        <AITextarea
                                             placeholder="Project description and goals..."
                                             rows={3}
                                             {...field}
+                                            minWords={5}
                                         />
                                     </FormControl>
                                     <FormMessage />

@@ -15,6 +15,7 @@ import {
   QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { redis } from "../redis";
 import type { Lead, LeadInput, LeadFilters, PaginationParams } from "@/types/crm";
 
 const COLLECTION_NAME = "leads";
@@ -32,6 +33,12 @@ export async function createLead(data: LeadInput, userId: string) {
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), leadData);
     console.log("✅ Lead created with ID:", docRef.id);
+
+    // Invalidate cache
+    await redis.del("leads:list:all");
+    if (userId) {
+        await redis.del(`dashboard:stats:${userId}`);
+    }
     
     return {
       success: true,
@@ -77,6 +84,27 @@ export async function getLeads(
     }
 
     const q = query(collection(db, COLLECTION_NAME), ...constraints);
+    
+    // Try Cache for unfiltered requests (and no pagination for now, or page 1)
+    const isUnfiltered = (!filters || Object.keys(filters).length === 0) && (!pagination);
+    const cacheKey = "leads:list:all";
+
+    if (isUnfiltered) {
+        const cached = await redis.get<Lead[]>(cacheKey);
+        if (cached) {
+                console.log("⚡ HIT: Leads list from Redis");
+                // Rehydrate Timestamps
+                const hydrated = cached.map((l: any) => ({
+                ...l,
+                createdAt: l.createdAt ? new Timestamp(l.createdAt.seconds || 0, l.createdAt.nanoseconds || 0) : null,
+                updatedAt: l.updatedAt ? new Timestamp(l.updatedAt.seconds || 0, l.updatedAt.nanoseconds || 0) : null,
+                lastContactedAt: l.lastContactedAt ? new Timestamp(l.lastContactedAt.seconds || 0, l.lastContactedAt.nanoseconds || 0) : null,
+                aiLastUpdated: l.aiLastUpdated ? new Timestamp(l.aiLastUpdated.seconds || 0, l.aiLastUpdated.nanoseconds || 0) : null,
+                }));
+                return { leads: hydrated, error: null };
+        }
+    }
+
     const querySnapshot = await getDocs(q);
     console.log("📊 Leads fetched from Firestore:", querySnapshot.size);
 
@@ -84,6 +112,10 @@ export async function getLeads(
     querySnapshot.forEach((doc) => {
       leads.push({ id: doc.id, ...doc.data() } as Lead);
     });
+
+    if (leads.length > 0 && isUnfiltered) {
+        await redis.set(cacheKey, leads, { ex: 300 });
+    }
 
     // Apply client-side search filter if provided
     let filteredLeads = leads;
@@ -151,6 +183,9 @@ export async function updateLead(id: string, data: Partial<LeadInput>) {
       updatedAt: Timestamp.now(),
     });
 
+    // Invalidate cache
+    await redis.del("leads:list:all");
+
     return {
       success: true,
       error: null,
@@ -168,6 +203,9 @@ export async function deleteLead(id: string) {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await deleteDoc(docRef);
+
+    // Invalidate cache
+    await redis.del("leads:list:all");
 
     return {
       success: true,
