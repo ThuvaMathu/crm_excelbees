@@ -13,6 +13,8 @@ import {
   QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { redis } from "../redis";
+import { generateNextInvoiceNumber } from "./invoice-number-generator";
 import type { Invoice, InvoiceInput, InvoiceStatus } from "@/types/crm";
 import { createNotification } from "./notifications";
 
@@ -38,7 +40,7 @@ export async function createInvoice(data: InvoiceInput, userId: string): Promise
     
     const invoiceData = {
       ...data,
-      invoiceNumber: data.invoiceNumber || generateInvoiceNumber(),
+      invoiceNumber: data.invoiceNumber || await generateNextInvoiceNumber(userId),
       ownerId: userId,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
@@ -46,6 +48,12 @@ export async function createInvoice(data: InvoiceInput, userId: string): Promise
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), invoiceData);
     console.log("✅ Invoice created with ID:", docRef.id);
+
+    // Invalidate cache
+    await redis.del("invoices:list:all");
+    if (userId) {
+        await redis.del(`dashboard:stats:${userId}`);
+    }
     
     return {
       success: true,
@@ -96,6 +104,26 @@ export async function getInvoices(filters?: {
       ? query(collection(db, COLLECTION_NAME), ...constraints)
       : collection(db, COLLECTION_NAME);
       
+    // Try Cache for unfiltered requests
+    const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.search === "");
+    const cacheKey = "invoices:list:all";
+
+    if (isUnfiltered) {
+        const cached = await redis.get<Invoice[]>(cacheKey);
+        if (cached) {
+            console.log("⚡ HIT: Invoices list from Redis");
+            // Rehydrate Timestamps
+            const hydrated = cached.map((inv: any) => ({
+                ...inv,
+                createdAt: inv.createdAt ? new Timestamp(inv.createdAt.seconds || 0, inv.createdAt.nanoseconds || 0) : null,
+                updatedAt: inv.updatedAt ? new Timestamp(inv.updatedAt.seconds || 0, inv.updatedAt.nanoseconds || 0) : null,
+                dueDate: inv.dueDate ? new Timestamp(inv.dueDate.seconds || 0, inv.dueDate.nanoseconds || 0) : null,
+                paidDate: inv.paidDate ? new Timestamp(inv.paidDate.seconds || 0, inv.paidDate.nanoseconds || 0) : null,
+            }));
+            return { invoices: hydrated, error: null };
+        }
+    }
+      
     const querySnapshot = await getDocs(q);
     console.log("📊 Invoices fetched:", querySnapshot.size);
 
@@ -103,6 +131,10 @@ export async function getInvoices(filters?: {
     querySnapshot.forEach((doc) => {
       invoices.push({ id: doc.id, ...doc.data() } as Invoice);
     });
+
+    if (invoices.length > 0 && isUnfiltered) {
+        await redis.set(cacheKey, invoices, { ex: 300 });
+    }
 
     // Sort by createdAt on client side
     invoices.sort((a, b) => {
@@ -183,6 +215,10 @@ export async function updateInvoice(id: string, data: Partial<InvoiceInput>): Pr
     } as any);
 
     console.log("✅ Invoice updated successfully");
+
+    // Invalidate cache
+    await redis.del("invoices:list:all");
+
     return {
       success: true,
       error: null,
@@ -235,6 +271,13 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus, pai
     }
 
     console.log("✅ Invoice status updated");
+
+    // Invalidate cache
+    await redis.del("invoices:list:all");
+    if (currentInvoice.ownerId) {
+        await redis.del(`dashboard:stats:${currentInvoice.ownerId}`);
+    }
+
     return {
       success: true,
       error: null,
@@ -259,6 +302,10 @@ export async function deleteInvoice(id: string): Promise<{
     await deleteDoc(docRef);
 
     console.log("✅ Invoice deleted successfully");
+
+    // Invalidate cache
+    await redis.del("invoices:list:all");
+
     return {
       success: true,
       error: null,

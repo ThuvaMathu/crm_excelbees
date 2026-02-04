@@ -36,6 +36,8 @@ import {
     Pencil,
     Trash2,
     Filter,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -49,6 +51,9 @@ export default function LeadsPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
     const [sourceFilter, setSourceFilter] = useState<LeadSource | "all">("all");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalLeads, setTotalLeads] = useState(0);
+    const pageSize = 10;
 
     const fetchLeads = async () => {
         setLoading(true);
@@ -64,14 +69,18 @@ export default function LeadsPage() {
             filters.search = searchQuery;
         }
 
-        const { leads: fetchedLeads } = await getLeads(filters);
+        const { leads: fetchedLeads } = await getLeads(filters, {
+            pageSize,
+            page: currentPage,
+        });
         setLeads(fetchedLeads);
+        setTotalLeads(fetchedLeads.length);
         setLoading(false);
     };
 
     useEffect(() => {
         fetchLeads();
-    }, [statusFilter, sourceFilter]);
+    }, [statusFilter, sourceFilter, currentPage]);
 
     const handleSearch = () => {
         fetchLeads();
@@ -225,6 +234,38 @@ export default function LeadsPage() {
                     </div>
                 )}
             </Card>
+
+            {/* Pagination */}
+            {leads.length > 0 && (
+                <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                        Showing {Math.min((currentPage - 1) * pageSize + 1, totalLeads)} to {Math.min(currentPage * pageSize, totalLeads)} of {totalLeads} leads
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                            Previous
+                        </Button>
+                        <span className="text-sm text-muted-foreground px-2">
+                            Page {currentPage}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => p + 1)}
+                            disabled={leads.length < pageSize}
+                        >
+                            Next
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Create Lead Dialog */}
             <CreateLeadDialog

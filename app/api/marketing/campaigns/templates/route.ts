@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import { EmailTemplate, EmailTemplateInput } from "@/types/email-campaigns";
+import { EmailTemplate, TemplateInput as EmailTemplateInput } from "@/types/email-campaigns";
 import { generateCampaignId, cleanObject } from "@/lib/email-campaigns/utils"; // Reusing ID generator
 import { Timestamp } from "firebase-admin/firestore";
 
@@ -62,9 +62,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!template.name || !template.content) {
+    if (!template.name || !template.html) {
       return NextResponse.json(
-        { error: "Missing required fields: name, content" },
+        { error: "Missing required fields: name, html" },
         { status: 400 }
       );
     }
@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
       id: templateId,
       isSystem: false,
       usageCount: 0,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: now as any,
+      updatedAt: now as any,
     };
 
     const cleanedTemplate = cleanObject(newTemplate);

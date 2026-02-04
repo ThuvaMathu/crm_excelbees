@@ -23,21 +23,27 @@ export interface Lead {
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
-  companyName?: string;
-  jobTitle?: string;
+  phone?: string | null;
+  companyName?: string | null;
+  jobTitle?: string | null;
   status: LeadStatus;
   source: LeadSource;
   value?: number;
   ownerId: string;
   ownerName?: string;
   tags: string[];
-  notes?: string;
+  notes?: string | null;
   // AI Qualification
   aiScore?: number;
   aiReasoning?: string[];
-  aiLastUpdated?: Timestamp;
-  lastContactedAt?: Timestamp;
+  aiLastUpdated?: Timestamp | null;
+  lastContactedAt?: Timestamp | null;
+  // Conversion tracking
+  converted?: boolean;
+  convertedToContactId?: string | null;
+  convertedToDealId?: string | null;
+  convertedToProjectId?: string | null;
+  convertedAt?: Timestamp | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -48,14 +54,14 @@ export interface Contact {
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
-  companyId?: string;
-  companyName?: string;
+  phone?: string | null;
+  companyId?: string | null;
+  companyName?: string | null;
   ownerId: string;
   ownerName?: string;
-  jobTitle?: string;
-  lastContactedAt?: Timestamp;
-  notes?: string;
+  jobTitle?: string | null;
+  lastContactedAt?: Timestamp | null;
+  notes?: string | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -115,6 +121,7 @@ export interface Activity {
     oldValue?: any;
     newValue?: any;
     field?: string;
+    [key: string]: any;
   };
   attachments?: {
     name: string;
@@ -151,6 +158,7 @@ export interface Deal {
   notes?: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  archived?: boolean;
 }
 
 // Project Types
@@ -390,6 +398,7 @@ export interface DealFilters {
   search?: string;
   minValue?: number;
   maxValue?: number;
+  archived?: boolean;
 }
 
 export interface ProjectFilters {
@@ -397,9 +406,11 @@ export interface ProjectFilters {
   priority?: ProjectPriority;
   ownerId?: string;
   companyId?: string;
+  dealId?: string;
   search?: string;
   startDateFrom?: Date;
   startDateTo?: Date;
+  archived?: boolean;
 }
 
 export interface TaskFilters {
@@ -408,6 +419,7 @@ export interface TaskFilters {
   type?: TaskType;
   assigneeId?: string;
   projectId?: string;
+  contactId?: string;
   ownerId?: string;
   search?: string;
   dueDateFrom?: Date;

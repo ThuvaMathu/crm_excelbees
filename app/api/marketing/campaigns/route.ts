@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
       id: campaignId,
       status: campaign.status || "draft",
       recipientCount: campaign.recipientCount || 0,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: now as any,
+      updatedAt: now as any,
     };
 
     // Clean undefined values

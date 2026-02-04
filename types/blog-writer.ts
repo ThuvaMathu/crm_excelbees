@@ -312,6 +312,7 @@ export interface AIAssistRequest {
   selection?: string;
   context?: string;
   userId: string;
+  mode?: "generate" | "improve";
 }
 
 export interface AIAssistResponse {

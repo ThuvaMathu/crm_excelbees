@@ -334,17 +334,18 @@ export function CreateCompanyDialog({
                             <FormField
                                 control={form.control}
                                 name="description"
+                                render={({ field }) => (
                                     <FormItem>
-                                <FormLabel>Description</FormLabel>
-                                <FormControl>
-                                    <AITextarea
-                                        minWords={5}
-                                        placeholder="Brief company description..."
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                                        <FormLabel>Description</FormLabel>
+                                        <FormControl>
+                                            <AITextarea
+                                                minWords={5}
+                                                placeholder="Brief company description..."
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
                                 )}
                             />
                             <FormField

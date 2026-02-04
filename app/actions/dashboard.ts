@@ -10,14 +10,24 @@ import { getInvoiceStats } from "@/lib/firestore/invoices";
 
 const CACHE_TTL = 300; // 5 minutes in seconds
 
-export async function getCachedDashboardStats(userId: string) {
+export interface DashboardStats {
+    totalLeads: number;
+    activeDeals: number;
+    totalCompanies: number;
+    totalRevenue: number;
+    activeProjects: number;
+    pendingTasks: number;
+    upcomingTasks: any[];
+}
+
+export async function getCachedDashboardStats(userId: string): Promise<DashboardStats | null> {
     if (!userId) return null;
 
     const cacheKey = `dashboard:stats:${userId}`;
 
     try {
         // 1. Try to get from Redis
-        const cachedData = await redis.get(cacheKey);
+        const cachedData = await redis.get<DashboardStats>(cacheKey);
         
         if (cachedData) {
             console.log("⚡ HIT: Dashboard stats served from Redis cache");

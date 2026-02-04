@@ -13,8 +13,10 @@ import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskDetailSheet } from "@/components/tasks/TaskDetailSheet";
 import { TaskCalendar } from "@/components/tasks/TaskCalendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function TasksPage() {
+    const { user } = useAuth();
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [createOpen, setCreateOpen] = useState(false);
@@ -224,6 +226,7 @@ export default function TasksPage() {
                 open={!!selectedTask}
                 onOpenChange={(open) => !open && setSelectedTask(null)}
                 onUpdate={fetchTasks}
+                user={user}
             />
         </div>
     );

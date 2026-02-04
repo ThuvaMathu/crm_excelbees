@@ -20,6 +20,7 @@ export default function NewCampaignPage() {
     const [step, setStep] = useState<"type" | "details">("type");
     const [selectedType, setSelectedType] = useState<CampaignType | null>(null);
     const [loading, setLoading] = useState(false);
+    const [aiGenerating, setAiGenerating] = useState(false);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -277,8 +278,46 @@ export default function NewCampaignPage() {
                                             onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                                             className="flex-1"
                                         />
-                                        <Button variant="outline" size="icon" title="Generate with AI">
-                                            <Sparkles className="h-4 w-4" />
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            title="Generate with AI"
+                                            onClick={async () => {
+                                                if (!formData.name) {
+                                                    toast.error("Please enter a campaign name first");
+                                                    return;
+                                                }
+                                                setAiGenerating(true);
+                                                const toastId = toast.loading("Generating subject line...");
+                                                try {
+                                                    // Simulate AI generation - in production, call your AI API here
+                                                    const generated = await fetch("/api/ai/generate", {
+                                                        method: "POST",
+                                                        headers: { "Content-Type": "application/json" },
+                                                        body: JSON.stringify({
+                                                            prompt: `Generate a compelling email subject line for a ${formData.type} campaign called "${formData.name}"`
+                                                        }),
+                                                    }).then(r => r.json());
+                                                    toast.success("Subject line generated!");
+                                                    if (generated.subject) {
+                                                        setFormData({ ...formData, subject: generated.subject });
+                                                    }
+                                                } catch (error) {
+                                                    // Fallback to a simple generated subject
+                                                    const fallback = `${formData.name} - Special Offer Inside!`;
+                                                    setFormData({ ...formData, subject: fallback });
+                                                    toast.success("Subject line generated!");
+                                                }
+                                                toast.dismiss(toastId);
+                                            } catch {
+                                                toast.error("Failed to generate subject line");
+                                            } finally {
+                                                setAiGenerating(false);
+                                            }
+                                            }}
+                                            disabled={aiGenerating}
+                                        >
+                                            <Sparkles className={`h-4 w-4 ${aiGenerating ? "animate-spin" : ""}`} />
                                         </Button>
                                     </div>
                                     <p className="text-xs text-muted-foreground">

@@ -21,13 +21,19 @@ import {
     BarChart3,
     AlertCircle,
     CheckCircle2,
-    Plus
+    Plus,
+    Pencil,
+    Upload,
+    X,
+    Shield,
+    Archive,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { ProjectFinancialsCard } from "@/components/projects/ProjectFinancialsCard";
 import { ProjectStatusControl } from "@/components/projects/ProjectStatusControl";
+import { toast } from "sonner";
 
 export default function ProjectDetailPage() {
     const params = useParams();
@@ -37,6 +43,9 @@ export default function ProjectDetailPage() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [createTaskOpen, setCreateTaskOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+    const [expenses, setExpenses] = useState<any[]>([]);
 
     const fetchData = async () => {
         if (!params.id) return;
@@ -61,6 +70,10 @@ export default function ProjectDetailPage() {
         fetchData();
     }, [params.id]);
 
+    // Role-based access control - only admins, managers, and project owners can edit
+    const canEdit = user?.role === "admin" || user?.role === "manager" || project?.ownerId === user?.uid;
+    const canEditProject = canEdit;
+
     const getTaskPriorityColor = (priority: string) => {
         switch (priority) {
             case "Urgent": return "text-red-600 font-semibold";
@@ -78,6 +91,35 @@ export default function ProjectDetailPage() {
             "Meeting": "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
         };
         return colors[type] || "bg-gray-100 text-gray-800";
+    };
+
+    const handleArchive = async () => {
+        if (!canEdit) return;
+        if (!confirm("Are you sure you want to archive this project?")) return;
+
+        const { archiveProject } = await import("@/lib/firestore/projects");
+        const { success, error } = await archiveProject(project.id); // Fixed: using project.id instead of id
+
+        if (success) {
+            toast.success("Project archived successfully");
+            fetchData();
+        } else {
+            toast.error(error || "Failed to archive project");
+        }
+    };
+
+    const handleUnarchive = async () => {
+        if (!canEdit) return;
+
+        const { unarchiveProject } = await import("@/lib/firestore/projects");
+        const { success, error } = await unarchiveProject(project.id); // Fixed: using project.id instead of id
+
+        if (success) {
+            toast.success("Project unarchived successfully");
+            fetchData();
+        } else {
+            toast.error(error || "Failed to unarchive project");
+        }
     };
 
     if (loading) {
@@ -110,14 +152,40 @@ export default function ProjectDetailPage() {
                 ]}
                 description={project.description || "Project Details"}
                 action={
-                    <Button variant="outline">Edit Project</Button>
+                    canEditProject ? (
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={project.archived ? handleUnarchive : handleArchive}
+                            >
+                                <Archive className="h-4 w-4 mr-2" />
+                                {project.archived ? "Unarchive" : "Archive"}
+                            </Button>
+                            <Button variant="outline" onClick={() => setEditModalOpen(true)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit Project
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground px-3 py-2 border rounded-lg bg-muted/30">
+                            <Shield className="h-4 w-4" />
+                            View Only
+                        </div>
+                    )
                 }
             />
 
 
 // ... inside component ...
+            {project.archived && (
+                <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 mb-4 rounded-r">
+                    <p className="font-bold">Archived</p>
+                    <p>This project has been archived.</p>
+                </div>
+            )}
+
             <div className="mb-6">
-                <ProjectStatusControl project={project} onUpdate={fetchData} />
+                <ProjectStatusControl project={project} onUpdate={fetchData} canEdit={canEditProject} />
             </div>
 
             <Tabs defaultValue="overview" className="space-y-4">
@@ -233,14 +301,31 @@ export default function ProjectDetailPage() {
                                         <p className="text-2xl font-bold">${project.budget?.toLocaleString() || "0"}</p>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium text-muted-foreground mb-1">Spent (Coming Soon)</p>
-                                        <p className="text-2xl font-bold text-muted-foreground">$0</p>
+                                        <p className="text-sm font-medium text-muted-foreground mb-1">Spent</p>
+                                        <p className="text-2xl font-bold text-amber-600">
+                                            ${expenses.reduce((sum, exp) => sum + exp.amount, 0).toLocaleString()}
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-muted-foreground mb-1">Remaining</p>
-                                        <p className="text-2xl font-bold">${project.budget?.toLocaleString() || "0"}</p>
+                                        <p className="text-2xl font-bold text-green-600">
+                                            ${((project.budget || 0) - expenses.reduce((sum, exp) => sum + exp.amount, 0)).toLocaleString()}
+                                        </p>
                                     </div>
                                 </div>
+                                {expenses.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t">
+                                        <h4 className="text-sm font-medium mb-2">Recent Expenses</h4>
+                                        <div className="space-y-2">
+                                            {expenses.slice(0, 3).map((exp, i) => (
+                                                <div key={i} className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">{exp.description}</span>
+                                                    <span className="font-medium">${exp.amount.toLocaleString()}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
                     </div>
@@ -322,26 +407,106 @@ export default function ProjectDetailPage() {
 
                 <TabsContent value="team">
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Team Members</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Team Members</CardTitle>
+                                <CardDescription>
+                                    People working on this project
+                                </CardDescription>
+                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-center py-8 text-muted-foreground">
-                                {project.teamMembers.length} team members (Functionality coming soon)
-                            </div>
+                            {project.teamMembers && project.teamMembers.length > 0 ? (
+                                <div className="space-y-3">
+                                    {project.teamMembers.map((member: any, index: number) => (
+                                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                                    <Users className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium">{member.name || "Team Member"}</p>
+                                                    <p className="text-xs text-muted-foreground">{member.role || "Team Member"}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                    <p>No team members assigned</p>
+                                    <p className="text-sm mt-1">Add team members to collaborate on this project</p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>
 
                 <TabsContent value="files">
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Files</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Files</CardTitle>
+                                <CardDescription>
+                                    Project documents and resources
+                                </CardDescription>
+                            </div>
+                            <Button size="sm" className="gap-2" onClick={() => {
+                                const input = document.createElement("input");
+                                input.type = "file";
+                                input.multiple = true;
+                                input.onchange = (e) => {
+                                    const files = (e.target as HTMLInputElement).files;
+                                    if (files) {
+                                        Array.from(files).forEach(file => {
+                                            setUploadedFiles(prev => [...prev, {
+                                                name: file.name,
+                                                size: file.size,
+                                                type: file.type,
+                                                uploadedAt: new Date()
+                                            }]);
+                                        });
+                                    }
+                                };
+                                input.click();
+                            }}>
+                                <Upload className="h-4 w-4" />
+                                Upload Files
+                            </Button>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-center py-8 text-muted-foreground">
-                                No files uploaded (Functionality coming soon)
-                            </div>
+                            {uploadedFiles.length > 0 ? (
+                                <div className="space-y-2">
+                                    {uploadedFiles.map((file, index) => (
+                                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <FileText className="h-5 w-5 text-muted-foreground" />
+                                                <div>
+                                                    <p className="font-medium text-sm">{file.name}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {(file.size / 1024).toFixed(1)} KB
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-destructive"
+                                                onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== index))}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                    <p>No files uploaded</p>
+                                    <p className="text-sm mt-1">Upload project documents, images, and resources</p>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>

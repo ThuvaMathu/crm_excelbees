@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const snapshot = await query.get();
     const contacts: Contact[] = [];
 
-    snapshot.forEach((doc) => {
+    snapshot.forEach((doc: any) => {
       const lead = doc.data();
       
       // Convert CRM lead to email contact

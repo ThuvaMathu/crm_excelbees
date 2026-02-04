@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
       ...audience,
       id: audienceId,
       contactCount: audience.contacts?.length || 0,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: now as any,
+      updatedAt: now as any,
     };
 
     const cleanedAudience = cleanObject(newAudience);

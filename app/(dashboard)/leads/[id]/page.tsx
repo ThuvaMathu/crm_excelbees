@@ -15,7 +15,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { getLead, deleteLead, updateLead } from "@/lib/firestore/leads";
+import { getLead, deleteLead, updateLead, convertLeadToContact } from "@/lib/firestore/leads";
 import { Timestamp } from "firebase/firestore";
 import { getActivities, logStatusChange, type Activity } from "@/lib/firestore/activities";
 import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
@@ -42,6 +42,8 @@ import { toast } from "sonner";
 import { scoreLead, enrichLead } from "@/app/actions/ai_leads";
 import { aiConfig } from "@/lib/ai/config";
 import { EmailComposeModal } from "@/components/email/EmailComposeModal";
+import { EditLeadDialog } from "@/components/leads/EditLeadDialog";
+import { getTasks } from "@/lib/firestore/tasks";
 
 export default function LeadDetailPage({
     params,
@@ -59,6 +61,9 @@ export default function LeadDetailPage({
     const [updating, setUpdating] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
     const [isEmailOpen, setIsEmailOpen] = useState(false);
+    const [isConverting, setIsConverting] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [relatedTasks, setRelatedTasks] = useState<any[]>([]);
 
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || lead?.ownerId === user?.uid;
@@ -71,9 +76,10 @@ export default function LeadDetailPage({
     const fetchLeadData = async () => {
         setLoading(true);
 
-        const [leadResult, activitiesResult] = await Promise.all([
+        const [leadResult, activitiesResult, tasksResult] = await Promise.all([
             getLead(id),
             getActivities("leads", id),
+            getTasks({ leadId: id }),
         ]);
 
         if (leadResult.error) {
@@ -85,6 +91,10 @@ export default function LeadDetailPage({
 
         if (!activitiesResult.error) {
             setActivities(activitiesResult.activities);
+        }
+
+        if (!tasksResult.error && tasksResult.tasks) {
+            setRelatedTasks(tasksResult.tasks);
         }
 
         setLoading(false);
@@ -215,8 +225,99 @@ export default function LeadDetailPage({
         window.location.href = `tel:${lead.phone}`;
     };
 
-    const handleConvert = () => {
-        toast.info("Lead conversion workflow coming soon!");
+    const handleConvert = async () => {
+        if (!lead || !user || !canEdit) return;
+
+        // Confirm conversion
+        const confirmed = confirm(
+            `Convert ${lead.firstName} ${lead.lastName} to a contact?\n\n` +
+            "This will create a new contact with this lead's information. " +
+            "The lead will be marked as converted."
+        );
+
+        if (!confirmed) return;
+
+        setIsConverting(true);
+        const toastId = toast.loading("Converting lead to contact...");
+
+        try {
+            const { success, contactId, error } = await convertLeadToContact(
+                id,
+                user.uid,
+                user.displayName || user.email || "Unknown"
+            );
+
+            if (success && contactId) {
+                toast.success("Successfully converted to contact!", { id: toastId });
+                router.push(`/contacts/${contactId}`);
+            } else {
+                toast.error(error || "Failed to convert lead", { id: toastId });
+            }
+        } catch (err: any) {
+            toast.error(err.message || "An error occurred", { id: toastId });
+        } finally {
+            setIsConverting(false);
+        }
+    };
+
+    const handleConvertToDeal = async () => {
+        if (!lead || !user || !canEdit) return;
+
+        if (!confirm(`Create a Deal for ${lead.firstName} ${lead.lastName}?`)) return;
+
+        setIsConverting(true);
+        const toastId = toast.loading("Creating Deal...");
+
+        try {
+            // Dynamically import to ensure we have the new function if not reloaded
+            const { convertLeadToDeal } = await import("@/lib/firestore/leads");
+            const { success, dealId, error } = await convertLeadToDeal(
+                id,
+                user.uid,
+                user.displayName || user.email || "Unknown"
+            );
+
+            if (success && dealId) {
+                toast.success("Deal created successfully!", { id: toastId });
+                router.push(`/deals/${dealId}`);
+            } else {
+                toast.error(error || "Failed to create deal", { id: toastId });
+            }
+        } catch (err: any) {
+            toast.error(err.message || "An error occurred", { id: toastId });
+        } finally {
+            setIsConverting(false);
+        }
+    };
+
+    const handleConvertToProject = async () => {
+        if (!lead || !user || !canEdit) return;
+
+        if (!confirm(`Start a Project for ${lead.firstName} ${lead.lastName}?`)) return;
+
+        setIsConverting(true);
+        const toastId = toast.loading("Initializing Project...");
+
+        try {
+            // Dynamically import
+            const { convertLeadToProject } = await import("@/lib/firestore/leads");
+            const { success, projectId, error } = await convertLeadToProject(
+                id,
+                user.uid,
+                user.displayName || user.email || "Unknown"
+            );
+
+            if (success && projectId) {
+                toast.success("Project started successfully!", { id: toastId });
+                router.push(`/projects/${projectId}`);
+            } else {
+                toast.error(error || "Failed to create project", { id: toastId });
+            }
+        } catch (err: any) {
+            toast.error(err.message || "An error occurred", { id: toastId });
+        } finally {
+            setIsConverting(false);
+        }
     };
 
     if (loading) {
@@ -243,7 +344,11 @@ export default function LeadDetailPage({
                 action={
                     <div className="flex gap-2">
                         {canEdit && (
-                            <Button variant="outline" size="sm">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsEditModalOpen(true)}
+                            >
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
                             </Button>
@@ -347,7 +452,31 @@ export default function LeadDetailPage({
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
-                                <CardTitle>Lead Information</CardTitle>
+                                <div className="flex items-center gap-3">
+                                    <CardTitle>Lead Information</CardTitle>
+                                    {lead.converted && (
+                                        <div className="flex flex-col gap-1 items-end">
+                                            <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                                                ✓ Converted
+                                            </span>
+                                            {lead.convertedToContactId && (
+                                                <Link href={`/contacts/${lead.convertedToContactId}`} className="text-xs text-primary hover:underline">
+                                                    View Contact →
+                                                </Link>
+                                            )}
+                                            {lead.convertedToDealId && (
+                                                <Link href={`/deals/${lead.convertedToDealId}`} className="text-xs text-primary hover:underline">
+                                                    View Deal →
+                                                </Link>
+                                            )}
+                                            {lead.convertedToProjectId && (
+                                                <Link href={`/projects/${lead.convertedToProjectId}`} className="text-xs text-primary hover:underline">
+                                                    View Project →
+                                                </Link>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="flex items-center gap-2">
                                     {canEdit ? (
                                         <Select
@@ -535,12 +664,55 @@ export default function LeadDetailPage({
                             <Button
                                 className="w-full justify-start"
                                 variant="outline"
-                                disabled={!canEdit}
+                                disabled={!canEdit || !!lead.convertedToContactId || isConverting}
                                 onClick={handleConvert}
                             >
                                 <Briefcase className="h-4 w-4 mr-2" />
-                                Convert to Contact
+                                {lead.convertedToContactId ? "Converted to Contact" : "Convert to Contact"}
                             </Button>
+
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit || !!lead.convertedToDealId || isConverting}
+                                onClick={handleConvertToDeal}
+                            >
+                                <DollarSign className="h-4 w-4 mr-2" />
+                                {lead.convertedToDealId ? "Converted to Deal" : "Convert to Deal"}
+                            </Button>
+
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit || !!lead.convertedToProjectId || isConverting}
+                                onClick={handleConvertToProject}
+                            >
+                                <Building2 className="h-4 w-4 mr-2" />
+                                {lead.convertedToProjectId ? "Converted to Project" : "Convert to Project"}
+                            </Button>
+
+                            {/* Links for already converted items */}
+                            {lead.convertedToContactId && (
+                                <Link href={`/contacts/${lead.convertedToContactId}`} className="w-full">
+                                    <Button className="w-full justify-start" variant="ghost" size="sm">
+                                        View Contact →
+                                    </Button>
+                                </Link>
+                            )}
+                            {lead.convertedToDealId && (
+                                <Link href={`/deals/${lead.convertedToDealId}`} className="w-full">
+                                    <Button className="w-full justify-start" variant="ghost" size="sm">
+                                        View Deal →
+                                    </Button>
+                                </Link>
+                            )}
+                            {lead.convertedToProjectId && (
+                                <Link href={`/projects/${lead.convertedToProjectId}`} className="w-full">
+                                    <Button className="w-full justify-start" variant="ghost" size="sm">
+                                        View Project →
+                                    </Button>
+                                </Link>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -549,9 +721,29 @@ export default function LeadDetailPage({
                             <CardTitle>Related Items</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-center py-4 text-sm text-muted-foreground">
-                                No related items yet
-                            </div>
+                            {relatedTasks.length > 0 ? (
+                                <div className="space-y-2">
+                                    <p className="text-xs text-muted-foreground mb-2">Tasks ({relatedTasks.length})</p>
+                                    {relatedTasks.slice(0, 3).map((task) => (
+                                        <div key={task.id} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-2 h-2 rounded-full ${task.status === "Done" ? "bg-green-500" :
+                                                    task.status === "In Progress" ? "bg-blue-500" :
+                                                        task.priority === "Urgent" ? "bg-red-500" : "bg-gray-400"
+                                                    }`} />
+                                                <div className="text-sm">
+                                                    <p className="font-medium">{task.title}</p>
+                                                    <p className="text-xs text-muted-foreground">{task.status}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-4 text-sm text-muted-foreground">
+                                    No related items yet
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -586,6 +778,16 @@ export default function LeadDetailPage({
                             isValid: true
                         }]
                     }}
+                />
+            )}
+
+            {/* Edit Lead Dialog */}
+            {lead && (
+                <EditLeadDialog
+                    open={isEditModalOpen}
+                    onOpenChange={setIsEditModalOpen}
+                    lead={lead}
+                    onSuccess={fetchLeadData}
                 />
             )}
         </div>

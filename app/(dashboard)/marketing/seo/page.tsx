@@ -32,7 +32,7 @@ export default function SEOAnalyzerPage() {
                     prompt: `Analyze the SEO for this URL: ${url}`, // Prompt for AI context
                     context: { url },
                     userId: user?.uid,
-                    workspaceId: "demo-workspace" // Replace with real ID
+                    workspaceId: user?.uid || "default"
                 })
             });
 

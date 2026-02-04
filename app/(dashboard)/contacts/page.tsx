@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { CreateContactDialog } from "@/components/contacts/CreateContactDialog";
+import { ImportCSVDialog } from "@/components/contacts/ImportCSVDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,7 +28,9 @@ import {
     Eye,
     Upload,
     Mail,
-    CheckSquare
+    CheckSquare,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -44,6 +47,10 @@ export default function ContactsPage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalContacts, setTotalContacts] = useState(0);
+    const pageSize = 10;
 
     const fetchContacts = async () => {
         try {
@@ -54,13 +61,17 @@ export default function ContactsPage() {
                 filters.search = searchQuery;
             }
 
-            const { contacts: fetchedContacts, error } = await getContacts(filters);
+            const { contacts: fetchedContacts, error } = await getContacts(filters, {
+                pageSize,
+                page: currentPage,
+            });
 
             if (error) {
                 console.error("Error fetching contacts:", error);
                 setContacts([]);
             } else {
                 setContacts(fetchedContacts);
+                setTotalContacts(fetchedContacts.length);
             }
         } catch (error) {
             console.error("Failed to fetch contacts:", error);
@@ -73,7 +84,7 @@ export default function ContactsPage() {
     useEffect(() => {
         fetchContacts();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [currentPage]);
 
     const handleSearch = () => {
         fetchContacts();
@@ -123,7 +134,7 @@ export default function ContactsPage() {
                         )}
                         <Button
                             variant="outline"
-                            onClick={() => { }}
+                            onClick={() => setImportDialogOpen(true)}
                             className="gap-2"
                         >
                             <Upload className="h-4 w-4" />
@@ -233,6 +244,38 @@ export default function ContactsPage() {
                 )}
             </Card>
 
+            {/* Pagination */}
+            {contacts.length > 0 && (
+                <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                        Showing {Math.min((currentPage - 1) * pageSize + 1, totalContacts)} to {Math.min(currentPage * pageSize, totalContacts)} of {totalContacts} contacts
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                            Previous
+                        </Button>
+                        <span className="text-sm text-muted-foreground px-2">
+                            Page {currentPage}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => p + 1)}
+                            disabled={contacts.length < pageSize}
+                        >
+                            Next
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             {/* Create Contact Dialog */}
             <CreateContactDialog
                 open={createDialogOpen}
@@ -255,6 +298,13 @@ export default function ContactsPage() {
                     isValid: true // simplified
                 }))}
                 isBulkMode={true} // New prop for Bulk Mode
+            />
+
+            {/* Import CSV Dialog */}
+            <ImportCSVDialog
+                open={importDialogOpen}
+                onOpenChange={setImportDialogOpen}
+                onSuccess={fetchContacts}
             />
         </div>
     );

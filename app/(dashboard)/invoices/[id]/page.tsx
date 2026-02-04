@@ -11,7 +11,7 @@ import { getInvoicePDFBlob } from "@/lib/pdf/invoice-generator";
 import type { Invoice } from "@/types/crm";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Shield, Lock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -22,6 +22,13 @@ export default function InvoiceDetailPage() {
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [loading, setLoading] = useState(true);
     const [composeOpen, setComposeOpen] = useState(false);
+
+    // Role-based access control - only admins and managers can modify invoices
+    const canModifyInvoice = user?.role === "admin" || user?.role === "manager";
+
+    const logPermissionCheck = (action: string, allowed: boolean) => {
+        console.log(`[RBAC] Invoice ${action} for invoice ${invoice?.id} by user ${user?.uid} (${user?.role}): ${allowed ? "ALLOWED" : "DENIED"}`);
+    };
 
     useEffect(() => {
         const fetchInvoice = async () => {
@@ -81,6 +88,14 @@ export default function InvoiceDetailPage() {
 
     const handleMarkPaid = async () => {
         if (!invoice) return;
+
+        if (!canModifyInvoice) {
+            logPermissionCheck("mark paid", false);
+            toast.error("Only admins and managers can mark invoices as paid");
+            return;
+        }
+
+        logPermissionCheck("mark paid", true);
         try {
             await updateInvoiceStatus(invoice.id, "Paid", new Date());
             setInvoice(prev => prev ? ({ ...prev, status: "Paid" }) : null);
@@ -88,6 +103,16 @@ export default function InvoiceDetailPage() {
         } catch (error) {
             toast.error("Failed to update status");
         }
+    };
+
+    const handleEditInvoice = () => {
+        if (!canModifyInvoice) {
+            logPermissionCheck("edit", false);
+            toast.error("Only admins and managers can edit invoices");
+            return;
+        }
+        logPermissionCheck("edit", true);
+        router.push(`/invoices/${invoice?.id}/edit`);
     };
 
     if (loading) {
@@ -102,13 +127,32 @@ export default function InvoiceDetailPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" asChild>
-                    <Link href="/invoices">
-                        <ArrowLeft className="h-4 w-4" />
-                    </Link>
-                </Button>
-                <h1 className="text-xl font-semibold">Back to Invoices</h1>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href="/invoices">
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <h1 className="text-xl font-semibold">Invoice {invoice.invoiceNumber}</h1>
+                    {!canModifyInvoice && (
+                        <span className="flex items-center gap-1 text-sm text-muted-foreground px-2 py-1 bg-muted rounded">
+                            <Shield className="h-3 w-3" />
+                            View Only
+                        </span>
+                    )}
+                </div>
+                <div className="flex gap-2">
+                    {invoice.status === "Draft" && (
+                        <Button
+                            variant="outline"
+                            onClick={handleEditInvoice}
+                            disabled={!canModifyInvoice}
+                        >
+                            {canModifyInvoice ? "Edit Invoice" : <><Lock className="h-4 w-4 mr-2" />Edit Locked</>}
+                        </Button>
+                    )}
+                </div>
             </div>
 
             <InvoiceDetail
@@ -117,6 +161,7 @@ export default function InvoiceDetailPage() {
                 onDownloadPDF={handleDownloadPDF}
                 onMarkPaid={handleMarkPaid}
                 sending={false}
+                canModify={canModifyInvoice}
             />
 
             {invoice && (

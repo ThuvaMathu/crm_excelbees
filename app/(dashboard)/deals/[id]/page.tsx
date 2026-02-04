@@ -7,25 +7,29 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { getDeal, deleteDeal, updateDealStage } from "@/lib/firestore/deals";
+import { getDeal, deleteDeal, updateDealStage, updateDeal } from "@/lib/firestore/deals";
 import { getActivities, type Activity } from "@/lib/firestore/activities";
 import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 import { EmailComposeModal } from "@/components/email/EmailComposeModal";
+import { EditDealDialog } from "@/components/deals/EditDealDialog";
 import type { Deal, DealStage } from "@/types/crm";
 import {
     ArrowLeft,
     Trash2,
+    Archive,
     Pencil,
     Shield,
     DollarSign,
     Percent,
     Building2,
+    Briefcase,
     Calendar,
     ChevronRight,
     CheckCircle2,
     XCircle,
     Clock,
     Mail,
+    UserPlus,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -53,6 +57,9 @@ export default function DealDetailPage({
     const [loading, setLoading] = useState(true);
     const [updatingStage, setUpdatingStage] = useState(false);
     const [emailModalOpen, setEmailModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [linkContactOpen, setLinkContactOpen] = useState(false);
+    const [availableContacts, setAvailableContacts] = useState<any[]>([]);
 
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || deal?.ownerId === user?.uid;
@@ -61,6 +68,45 @@ export default function DealDetailPage({
     useEffect(() => {
         fetchDealData();
     }, [id]);
+
+    const fetchAvailableContacts = async () => {
+        const { getContacts } = await import("@/lib/firestore/contacts");
+        const result = await getContacts();
+        if (!result.error && result.contacts) {
+            // Filter out already linked contacts
+            const available = result.contacts.filter(
+                (c: any) => !deal?.contactIds?.includes(c.id)
+            );
+            setAvailableContacts(available);
+        }
+    };
+
+    const handleLinkContact = async (contactId: string) => {
+        if (!deal) return;
+        const updatedContactIds = [...(deal.contactIds || []), contactId];
+        const { success, error } = await updateDeal(deal.id, { contactIds: updatedContactIds });
+        if (success) {
+            toast.success("Contact linked successfully");
+            setDeal({ ...deal, contactIds: updatedContactIds });
+            setLinkContactOpen(false);
+            fetchAvailableContacts();
+        } else {
+            toast.error(error || "Failed to link contact");
+        }
+    };
+
+    const handleUnlinkContact = async (contactId: string) => {
+        if (!deal) return;
+        const updatedContactIds = (deal.contactIds || []).filter((id) => id !== contactId);
+        const { success, error } = await updateDeal(deal.id, { contactIds: updatedContactIds });
+        if (success) {
+            toast.success("Contact unlinked successfully");
+            setDeal({ ...deal, contactIds: updatedContactIds });
+            fetchAvailableContacts();
+        } else {
+            toast.error(error || "Failed to unlink contact");
+        }
+    };
 
     const fetchDealData = async () => {
         setLoading(true);
@@ -122,6 +168,36 @@ export default function DealDetailPage({
         } else {
             toast.error(error || "Failed to delete deal");
         }
+    }
+
+
+    const handleArchive = async () => {
+        if (!canEdit) return;
+        if (!confirm("Are you sure you want to archive this deal?")) return;
+
+        const { archiveDeal } = await import("@/lib/firestore/deals");
+        const { success, error } = await archiveDeal(id);
+
+        if (success) {
+            toast.success("Deal archived successfully");
+            fetchDealData();
+        } else {
+            toast.error(error || "Failed to archive deal");
+        }
+    };
+
+    const handleUnarchive = async () => {
+        if (!canEdit) return;
+
+        const { unarchiveDeal } = await import("@/lib/firestore/deals");
+        const { success, error } = await unarchiveDeal(id);
+
+        if (success) {
+            toast.success("Deal unarchived successfully");
+            fetchDealData();
+        } else {
+            toast.error(error || "Failed to unarchive deal");
+        }
     };
 
     if (loading) {
@@ -138,6 +214,35 @@ export default function DealDetailPage({
 
     const currentStageIndex = STAGES.indexOf(deal.stage);
 
+    const handleCreateProject = async () => {
+        if (!deal || !user || !canEdit) return;
+
+        if (!confirm(`Initialize a Project for "${deal.title}"?\n\nThis will create a new project with details from this deal.`)) return;
+
+        setUpdatingStage(true); // Re-use loading state
+        const toastId = toast.loading("Initializing Project...");
+
+        try {
+            const { createProjectFromDeal } = await import("@/lib/firestore/deals");
+            const { success, projectId, error } = await createProjectFromDeal(
+                deal.id,
+                user.uid,
+                user.displayName || user.email || "Unknown"
+            );
+
+            if (success && projectId) {
+                toast.success("Project initialized successfully!", { id: toastId });
+                router.push(`/projects/${projectId}`);
+            } else {
+                toast.error(error || "Failed to create project", { id: toastId });
+            }
+        } catch (err: any) {
+            toast.error(err.message || "An error occurred", { id: toastId });
+        } finally {
+            setUpdatingStage(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <PageHeader
@@ -149,6 +254,16 @@ export default function DealDetailPage({
                 ]}
                 action={
                     <div className="flex gap-2">
+                        {canEdit && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCreateProject}
+                            >
+                                <Briefcase className="h-4 w-4 mr-2" />
+                                Create Project
+                            </Button>
+                        )}
                         <Button
                             variant="outline"
                             size="sm"
@@ -158,7 +273,11 @@ export default function DealDetailPage({
                             Send Email
                         </Button>
                         {canEdit && (
-                            <Button variant="outline" size="sm">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditModalOpen(true)}
+                            >
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
                             </Button>
@@ -172,6 +291,16 @@ export default function DealDetailPage({
                             >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Delete
+                            </Button>
+                        )}
+                        {canEdit && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={deal.archived ? handleUnarchive : handleArchive}
+                            >
+                                <Archive className="h-4 w-4 mr-2" />
+                                {deal.archived ? "Unarchive" : "Archive"}
                             </Button>
                         )}
                         {!canEdit && !canDelete && (
@@ -322,21 +451,46 @@ export default function DealDetailPage({
                 {/* Sidebar */}
                 <div className="space-y-6">
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Contacts</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-base">Contacts</CardTitle>
+                            {canEdit && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2"
+                                    onClick={() => {
+                                        fetchAvailableContacts();
+                                        setLinkContactOpen(true);
+                                    }}
+                                >
+                                    <UserPlus className="h-3 w-3 mr-1" />
+                                    Add
+                                </Button>
+                            )}
                         </CardHeader>
                         <CardContent>
-                            {/* We would fetch contacts here, but for now just a placeholder or mapped if available */}
                             {deal.contactIds?.length > 0 ? (
                                 <div className="space-y-2">
                                     {deal.contactIds.map(contactId => (
-                                        <div key={contactId} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50">
+                                        <div key={contactId} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50 group">
                                             <div className="text-sm font-medium">Contact ID: {contactId.substring(0, 8)}...</div>
-                                            <Link href={`/contacts/${contactId}`}>
-                                                <Button size="icon" variant="ghost" className="h-6 w-6">
-                                                    <ChevronRight className="h-4 w-4" />
-                                                </Button>
-                                            </Link>
+                                            <div className="flex items-center gap-1">
+                                                <Link href={`/contacts/${contactId}`}>
+                                                    <Button size="icon" variant="ghost" className="h-6 w-6">
+                                                        <ChevronRight className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                                {canEdit && (
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-6 w-6 text-destructive hover:text-destructive"
+                                                        onClick={() => handleUnlinkContact(contactId)}
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -347,6 +501,41 @@ export default function DealDetailPage({
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Link Contact Dialog */}
+                    {linkContactOpen && (
+                        <Card className="absolute top-0 right-0 w-full z-50 shadow-lg">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm">Link Contact</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {availableContacts.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-2">No contacts available</p>
+                                ) : (
+                                    <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                                        {availableContacts.map((contact) => (
+                                            <button
+                                                key={contact.id}
+                                                onClick={() => handleLinkContact(contact.id)}
+                                                className="w-full text-left p-2 hover:bg-muted rounded flex items-center justify-between"
+                                            >
+                                                <span className="text-sm">{contact.firstName} {contact.lastName}</span>
+                                                <span className="text-xs text-muted-foreground">{contact.email}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full mt-2"
+                                    onClick={() => setLinkContactOpen(false)}
+                                >
+                                    Cancel
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
 
@@ -370,6 +559,16 @@ export default function DealDetailPage({
                     dealId: deal.id,
                 }}
             />
+
+            {/* Edit Deal Dialog */}
+            {deal && (
+                <EditDealDialog
+                    open={editModalOpen}
+                    onOpenChange={setEditModalOpen}
+                    deal={deal}
+                    onSuccess={fetchDealData}
+                />
+            )}
         </div>
     );
 }

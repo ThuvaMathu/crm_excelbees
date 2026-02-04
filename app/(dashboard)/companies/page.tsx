@@ -25,6 +25,8 @@ import {
     Search,
     Building2,
     Eye,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -36,6 +38,9 @@ export default function CompaniesPage() {
     const [loading, setLoading] = useState(true);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCompanies, setTotalCompanies] = useState(0);
+    const pageSize = 10;
 
     const fetchCompanies = async () => {
         try {
@@ -46,13 +51,17 @@ export default function CompaniesPage() {
                 filters.search = searchQuery;
             }
 
-            const { companies: fetchedCompanies, error } = await getCompanies(filters);
+            const { companies: fetchedCompanies, error } = await getCompanies(filters, {
+                pageSize,
+                page: currentPage,
+            });
 
             if (error) {
                 console.error("Error fetching companies:", error);
                 setCompanies([]);
             } else {
                 setCompanies(fetchedCompanies);
+                setTotalCompanies(fetchedCompanies.length);
             }
         } catch (error) {
             console.error("Failed to fetch companies:", error);
@@ -65,7 +74,7 @@ export default function CompaniesPage() {
     useEffect(() => {
         fetchCompanies();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [currentPage]);
 
     const handleSearch = () => {
         fetchCompanies();
@@ -175,6 +184,38 @@ export default function CompaniesPage() {
                     </div>
                 )}
             </Card>
+
+            {/* Pagination */}
+            {companies.length > 0 && (
+                <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                        Showing {Math.min((currentPage - 1) * pageSize + 1, totalCompanies)} to {Math.min(currentPage * pageSize, totalCompanies)} of {totalCompanies} companies
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                            Previous
+                        </Button>
+                        <span className="text-sm text-muted-foreground px-2">
+                            Page {currentPage}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => p + 1)}
+                            disabled={companies.length < pageSize}
+                        >
+                            Next
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Create Company Dialog */}
             <CreateCompanyDialog

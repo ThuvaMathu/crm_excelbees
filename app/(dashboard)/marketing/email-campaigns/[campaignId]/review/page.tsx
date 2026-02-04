@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Campaign } from "@/types/email-campaigns";
 import { formatCampaignDate, estimateSendTime } from "@/lib/email-campaigns/utils";
-import { CheckCircle2, AlertCircle, Send, Loader2, Eye, Edit } from "lucide-react";
+import { CheckCircle2, AlertCircle, Send, Loader2, Eye, Edit, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CampaignReviewPage() {
@@ -20,6 +20,13 @@ export default function CampaignReviewPage() {
     const [campaign, setCampaign] = useState<Campaign | null>(null);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+
+    // Role-based access control - only admins and managers can send campaigns
+    const canSendCampaign = user?.role === "admin" || user?.role === "manager";
+
+    const logPermissionCheck = (action: string, allowed: boolean) => {
+        console.log(`[RBAC] Campaign ${action} for campaign ${campaignId} by user ${user?.uid} (${user?.role}): ${allowed ? "ALLOWED" : "DENIED"}`);
+    };
 
     useEffect(() => {
         if (user && campaignId) {
@@ -44,6 +51,14 @@ export default function CampaignReviewPage() {
 
     const handleSend = async () => {
         if (!campaign) return;
+
+        if (!canSendCampaign) {
+            logPermissionCheck("send", false);
+            toast.error("Only admins and managers can send email campaigns");
+            return;
+        }
+
+        logPermissionCheck("send", true);
 
         if (!confirm(`Send this campaign to ${campaign.recipientCount} recipients?`)) {
             return;
@@ -228,6 +243,12 @@ export default function CampaignReviewPage() {
                                 <p className="text-sm text-muted-foreground">
                                     This will send to {campaign.recipientCount} recipients
                                 </p>
+                                {!canSendCampaign && (
+                                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                        <Lock className="h-3 w-3" />
+                                        Only admins and managers can send campaigns
+                                    </p>
+                                )}
                             </div>
                             <div className="flex gap-2">
                                 <Button
@@ -236,16 +257,25 @@ export default function CampaignReviewPage() {
                                 >
                                     Edit Campaign
                                 </Button>
-                                <Button onClick={handleSend} disabled={!allChecked || sending}>
+                                <Button
+                                    onClick={handleSend}
+                                    disabled={!allChecked || sending || !canSendCampaign}
+                                    title={canSendCampaign ? "Send campaign now" : "You don't have permission to send campaigns"}
+                                >
                                     {sending ? (
                                         <>
                                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                             Sending...
                                         </>
-                                    ) : (
+                                    ) : canSendCampaign ? (
                                         <>
                                             <Send className="h-4 w-4 mr-2" />
                                             Send Now
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Lock className="h-4 w-4 mr-2" />
+                                            Send Locked
                                         </>
                                     )}
                                 </Button>

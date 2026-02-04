@@ -51,10 +51,19 @@ export default function KeywordHistoryPage() {
         if (!confirm("Are you sure you want to delete this research?")) return;
 
         try {
-            // Delete from Firestore
-            toast.success("Research deleted");
+            // Delete from Firestore via API
+            const response = await fetch(`/api/keyword/research/${id}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to delete research");
+            }
+
+            toast.success("Research deleted successfully");
             setResearches(researches.filter(r => r.id !== id));
         } catch (error) {
+            console.error("Error deleting research:", error);
             toast.error("Failed to delete research");
         }
     };

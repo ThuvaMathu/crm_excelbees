@@ -156,7 +156,6 @@ export function AIAssistant({
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        userId,
                         ...plan,
                     }),
                 })

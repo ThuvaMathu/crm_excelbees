@@ -201,7 +201,7 @@ export interface CRMFilter {
 // TEMPLATES
 // ============================================================================
 
-export type TemplateCategory = "newsletter" | "promotion" | "announcement" | "welcome" | "onboarding" | "custom";
+export type TemplateCategory = "newsletter" | "promotion" | "announcement" | "welcome" | "onboarding" | "custom" | "marketing" | "transactional" | "event";
 
 export interface EmailTemplate {
   id: string;

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { AITextarea } from "@/components/ui/ai-textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
-import { EmailTemplateInput } from "@/types/email-campaigns";
+import { TemplateInput as EmailTemplateInput, TemplateCategory } from "@/types/email-campaigns";
 import { ArrowRight, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { AIContentGenerator } from "@/components/email-campaigns/AIContentGenerator";
@@ -26,11 +26,12 @@ export default function NewTemplatePage() {
         name: "",
         description: "",
         category: "marketing",
-        content: {
-            html: "",
-            plainText: "",
-        },
+        subject: "",
+        html: "",
+        plainText: "",
         thumbnail: "",
+        isSystem: false,
+        isActive: true,
     });
 
     const handleNext = () => {
@@ -42,7 +43,7 @@ export default function NewTemplatePage() {
     };
 
     const handleCreate = async () => {
-        if (!formData.content?.html) {
+        if (!formData.html) {
             toast.error("Template content is empty");
             return;
         }
@@ -52,11 +53,15 @@ export default function NewTemplatePage() {
             const template: EmailTemplateInput = {
                 name: formData.name!,
                 description: formData.description,
-                category: formData.category || "marketing",
-                content: formData.content!,
+                category: (formData.category as TemplateCategory) || "marketing",
+                subject: formData.subject || "",
+                html: formData.html!,
+                plainText: formData.plainText || "",
                 thumbnail: formData.thumbnail,
                 createdBy: user?.uid || "",
                 createdByName: user?.displayName || user?.email || "",
+                isSystem: false,
+                isActive: true,
             };
 
             const response = await fetch("/api/marketing/campaigns/templates", {
@@ -81,12 +86,11 @@ export default function NewTemplatePage() {
     };
 
     const handleContentUpdate = (content: { html: string; plainText: string; subject?: string }) => {
-        setFormData((prev) => ({
+        setFormData((prev: Partial<EmailTemplateInput>) => ({
             ...prev,
-            content: {
-                html: content.html,
-                plainText: content.plainText,
-            },
+            html: content.html,
+            plainText: content.plainText,
+            subject: content.subject || prev.subject || "",
         }));
     };
 
@@ -119,7 +123,7 @@ export default function NewTemplatePage() {
                                 <Label htmlFor="category">Category</Label>
                                 <Select
                                     value={formData.category}
-                                    onValueChange={(v) => setFormData({ ...formData, category: v })}
+                                    onValueChange={(v) => setFormData({ ...formData, category: v as TemplateCategory })}
                                 >
                                     <SelectTrigger id="category">
                                         <SelectValue placeholder="Select category" />
@@ -127,7 +131,7 @@ export default function NewTemplatePage() {
                                     <SelectContent>
                                         <SelectItem value="marketing">Marketing</SelectItem>
                                         <SelectItem value="newsletter">Newsletter</SelectItem>
-                                        <SelectItem value="transactonal">Transactional</SelectItem>
+                                        <SelectItem value="transactional">Transactional</SelectItem>
                                         <SelectItem value="announcement">Announcement</SelectItem>
                                         <SelectItem value="event">Event</SelectItem>
                                     </SelectContent>
@@ -185,8 +189,8 @@ export default function NewTemplatePage() {
                                         <div className="mt-4 space-y-2">
                                             <Label>HTML Content</Label>
                                             <AITextarea
-                                                value={formData.content?.html}
-                                                onChange={(e) => handleContentUpdate({ ...formData.content!, html: e.target.value })}
+                                                value={formData.html}
+                                                onChange={(e) => handleContentUpdate({ html: e.target.value, plainText: formData.plainText || "" })}
                                                 className="font-mono text-xs min-h-[300px]"
                                                 placeholder="<html>...</html>"
                                                 minWords={1000} // Disable simplified AI for code
@@ -223,9 +227,9 @@ export default function NewTemplatePage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="border rounded-md overflow-hidden bg-white min-h-[500px]">
-                                    {formData.content?.html ? (
+                                    {formData.html ? (
                                         <iframe
-                                            srcDoc={formData.content.html}
+                                            srcDoc={formData.html}
                                             className="w-full h-[600px] border-0"
                                             title="Preview"
                                         />

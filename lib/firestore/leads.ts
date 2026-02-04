@@ -246,3 +246,284 @@ export async function getLeadsByOwner(ownerId: string) {
     };
   }
 }
+
+// Convert lead to contact
+export async function convertLeadToContact(leadId: string, userId: string, userName: string) {
+  console.log("🔄 Converting lead to contact:", leadId);
+  try {
+    // 1. Get the lead
+    const leadResult = await getLead(leadId);
+    if (leadResult.error || !leadResult.lead) {
+      return {
+        success: false,
+        contactId: null,
+        error: leadResult.error || "Lead not found",
+      };
+    }
+
+    const lead = leadResult.lead;
+
+    // 2. Check if already converted
+    if (lead.converted) {
+      return {
+        success: false,
+        contactId: lead.convertedToContactId || null,
+        error: "Lead has already been converted to a contact",
+      };
+    }
+
+    // 3. Create contact from lead data
+    const { createContact } = await import("./contacts");
+    const contactData = {
+      firstName: lead.firstName,
+      lastName: lead.lastName,
+      email: lead.email,
+      phone: lead.phone || null,
+      companyName: lead.companyName || null,
+      jobTitle: lead.jobTitle || null,
+      notes: lead.notes || null,
+      lastContactedAt: lead.lastContactedAt || null,
+    };
+
+    const contactResult = await createContact(contactData, userId);
+    
+    if (!contactResult.success || !contactResult.id) {
+      return {
+        success: false,
+        contactId: null,
+        error: contactResult.error || "Failed to create contact",
+      };
+    }
+
+    const contactId = contactResult.id;
+    console.log("✅ Contact created:", contactId);
+
+    // 4. Update lead to mark as converted
+    const leadDocRef = doc(db, COLLECTION_NAME, leadId);
+    await updateDoc(leadDocRef, {
+      converted: true,
+      convertedToContactId: contactId,
+      convertedAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+
+    console.log("✅ Lead marked as converted");
+
+    // 5. Log activity for the conversion
+    const { createActivity } = await import("./activities");
+    await createActivity({
+      type: "log",
+      content: `Lead converted to contact by ${userName}`,
+      performedBy: userId,
+      performedByName: userName,
+      relatedTo: {
+        collection: "leads",
+        id: leadId,
+      },
+      metadata: {
+        contactId,
+        action: "convert_to_contact",
+      },
+    });
+
+    // Also log on the contact side
+    await createActivity({
+      type: "created",
+      content: `Contact created from lead conversion by ${userName}`,
+      performedBy: userId,
+      performedByName: userName,
+      relatedTo: {
+        collection: "contacts",
+        id: contactId,
+      },
+      metadata: {
+        leadId,
+        action: "converted_from_lead",
+      },
+    });
+
+    console.log("✅ Activities logged");
+
+    // 6. Invalidate caches
+    await redis.del("leads:list:all");
+    await redis.del("contacts:list:all");
+    if (userId) {
+      await redis.del(`dashboard:stats:${userId}`);
+    }
+
+    return {
+      success: true,
+      contactId,
+      error: null,
+    };
+  } catch (error: any) {
+    console.error("❌ Failed to convert lead:", error.message);
+    return {
+      success: false,
+      contactId: null,
+      error: error.message,
+    };
+  }
+}
+
+// Convert lead to deal
+export async function convertLeadToDeal(leadId: string, userId: string, userName: string) {
+  console.log("🔄 Converting lead to deal:", leadId);
+  try {
+    // 1. Get the lead
+    const leadResult = await getLead(leadId);
+    if (leadResult.error || !leadResult.lead) {
+      return { success: false, dealId: null, error: leadResult.error || "Lead not found" };
+    }
+    const lead = leadResult.lead;
+
+    // 2. Check if already converted to deal
+    if (lead.convertedToDealId) {
+      return { success: false, dealId: lead.convertedToDealId, error: "Lead has already been converted to a deal" };
+    }
+
+    // 3. Create deal from lead data
+    const { createDeal } = await import("./deals");
+    const dealData = {
+      title: `${lead.companyName || lead.lastName + "'s"} Deal`,
+      value: lead.value || 0,
+      stage: "Pipeline" as const,
+      probability: 10,
+      description: `Converted from lead: ${lead.firstName} ${lead.lastName}. Notes: ${lead.notes || ""}`,
+      companyName: lead.companyName || undefined,
+      contactIds: [], // We might want to create a contact first, but for now empty
+    };
+
+    const dealResult = await createDeal(dealData, userId);
+    
+    if (!dealResult.success || !dealResult.id) {
+      return { success: false, dealId: null, error: dealResult.error || "Failed to create deal" };
+    }
+
+    const dealId = dealResult.id;
+    console.log("✅ Deal created:", dealId);
+
+    // 4. Update lead
+    const leadDocRef = doc(db, COLLECTION_NAME, leadId);
+    await updateDoc(leadDocRef, {
+      converted: true,
+      convertedToDealId: dealId,
+      convertedAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+
+    // 5. Log activity
+    const { createActivity } = await import("./activities");
+    await createActivity({
+      type: "log", // Start with log, or maybe 'deal_created'?
+      content: `Lead converted to deal by ${userName}`,
+      performedBy: userId,
+      performedByName: userName,
+      relatedTo: { collection: "leads", id: leadId },
+      metadata: { dealId, action: "convert_to_deal" },
+    });
+    
+    // Log on Deal side
+    await createActivity({
+      type: "created",
+      content: `Deal created from lead conversion by ${userName}`,
+      performedBy: userId,
+      performedByName: userName,
+      relatedTo: { collection: "deals", id: dealId },
+      metadata: { leadId, action: "converted_from_lead" },
+    });
+
+    // 6. Invalidate caches
+    await redis.del("leads:list:all");
+    await redis.del("deals:list:all");
+    if (userId) await redis.del(`dashboard:stats:${userId}`);
+
+    return { success: true, dealId, error: null };
+  } catch (error: any) {
+    console.error("❌ Failed to convert lead to deal:", error.message);
+    return { success: false, dealId: null, error: error.message };
+  }
+}
+
+// Convert lead to project
+export async function convertLeadToProject(leadId: string, userId: string, userName: string) {
+  console.log("🔄 Converting lead to project:", leadId);
+  try {
+    // 1. Get the lead
+    const leadResult = await getLead(leadId);
+    if (leadResult.error || !leadResult.lead) {
+      return { success: false, projectId: null, error: leadResult.error || "Lead not found" };
+    }
+    const lead = leadResult.lead;
+
+    // 2. Check if already converted to project
+    if (lead.convertedToProjectId) {
+      return { success: false, projectId: lead.convertedToProjectId, error: "Lead has already been converted to a project" };
+    }
+
+    // 3. Create project from lead data
+    const { createProject } = await import("./projects");
+    const projectData = {
+      name: `Project for ${lead.companyName || lead.lastName}`,
+      description: `Converted from lead: ${lead.firstName} ${lead.lastName}. ${lead.notes || ""}`,
+      status: "Planning" as const,
+      priority: "Medium" as const,
+      budget: lead.value || 0,
+      startDate: Timestamp.now(),
+      clientId: "", // Empty for now, ideally linked to a Client/Contact
+      companyName: lead.companyName || undefined,
+      tags: [],
+      teamMembers: [userId],
+      progress: 0,
+    };
+
+    const projectResult = await createProject(projectData, userId);
+    
+    if (!projectResult.success || !projectResult.id) {
+      return { success: false, projectId: null, error: projectResult.error || "Failed to create project" };
+    }
+
+    const projectId = projectResult.id;
+    console.log("✅ Project created:", projectId);
+
+    // 4. Update lead
+    const leadDocRef = doc(db, COLLECTION_NAME, leadId);
+    await updateDoc(leadDocRef, {
+      converted: true,
+      convertedToProjectId: projectId,
+      convertedAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+
+    // 5. Log activity
+    const { createActivity } = await import("./activities");
+    await createActivity({
+      type: "log",
+      content: `Lead converted to project by ${userName}`,
+      performedBy: userId,
+      performedByName: userName,
+      relatedTo: { collection: "leads", id: leadId },
+      metadata: { projectId, action: "convert_to_project" },
+    });
+
+    // Log on Project side
+    await createActivity({
+      type: "created",
+      content: `Project created from lead conversion by ${userName}`,
+      performedBy: userId,
+      performedByName: userName,
+      relatedTo: { collection: "projects", id: projectId },
+      metadata: { leadId, action: "converted_from_lead" },
+    });
+
+    // 6. Invalidate caches
+    await redis.del("leads:list:all");
+    await redis.del("projects:list:all");
+    if (userId) await redis.del(`dashboard:stats:${userId}`);
+
+    return { success: true, projectId, error: null };
+  } catch (error: any) {
+    console.error("❌ Failed to convert lead to project:", error.message);
+    return { success: false, projectId: null, error: error.message };
+  }
+}

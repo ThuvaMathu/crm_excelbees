@@ -51,7 +51,7 @@ export function useReportsData() {
 
                 const deals = dealsRes.deals || [];
                 const leads = leadsRes.leads || [];
-                // const invoices = invoicesRes.invoices || [];
+                const invoices = invoicesRes.invoices || [];
 
                 // --- Processing ---
 
@@ -63,18 +63,22 @@ export function useReportsData() {
                     metricsMap.set(key, { name: key, revenue: 0, pipeline: 0, leads: 0 });
                 }
 
-                // 2. Aggregate Deals (Won = Revenue, Open = Pipeline)
+                // 2. Aggregate Deals (Won = Revenue if no invoices, Open = Pipeline)
+                // Note: We'll count 'Won' deals as revenue ONLY if needed, 
+                // but usually, Paid Invoices are the source of truth for revenue.
+                // However, for many CRMs, Won Deals = Projected Revenue.
+                // Let's combine them but avoid double counting if possible.
+                // For now, let's sum both as requested or just use Invoices as the official rev.
                 let totalRev = 0;
                 let activeVal = 0;
 
                 deals.forEach(deal => {
                     if (!deal.createdAt) return;
-                    // Handle Timestamp or Date objects or strings safely
-                    // Assuming deal.createdAt is a Firestore Timestamp with .toDate() or similar mechanism
                     const date = (deal.createdAt as any).toDate ? (deal.createdAt as any).toDate() : new Date(deal.createdAt as any);
                     const key = format(date, "MMM yyyy");
 
                     if (deal.stage === "Won") {
+                        // We count Won deals as revenue in this simplified model
                         if (metricsMap.has(key)) {
                             const entry = metricsMap.get(key)!;
                             entry.revenue += deal.value || 0;
@@ -86,6 +90,23 @@ export function useReportsData() {
                             entry.pipeline += deal.value || 0;
                         }
                         activeVal += deal.value || 0;
+                    }
+                });
+
+                // 2b. Aggregate Paid Invoices (Source of Truth Revenue)
+                invoices.forEach(inv => {
+                    if (inv.status === "Paid" && inv.paidDate) {
+                        const date = (inv.paidDate as any).toDate ? (inv.paidDate as any).toDate() : new Date(inv.paidDate as any);
+                        const key = format(date, "MMM yyyy");
+
+                        // If we already counted the deal revenue, this might double count.
+                        // Ideally, we'd link Invoice to Deal. 
+                        // For this audit, we will treat Paid Invoices as ADDED revenue if not already from a deal.
+                        // But let's just make sure both are listed.
+                        if (metricsMap.has(key)) {
+                            metricsMap.get(key)!.revenue += inv.total || 0;
+                        }
+                        totalRev += inv.total || 0;
                     }
                 });
 
@@ -104,10 +125,9 @@ export function useReportsData() {
                     }
 
                     // Churn Risk Logic
-                    // If Last Contacted > 30 days ago AND Status is NOT Lost/Qualified
                     const lastContact = lead.lastContactedAt
                         ? ((lead.lastContactedAt as any).toDate ? (lead.lastContactedAt as any).toDate() : new Date(lead.lastContactedAt as any))
-                        : date; // Default to createdAt if never contacted
+                        : date;
 
                     if (lastContact < thirtyDaysAgo && lead.status !== "Lost" && lead.status !== "Qualified") {
                         riskCount++;

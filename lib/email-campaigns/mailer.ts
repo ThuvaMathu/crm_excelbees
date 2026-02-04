@@ -9,7 +9,7 @@ export function createTransporter(smtp: BrandSettings["smtp"]) {
     throw new Error("SMTP settings not configured");
   }
 
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: smtp.host,
     port: smtp.port,
     secure: smtp.secure,

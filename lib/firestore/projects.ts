@@ -13,7 +13,9 @@ import {
   QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { redis } from "../redis";
 import type { Project, ProjectInput, ProjectFilters, ProjectStatus } from "@/types/crm";
+import { sanitizeData } from "./utils";
 
 const COLLECTION_NAME = "projects";
 
@@ -33,8 +35,15 @@ export async function createProject(data: ProjectInput, userId: string): Promise
       updatedAt: Timestamp.now(),
     };
 
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), projectData);
+    const sanitizedData = sanitizeData(projectData);
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), sanitizedData);
     console.log("✅ Project created with ID:", docRef.id);
+    
+    // Invalidate cache
+    await redis.del("projects:list:all");
+    if (userId) {
+        await redis.del(`dashboard:stats:${userId}`);
+    }
     
     return {
       success: true,
@@ -48,6 +57,36 @@ export async function createProject(data: ProjectInput, userId: string): Promise
       id: null,
       error: error.message,
     };
+  }
+}
+
+// Archive a project
+export async function archiveProject(id: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    await updateDoc(docRef, { archived: true, updatedAt: Timestamp.now() });
+    
+    // Invalidate cache
+    await redis.del("projects:list:all");
+    
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Unarchive a project
+export async function unarchiveProject(id: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    await updateDoc(docRef, { archived: false, updatedAt: Timestamp.now() });
+    
+    // Invalidate cache
+    await redis.del("projects:list:all");
+    
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }
 
@@ -73,6 +112,17 @@ export async function getProjects(filters?: ProjectFilters): Promise<{
     if (filters?.companyId) {
       constraints.push(where("companyId", "==", filters.companyId));
     }
+    if (filters?.dealId) {
+      constraints.push(where("dealId", "==", filters.dealId));
+    }
+    
+    // Default to active only unless specified
+    if (filters?.archived !== undefined) {
+      constraints.push(where("archived", "==", filters.archived));
+    } else {
+      // By default, exclude archived projects
+      constraints.push(where("archived", "==", false));
+    }
 
     // Only add ordering if we have filters (to avoid index requirements)
     if (constraints.length > 0) {
@@ -83,6 +133,26 @@ export async function getProjects(filters?: ProjectFilters): Promise<{
       ? query(collection(db, COLLECTION_NAME), ...constraints)
       : collection(db, COLLECTION_NAME);
       
+    // Try Cache for unfiltered requests
+    const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.search === "");
+    const cacheKey = "projects:list:all";
+
+    if (isUnfiltered) {
+        const cached = await redis.get<Project[]>(cacheKey);
+        if (cached) {
+            console.log("⚡ HIT: Projects list from Redis");
+            // Rehydrate Timestamps
+            const hydrated = cached.map((p: any) => ({
+                ...p,
+                createdAt: p.createdAt ? new Timestamp(p.createdAt.seconds || 0, p.createdAt.nanoseconds || 0) : null,
+                updatedAt: p.updatedAt ? new Timestamp(p.updatedAt.seconds || 0, p.updatedAt.nanoseconds || 0) : null,
+                startDate: p.startDate ? new Timestamp(p.startDate.seconds || 0, p.startDate.nanoseconds || 0) : null,
+                endDate: p.endDate ? new Timestamp(p.endDate.seconds || 0, p.endDate.nanoseconds || 0) : null,
+            }));
+            return { projects: hydrated, error: null };
+        }
+    }
+      
     const querySnapshot = await getDocs(q);
     console.log("📊 Projects fetched:", querySnapshot.size);
 
@@ -90,6 +160,10 @@ export async function getProjects(filters?: ProjectFilters): Promise<{
     querySnapshot.forEach((doc) => {
       projects.push({ id: doc.id, ...doc.data() } as Project);
     });
+
+    if (projects.length > 0 && isUnfiltered) {
+        await redis.set(cacheKey, projects, { ex: 300 });
+    }
 
     // Sort by createdAt on client side
     projects.sort((a, b) => {
@@ -176,12 +250,20 @@ export async function updateProject(id: string, data: Partial<ProjectInput>): Pr
   try {
     console.log("📝 Updating project:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, {
+    
+    const updateData = {
       ...data,
       updatedAt: Timestamp.now(),
-    } as any);
+    };
+
+    const sanitizedData = sanitizeData(updateData);
+    await updateDoc(docRef, sanitizedData as any);
 
     console.log("✅ Project updated successfully");
+
+    // Invalidate cache
+    await redis.del("projects:list:all");
+
     return {
       success: true,
       error: null,
@@ -209,6 +291,10 @@ export async function updateProjectStatus(id: string, status: ProjectStatus): Pr
     });
 
     console.log("✅ Project status updated");
+
+    // Invalidate cache
+    await redis.del("projects:list:all");
+
     return {
       success: true,
       error: null,
@@ -233,6 +319,10 @@ export async function deleteProject(id: string): Promise<{
     await deleteDoc(docRef);
 
     console.log("✅ Project deleted successfully");
+
+    // Invalidate cache
+    await redis.del("projects:list:all");
+
     return {
       success: true,
       error: null,

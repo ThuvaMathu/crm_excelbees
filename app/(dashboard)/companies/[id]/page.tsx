@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getCompany, deleteCompany } from "@/lib/firestore/companies";
 import { getActivities, type Activity } from "@/lib/firestore/activities";
+import { getContacts } from "@/lib/firestore/contacts";
+import { getDeals } from "@/lib/firestore/deals";
 
 import { EmailComposeModal } from "@/components/email/EmailComposeModal";
 import { EditCompanyDialog } from "@/components/companies/EditCompanyDialog";
@@ -49,6 +51,8 @@ export default function CompanyDetailPage({
     const [emailModalOpen, setEmailModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [dealModalOpen, setDealModalOpen] = useState(false);
+    const [relatedContacts, setRelatedContacts] = useState<any[]>([]);
+    const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
 
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || company?.ownerId === user?.uid;
@@ -70,9 +74,11 @@ export default function CompanyDetailPage({
         setLoading(true);
 
         try {
-            const [companyResult, activitiesResult] = await Promise.all([
+            const [companyResult, activitiesResult, contactsResult, dealsResult] = await Promise.all([
                 getCompany(id),
                 getActivities("companies", id),
+                getContacts({ search: id }).catch(() => ({ contacts: [], error: null })),
+                getDeals({ companyId: id }).catch(() => ({ deals: [], error: null })),
             ]);
 
             if (companyResult.error) {
@@ -85,12 +91,75 @@ export default function CompanyDetailPage({
             if (!activitiesResult.error) {
                 setActivities(activitiesResult.activities);
             }
+
+            if (!contactsResult.error && contactsResult.contacts) {
+                // Filter contacts that belong to this company
+                const companyContacts = contactsResult.contacts.filter((contact: any) =>
+                    contact.companyName === companyResult.company?.name
+                );
+                setRelatedContacts(companyContacts);
+            }
+
+            if (!dealsResult.error && dealsResult.deals) {
+                setRelatedDeals(dealsResult.deals);
+            }
         } catch (error) {
             console.error(error);
             toast.error("Failed to load company data");
         }
 
         setLoading(false);
+    };
+
+    const handleCreateProject = async () => {
+        if (!company || !canEdit) return;
+
+        if (!confirm(`Initialize a Project for "${company.name}"?`)) return;
+
+        const toastId = toast.loading("Initializing Project...");
+
+        try {
+            const { createProject } = await import("@/lib/firestore/projects");
+            const { Timestamp } = await import("firebase/firestore");
+
+            const projectData = {
+                name: `Project for ${company.name}`,
+                description: `Created for company: ${company.name}`,
+                status: "Planning" as const,
+                priority: "Medium" as const,
+                budget: 0,
+                startDate: Timestamp.now(),
+                clientId: "", // No specific contact linked initially
+                companyId: company.id,
+                companyName: company.name,
+                tags: [],
+                teamMembers: [user?.uid || ""],
+                progress: 0,
+            };
+
+            const { success, id: projectId, error } = await createProject(projectData, user?.uid || "");
+
+            if (success && projectId) {
+                // Log activity
+                const { createActivity } = await import("@/lib/firestore/activities");
+                await createActivity({
+                    type: "created",
+                    content: `Project created for company by ${user?.displayName || "User"}`,
+                    performedBy: user?.uid || "",
+                    performedByName: user?.displayName || "User",
+                    relatedTo: { collection: "companies", id: company.id },
+                    metadata: { projectId, action: "create_project" }
+                });
+
+                toast.success("Project initialized successfully!", { id: toastId });
+                router.push(`/projects/${projectId}`);
+            } else {
+                toast.error(error || "Failed to create project", { id: toastId });
+            }
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.message || "An error occurred", { id: toastId });
+        }
     };
 
     const handleDelete = async () => {
@@ -336,6 +405,15 @@ export default function CompanyDetailPage({
                                 <Target className="h-4 w-4 mr-2" />
                                 New Deal
                             </Button>
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit}
+                                onClick={handleCreateProject}
+                            >
+                                <Briefcase className="h-4 w-4 mr-2" />
+                                New Project
+                            </Button>
                         </CardContent>
                     </Card>
 
@@ -344,9 +422,48 @@ export default function CompanyDetailPage({
                             <CardTitle>Related Items</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-center py-4 text-sm text-muted-foreground">
-                                No related items yet
-                            </div>
+                            {relatedContacts.length > 0 || relatedDeals.length > 0 ? (
+                                <div className="space-y-4">
+                                    {relatedContacts.length > 0 && (
+                                        <div>
+                                            <p className="text-xs text-muted-foreground mb-2">Contacts ({relatedContacts.length})</p>
+                                            <div className="space-y-2">
+                                                {relatedContacts.slice(0, 3).map((contact) => (
+                                                    <div key={contact.id} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium">
+                                                                {contact.firstName} {contact.lastName}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground">{contact.email}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {relatedDeals.length > 0 && (
+                                        <div>
+                                            <p className="text-xs text-muted-foreground mb-2">Deals ({relatedDeals.length})</p>
+                                            <div className="space-y-2">
+                                                {relatedDeals.slice(0, 3).map((deal) => (
+                                                    <div key={deal.id} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium">{deal.title}</p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                ${deal.value?.toLocaleString()} • {deal.stage}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center py-4 text-sm text-muted-foreground">
+                                    No related items yet
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

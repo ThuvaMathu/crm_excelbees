@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Invoice } from "@/types/crm";
 import { format } from "date-fns";
-import { Download, Mail, Edit, CheckCircle, Smartphone } from "lucide-react";
+import { Download, Mail, Edit, CheckCircle, Smartphone, Lock } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +16,10 @@ interface InvoiceDetailProps {
     onDownloadPDF: () => void;
     onMarkPaid: () => void;
     sending?: boolean;
+    canModify?: boolean;
 }
 
-export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid, sending }: InvoiceDetailProps) {
+export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid, sending, canModify = true }: InvoiceDetailProps) {
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
             Draft: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
@@ -55,17 +56,29 @@ export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid,
                         {sending ? "Sending..." : "Email"}
                     </Button>
                     {invoice.status !== "Paid" && (
-                        <Button variant="outline" onClick={onMarkPaid}>
+                        <Button
+                            variant="outline"
+                            onClick={onMarkPaid}
+                            disabled={!canModify}
+                            title={canModify ? "Mark invoice as paid" : "Only admins and managers can mark invoices as paid"}
+                        >
                             <CheckCircle className="mr-2 h-4 w-4" />
-                            Mark Paid
+                            {canModify ? "Mark Paid" : <><Lock className="h-4 w-4 mr-2" />Locked</>}
                         </Button>
                     )}
-                    <Button asChild>
-                        <Link href={`/invoices/${invoice.id}/edit`}>
-                            <Edit className="mr-2 h-4 w-4" />
+                    {canModify ? (
+                        <Button asChild>
+                            <Link href={`/invoices/${invoice.id}/edit`}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                            </Link>
+                        </Button>
+                    ) : (
+                        <Button variant="outline" disabled title="Only admins and managers can edit invoices">
+                            <Lock className="mr-2 h-4 w-4" />
                             Edit
-                        </Link>
-                    </Button>
+                        </Button>
+                    )}
                 </div>
             </div>
 

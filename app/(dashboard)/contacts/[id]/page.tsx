@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getContact, deleteContact } from "@/lib/firestore/contacts";
 import { getActivities, type Activity } from "@/lib/firestore/activities";
+import { getDeals } from "@/lib/firestore/deals";
+import { getTasks } from "@/lib/firestore/tasks";
 
 import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 import { EmailComposeModal } from "@/components/email/EmailComposeModal";
@@ -43,6 +45,8 @@ export default function ContactDetailPage({
     const [loading, setLoading] = useState(true);
     const [emailModalOpen, setEmailModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const [relatedDeals, setRelatedDeals] = useState<any[]>([]);
+    const [relatedTasks, setRelatedTasks] = useState<any[]>([]);
 
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || contact?.ownerId === user?.uid;
@@ -60,9 +64,11 @@ export default function ContactDetailPage({
         // Assuming typical pattern:
         try {
             // Parallel fetch
-            const [contactResult, activitiesResult] = await Promise.all([
+            const [contactResult, activitiesResult, dealsResult, tasksResult] = await Promise.all([
                 getContact(id),
                 getActivities("contacts", id),
+                getDeals({ search: id }).catch(() => ({ deals: [], error: null })),
+                getTasks({ contactId: id }).catch(() => ({ tasks: [], error: null })),
             ]);
 
             if (contactResult.error) {
@@ -74,6 +80,18 @@ export default function ContactDetailPage({
 
             if (!activitiesResult.error) {
                 setActivities(activitiesResult.activities);
+            }
+
+            if (!dealsResult.error && dealsResult.deals) {
+                // Filter deals that have this contact in their contactIds array
+                const contactDeals = dealsResult.deals.filter((deal: any) =>
+                    deal.contactIds?.includes(id)
+                );
+                setRelatedDeals(contactDeals);
+            }
+
+            if (!tasksResult.error && tasksResult.tasks) {
+                setRelatedTasks(tasksResult.tasks);
             }
         } catch (error) {
             console.error(error);
@@ -109,6 +127,56 @@ export default function ContactDetailPage({
             return;
         }
         window.location.href = `tel:${contact.phone}`;
+    };
+
+    const handleCreateProject = async () => {
+        if (!contact || !canEdit) return;
+
+        if (!confirm(`Initialize a Project for "${contact.firstName} ${contact.lastName}"?`)) return;
+
+        const toastId = toast.loading("Initializing Project...");
+
+        try {
+            const { createProject } = await import("@/lib/firestore/projects");
+            const { Timestamp } = await import("firebase/firestore");
+
+            const projectData = {
+                name: `Project for ${contact.firstName} ${contact.lastName}`,
+                description: `Created for contact: ${contact.firstName} ${contact.lastName}`,
+                status: "Planning" as const,
+                priority: "Medium" as const,
+                budget: 0,
+                startDate: Timestamp.now(),
+                clientId: contact.id, // Link to this contact
+                companyName: contact.companyName || undefined,
+                tags: [],
+                teamMembers: [user?.uid || ""],
+                progress: 0,
+            };
+
+            const { success, id: projectId, error } = await createProject(projectData, user?.uid || "");
+
+            if (success && projectId) {
+                // Log activity
+                const { createActivity } = await import("@/lib/firestore/activities");
+                await createActivity({
+                    type: "created",
+                    content: `Project created for contact by ${user?.displayName || "User"}`,
+                    performedBy: user?.uid || "",
+                    performedByName: user?.displayName || "User",
+                    relatedTo: { collection: "contacts", id: contact.id },
+                    metadata: { projectId, action: "create_project" }
+                });
+
+                toast.success("Project initialized successfully!", { id: toastId });
+                router.push(`/projects/${projectId}`);
+            } else {
+                toast.error(error || "Failed to create project", { id: toastId });
+            }
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.message || "An error occurred", { id: toastId });
+        }
     };
 
     if (loading) {
@@ -298,6 +366,15 @@ export default function ContactDetailPage({
                                 <Phone className="h-4 w-4 mr-2" />
                                 Make Call
                             </Button>
+                            <Button
+                                className="w-full justify-start"
+                                variant="outline"
+                                disabled={!canEdit}
+                                onClick={handleCreateProject}
+                            >
+                                <Briefcase className="h-4 w-4 mr-2" />
+                                New Project
+                            </Button>
                         </CardContent>
                     </Card>
 
@@ -306,9 +383,52 @@ export default function ContactDetailPage({
                             <CardTitle>Related Items</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-center py-4 text-sm text-muted-foreground">
-                                No related items yet
-                            </div>
+                            {relatedDeals.length > 0 || relatedTasks.length > 0 ? (
+                                <div className="space-y-4">
+                                    {relatedDeals.length > 0 && (
+                                        <div>
+                                            <p className="text-xs text-muted-foreground mb-2">Deals ({relatedDeals.length})</p>
+                                            <div className="space-y-2">
+                                                {relatedDeals.slice(0, 3).map((deal) => (
+                                                    <div key={deal.id} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50">
+                                                        <div className="flex-1">
+                                                            <p className="text-sm font-medium">{deal.title}</p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                ${deal.value?.toLocaleString()} • {deal.stage}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {relatedTasks.length > 0 && (
+                                        <div>
+                                            <p className="text-xs text-muted-foreground mb-2">Tasks ({relatedTasks.length})</p>
+                                            <div className="space-y-2">
+                                                {relatedTasks.slice(0, 3).map((task) => (
+                                                    <div key={task.id} className="flex items-center justify-between p-2 border rounded hover:bg-muted/50">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-2 h-2 rounded-full ${task.status === "Done" ? "bg-green-500" :
+                                                                task.status === "In Progress" ? "bg-blue-500" :
+                                                                    task.priority === "Urgent" ? "bg-red-500" : "bg-gray-400"
+                                                                }`} />
+                                                            <div className="text-sm">
+                                                                <p className="font-medium">{task.title}</p>
+                                                                <p className="text-xs text-muted-foreground">{task.status}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center py-4 text-sm text-muted-foreground">
+                                    No related items yet
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

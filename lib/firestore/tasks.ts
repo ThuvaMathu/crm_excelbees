@@ -13,8 +13,10 @@ import {
   QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { redis } from "../redis";
 import type { Task, TaskInput, TaskFilters, TaskStatus } from "@/types/crm";
 import { createNotification } from "./notifications";
+import { sanitizeData } from "./utils";
 
 const COLLECTION_NAME = "tasks";
 
@@ -34,7 +36,8 @@ export async function createTask(data: TaskInput, userId: string): Promise<{
       updatedAt: Timestamp.now(),
     };
 
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), taskData);
+    const sanitizedData = sanitizeData(taskData);
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), sanitizedData);
     console.log("✅ Task created with ID:", docRef.id);
 
     // Notify assignee if different from creator
@@ -47,6 +50,12 @@ export async function createTask(data: TaskInput, userId: string): Promise<{
         "task", 
         docRef.id
       );
+    }
+    
+    // Invalidate cache
+    await redis.del("tasks:list:all");
+    if (userId) {
+        await redis.del(`dashboard:stats:${userId}`);
     }
     
     return {
@@ -102,6 +111,27 @@ export async function getTasks(filters?: TaskFilters): Promise<{
       ? query(collection(db, COLLECTION_NAME), ...constraints)
       : collection(db, COLLECTION_NAME);
       
+    // Try Cache for unfiltered requests
+    const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && (filters.search === "" || filters.assigneeId));
+    const cacheKey = "tasks:list:all";
+
+    if (isUnfiltered) {
+        const cached = await redis.get<Task[]>(cacheKey);
+        if (cached) {
+            console.log("⚡ HIT: Tasks list from Redis");
+            // Rehydrate Timestamps
+            const hydrated = cached.map((t: any) => ({
+                ...t,
+                createdAt: t.createdAt ? new Timestamp(t.createdAt.seconds || 0, t.createdAt.nanoseconds || 0) : null,
+                updatedAt: t.updatedAt ? new Timestamp(t.updatedAt.seconds || 0, t.updatedAt.nanoseconds || 0) : null,
+                dueDate: t.dueDate ? new Timestamp(t.dueDate.seconds || 0, t.dueDate.nanoseconds || 0) : null,
+                startDate: t.startDate ? new Timestamp(t.startDate.seconds || 0, t.startDate.nanoseconds || 0) : null,
+                completedAt: t.completedAt ? new Timestamp(t.completedAt.seconds || 0, t.completedAt.nanoseconds || 0) : null,
+            }));
+            return { tasks: hydrated, error: null };
+        }
+    }
+      
     const querySnapshot = await getDocs(q);
     console.log("📊 Tasks fetched:", querySnapshot.size);
 
@@ -109,6 +139,10 @@ export async function getTasks(filters?: TaskFilters): Promise<{
     querySnapshot.forEach((doc) => {
       tasks.push({ id: doc.id, ...doc.data() } as Task);
     });
+
+    if (tasks.length > 0 && isUnfiltered) {
+        await redis.set(cacheKey, tasks, { ex: 300 });
+    }
 
     // Sort by createdAt on client side
     tasks.sort((a, b) => {
@@ -211,7 +245,8 @@ export async function updateTask(id: string, data: Partial<TaskInput>): Promise<
       updateData.completedAt = Timestamp.now();
     }
 
-    await updateDoc(docRef, updateData);
+    const sanitizedData = sanitizeData(updateData);
+    await updateDoc(docRef, sanitizedData);
 
     // Notify assignee if changed
     if (data.assigneeId && data.assigneeId !== currentTask.assigneeId) {
@@ -226,6 +261,13 @@ export async function updateTask(id: string, data: Partial<TaskInput>): Promise<
     }
 
     console.log("✅ Task updated successfully");
+
+    // Invalidate cache
+    await redis.del("tasks:list:all");
+    if (currentTask.ownerId) {
+        await redis.del(`dashboard:stats:${currentTask.ownerId}`);
+    }
+
     return {
       success: true,
       error: null,
@@ -261,6 +303,10 @@ export async function updateTaskStatus(id: string, status: TaskStatus): Promise<
     await updateDoc(docRef, updateData);
 
     console.log("✅ Task status updated");
+
+    // Invalidate cache
+    await redis.del("tasks:list:all");
+
     return {
       success: true,
       error: null,
@@ -285,6 +331,10 @@ export async function deleteTask(id: string): Promise<{
     await deleteDoc(docRef);
 
     console.log("✅ Task deleted successfully");
+
+    // Invalidate cache
+    await redis.del("tasks:list:all");
+
     return {
       success: true,
       error: null,

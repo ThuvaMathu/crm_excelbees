@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { Campaign } from "@/types/email-campaigns";
 import { addEmailJob } from "@/lib/email-campaigns/queue";
-import { wrapLinksWithTracking, injectTrackingPixel, replaceMergeTags, addUnsubscribeLink } from "@/lib/email-campaigns/utils";
+import { wrapLinksWithTracking, injectTrackingPixel, replaceMergeTags } from "@/lib/email-campaigns/utils";
+import { addUnsubscribeLink } from "@/lib/email-campaigns/mailer";
 import { Timestamp } from "firebase-admin/firestore";
 
 // POST /api/marketing/campaigns/[campaignId]/send - Send campaign
@@ -47,8 +48,8 @@ export async function POST(
     // Update campaign status to sending
     await campaignRef.update({
       status: "sending",
-      sentAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
+      sentAt: Timestamp.now() as any,
+      updatedAt: Timestamp.now() as any,
     });
 
     // For now, create a mock recipient list
@@ -108,7 +109,7 @@ export async function POST(
         clickRate: 0,
         clickToOpenRate: 0,
         unsubscribeRate: 0,
-        lastUpdatedAt: Timestamp.now(),
+        lastUpdatedAt: Timestamp.now() as any,
       },
     });
 
