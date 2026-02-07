@@ -1,7 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import { CampaignEvent } from "@/types/email-campaigns";
+import { CampaignEvent, Campaign } from "@/types/email-campaigns";
 import { calculateCampaignStats } from "@/lib/email-campaigns/utils";
+
+interface AnalyticsResponse {
+  stats: ReturnType<typeof calculateCampaignStats>;
+  linkClicks: Record<string, number>;
+  deviceBreakdown: {
+    desktop: number;
+    mobile: number;
+    tablet: number;
+  };
+  timeline: Record<string, { opens: number; clicks: number }>;
+  totalEvents: number;
+}
 
 // GET /api/marketing/campaigns/[campaignId]/analytics - Get campaign analytics
 export async function GET(
@@ -27,7 +39,7 @@ export async function GET(
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
 
-    const campaign = campaignDoc.data();
+    const campaign = campaignDoc.data() as Campaign | undefined;
 
     // Get all events for this campaign
     const eventsSnapshot = await adminDb
@@ -36,11 +48,14 @@ export async function GET(
 
     const events: CampaignEvent[] = [];
     eventsSnapshot.forEach((doc) => {
-      events.push({ id: doc.id, ...doc.data() } as CampaignEvent);
+      const data = doc.data();
+      if (data.eventType && data.contactId) {
+        events.push({ id: doc.id, ...data } as CampaignEvent);
+      }
     });
 
-    // Calculate stats
-    const sent = events.filter((e) => e.eventType === "sent").length;
+    // Use campaign recipient count if no sent events
+    const sent = campaign?.recipientCount ?? events.filter((e) => e.eventType === "sent").length;
     const delivered = events.filter((e) => e.eventType === "delivered").length;
     const opened = new Set(
       events.filter((e) => e.eventType === "opened").map((e) => e.contactId)
@@ -78,7 +93,7 @@ export async function GET(
     // Get timeline data (opens/clicks over time)
     const timeline: Record<string, { opens: number; clicks: number }> = {};
     events.forEach((event) => {
-      if (event.eventType === "opened" || event.eventType === "clicked") {
+      if ((event.eventType === "opened" || event.eventType === "clicked") && event.timestamp) {
         const date = event.timestamp.toDate().toISOString().split("T")[0];
         if (!timeline[date]) {
           timeline[date] = { opens: 0, clicks: 0 };
@@ -88,17 +103,20 @@ export async function GET(
       }
     });
 
-    return NextResponse.json({
+    const response: AnalyticsResponse = {
       stats,
       linkClicks,
       deviceBreakdown,
       timeline,
       totalEvents: events.length,
-    });
-  } catch (error: any) {
+    };
+
+    return NextResponse.json(response);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error fetching analytics:", error);
     return NextResponse.json(
-      { error: "Failed to fetch analytics", message: error.message },
+      { error: "Failed to fetch analytics", message: errorMessage },
       { status: 500 }
     );
   }

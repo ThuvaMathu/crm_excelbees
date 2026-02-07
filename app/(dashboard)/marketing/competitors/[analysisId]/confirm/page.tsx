@@ -236,7 +236,8 @@ export default function ConfirmCompetitorsPage() {
                                                 </div>
                                             </div>
                                             <Badge variant="outline" className="ml-2">
-                                                {competitor.source === "google_places" && "Google Places"}
+                                                {competitor.source === "gemini" && "AI Discovery"}
+                                                {competitor.source === "google_places" && "AI Discovery"}
                                                 {competitor.source === "web_search" && "Web Search"}
                                                 {competitor.source === "user_provided" && "User Provided"}
                                             </Badge>

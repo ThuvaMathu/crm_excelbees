@@ -1,4 +1,6 @@
 import { Redis } from "@upstash/redis";
+import { adminDb } from "@/lib/firebase-admin";
+import { Timestamp } from "firebase-admin/firestore";
 
 if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
   throw new Error("Upstash Redis credentials not configured");
@@ -15,6 +17,7 @@ export const QUEUE_KEYS = {
   processing: "email:processing",
   failed: "email:failed",
   completed: "email:completed",
+  scheduled: "email:scheduled",
 };
 
 /**
@@ -29,7 +32,7 @@ export async function addEmailJob(job: {
   plainText?: string;
 }) {
   const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   const emailJob = {
     id: jobId,
     ...job,
@@ -41,6 +44,107 @@ export async function addEmailJob(job: {
 
   await redis.lpush(QUEUE_KEYS.emailJobs, JSON.stringify(emailJob));
   return jobId;
+}
+
+/**
+ * Add scheduled job to queue
+ */
+export async function addScheduledJob(job: {
+  campaignId: string;
+  userId: string;
+  scheduledFor: Date;
+}) {
+  const jobId = `scheduled_${job.campaignId}_${job.scheduledFor.getTime()}`;
+
+  const scheduledJob = {
+    id: jobId,
+    campaignId: job.campaignId,
+    userId: job.userId,
+    scheduledFor: job.scheduledFor.toISOString(),
+    status: "scheduled",
+    createdAt: new Date().toISOString(),
+  };
+
+  // Store in sorted set with score as scheduled timestamp
+  await redis.zadd(
+    QUEUE_KEYS.scheduled,
+    { score: job.scheduledFor.getTime(), member: JSON.stringify(scheduledJob) }
+  );
+
+  // Also store in Firestore for persistence and querying
+  await adminDb
+    .collection("marketing/email-campaigns/scheduled")
+    .doc(job.campaignId)
+    .set({
+      ...scheduledJob,
+      scheduledFor: Timestamp.fromDate(job.scheduledFor),
+    });
+
+  return jobId;
+}
+
+/**
+ * Get due scheduled jobs (scheduled time has passed)
+ */
+export async function getDueScheduledJobs(): Promise<Array<{
+  id: string;
+  campaignId: string;
+  userId: string;
+  scheduledFor: string;
+}>> {
+  const now = Date.now();
+
+  // Get all jobs with score <= now (due to run)
+  // Upstash Redis uses zrange with min/max
+  const members = await redis.zrange(QUEUE_KEYS.scheduled, 0, now, {
+    withScores: false,
+  });
+
+  const jobs: Array<{
+    id: string;
+    campaignId: string;
+    userId: string;
+    scheduledFor: string;
+  }> = [];
+
+  for (const member of members) {
+    try {
+      const job = JSON.parse(member as string);
+      jobs.push(job);
+    } catch {
+      // Skip invalid JSON
+    }
+  }
+
+  return jobs;
+}
+
+/**
+ * Remove scheduled job from queue
+ */
+export async function removeScheduledJob(campaignId: string): Promise<void> {
+  // Get all scheduled jobs
+  const members = await redis.zrange(QUEUE_KEYS.scheduled, 0, -1);
+
+  // Find and remove the matching job
+  for (const member of members) {
+    try {
+      const job = JSON.parse(member as string);
+      if (job.campaignId === campaignId) {
+        await redis.zrem(QUEUE_KEYS.scheduled, member);
+
+        // Also remove from Firestore
+        await adminDb
+          .collection("marketing/email-campaigns/scheduled")
+          .doc(campaignId)
+          .delete();
+
+        return;
+      }
+    } catch {
+      // Skip invalid JSON
+    }
+  }
 }
 
 /**

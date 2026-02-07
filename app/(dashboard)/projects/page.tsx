@@ -17,6 +17,15 @@ export default function ProjectsPage() {
     const [loading, setLoading] = useState(true);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+    // Helper to safely convert Firestore Timestamp or Date to JS Date
+    const safeToDate = (date: any): Date | null => {
+        if (!date) return null;
+        if (typeof date.toDate === 'function') return date.toDate();
+        if (date instanceof Date) return date;
+        if (typeof date === 'string') return new Date(date);
+        return null;
+    };
+
     const fetchProjects = async () => {
         const { projects: fetchedProjects, error } = await getProjects();
 
@@ -139,9 +148,9 @@ export default function ProjectsPage() {
 
                                     {/* Dates */}
                                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                        <span>Start: {format(project.startDate.toDate(), "MMM d, yyyy")}</span>
+                                        {project.startDate && <span>Start: {format(safeToDate(project.startDate)!, "MMM d, yyyy")}</span>}
                                         {project.endDate && (
-                                            <span>End: {format(project.endDate.toDate(), "MMM d, yyyy")}</span>
+                                            <span>End: {format(safeToDate(project.endDate)!, "MMM d, yyyy")}</span>
                                         )}
                                     </div>
 
@@ -175,7 +184,14 @@ export default function ProjectsPage() {
             <CreateProjectDialog
                 open={createDialogOpen}
                 onOpenChange={setCreateDialogOpen}
-                onSuccess={fetchProjects}
+                onSuccess={(createdProject) => {
+                    // Optimistic update: add new project immediately
+                    if (createdProject) {
+                        setProjects((prev) => [createdProject, ...prev]);
+                    }
+                    // No need to fetch - optimistic update handles it and cache is invalidated
+                    // Fresh data will be loaded on next page refresh/navigation
+                }}
             />
         </div>
     );

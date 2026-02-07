@@ -1,105 +1,74 @@
 "use client";
 
-import { Calendar, dateFnsLocalizer, View, Views } from "react-big-calendar";
-import { format, parse, startOfWeek, getDay, addHours } from "date-fns";
-import { enUS } from "date-fns/locale";
-import type { Task } from "@/types/crm";
 import { useState } from "react";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import { cn } from "@/lib/utils";
-import { CalendarToolbar } from "./CalendarToolbar";
-
-const locales = {
-    "en-US": enUS,
-};
-
-const localizer = dateFnsLocalizer({
-    format,
-    parse,
-    startOfWeek,
-    getDay,
-    locales,
-});
+import { Card } from "@/components/ui/card";
+import { UniversalCalendar, CalendarEvent } from "@/components/calendar";
+import type { Task } from "@/types/crm";
 
 interface TaskCalendarProps {
-    tasks: Task[];
-    onSelectTask: (task: Task) => void;
+  tasks: Task[];
+  onSelectTask: (task: Task) => void;
 }
 
 export function TaskCalendar({ tasks, onSelectTask }: TaskCalendarProps) {
-    const [view, setView] = useState<View>(Views.MONTH);
-    const [date, setDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
-    const events = tasks
-        .filter((task) => task.dueDate)
-        .map((task) => {
-            // Create an event that spans at least 1 hour for display if no start time
-            const start = task.dueDate!.toDate();
-            const end = addHours(start, 1);
+  // Convert tasks to calendar events
+  const events: CalendarEvent[] = tasks
+    .filter((task) => task.dueDate)
+    .map((task) => {
+      // Map task type to calendar event type
+      let eventType: CalendarEvent["type"] = "task";
+      if (task.type === "Meeting") eventType = "meeting";
+      else if (task.type === "Call") eventType = "call";
+      else if (task.type === "Email") eventType = "email";
 
-            return {
-                title: task.title,
-                start,
-                end,
-                resource: task,
-                allDay: task.type === "To Do", // Simple heuristic
-            };
-        });
+      // Map task status to calendar event status
+      let eventStatus: CalendarEvent["status"] = "todo";
+      if (task.status === "In Progress") eventStatus = "in-progress";
+      else if (task.status === "Done") eventStatus = "done";
 
-    const eventPropGetter = (event: any) => {
-        const task = event.resource as Task;
-        // Default styling - muted but visible
-        let className = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-l-2 border-slate-500";
+      return {
+        id: task.id,
+        title: task.title,
+        date: task.dueDate!.toDate(),
+        type: eventType,
+        status: eventStatus,
+        priority: task.priority?.toLowerCase() as CalendarEvent["priority"],
+        // Use custom color based on priority
+        color: task.priority === "High" || task.priority === "Urgent"
+          ? "#EF4444"
+          : task.priority === "Medium"
+            ? "#F59E0B"
+            : "#10B981",
+      };
+    });
 
-        switch (task.priority) {
-            case "High":
-            case "Urgent":
-                // Urgent: Red
-                className = "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 border-l-2 border-red-500";
-                break;
-            case "Medium":
-                // Medium: Blue
-                className = "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300 border-l-2 border-blue-500";
-                break;
-            case "Low":
-                // Low: Gray/Green
-                className = "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border-l-2 border-emerald-500";
-                break;
-        }
+  const handleEventClick = (event: CalendarEvent) => {
+    // Find the original task and call onSelectTask
+    const task = tasks.find((t) => t.id === event.id);
+    if (task) {
+      onSelectTask(task);
+    }
+  };
 
-        if (task.status === "Done") {
-            className = "bg-gray-100/50 text-gray-400 dark:text-gray-600 border-gray-300 dark:border-gray-700 line-through opacity-70";
-        }
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    // Could filter tasks by selected date or show a "new task" dialog
+  };
 
-        return {
-            className: cn("px-2 py-1 text-xs rounded-r-md border-0 border-l-4 mb-1 truncate", className),
-        };
-    };
-
-    const handleNavigate = (newDate: Date) => {
-        setDate(newDate);
-    };
-
-    return (
-        <div className="h-[750px] p-2">
-            <Calendar
-                localizer={localizer}
-                events={events}
-                startAccessor="start"
-                endAccessor="end"
-                style={{ height: "100%" }}
-                onSelectEvent={(event) => onSelectTask(event.resource)}
-                views={["month", "week", "day", "agenda"]}
-                view={view}
-                onView={setView}
-                date={date}
-                onNavigate={handleNavigate}
-                eventPropGetter={eventPropGetter}
-                tooltipAccessor={(event) => event.title}
-                components={{
-                    toolbar: CalendarToolbar as any,
-                }}
-            />
-        </div>
-    );
+  return (
+    <Card className="p-4 border-slate-200 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-900/20">
+      <UniversalCalendar
+        events={events}
+        selectedDate={selectedDate}
+        onDateSelect={handleDateSelect}
+        onEventClick={handleEventClick}
+        variant="tasks"
+        className="bg-transparent"
+      />
+    </Card>
+  );
 }
+
+export default TaskCalendar;

@@ -47,6 +47,15 @@ export default function ProjectDetailPage() {
     const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
     const [expenses, setExpenses] = useState<any[]>([]);
 
+    // Helper to safely convert Firestore Timestamp or Date to JS Date
+    const safeToDate = (date: any): Date | null => {
+        if (!date) return null;
+        if (typeof date.toDate === 'function') return date.toDate();
+        if (date instanceof Date) return date;
+        if (typeof date === 'string') return new Date(date);
+        return null;
+    };
+
     const fetchData = async () => {
         if (!params.id) return;
 
@@ -94,7 +103,7 @@ export default function ProjectDetailPage() {
     };
 
     const handleArchive = async () => {
-        if (!canEdit) return;
+        if (!canEdit || !project) return;
         if (!confirm("Are you sure you want to archive this project?")) return;
 
         const { archiveProject } = await import("@/lib/firestore/projects");
@@ -109,7 +118,7 @@ export default function ProjectDetailPage() {
     };
 
     const handleUnarchive = async () => {
-        if (!canEdit) return;
+        if (!canEdit || !project) return;
 
         const { unarchiveProject } = await import("@/lib/firestore/projects");
         const { success, error } = await unarchiveProject(project.id); // Fixed: using project.id instead of id
@@ -229,9 +238,9 @@ export default function ProjectDetailPage() {
                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-sm">
-                                    {project.endDate
-                                        ? format(project.endDate.toDate(), "MMM d, yyyy")
+                                <div className="text-2xl font-bold">
+                                    {safeToDate(project.endDate)
+                                        ? format(safeToDate(project.endDate)!, "MMM d, yyyy")
                                         : "No deadline"}
                                 </div>
                             </CardContent>
@@ -270,7 +279,7 @@ export default function ProjectDetailPage() {
                                     <div>
                                         <h4 className="text-sm font-medium mb-1">Created</h4>
                                         <p className="text-sm text-muted-foreground">
-                                            {format(project.createdAt.toDate(), "MMM d, yyyy")}
+                                            {project.createdAt && safeToDate(project.createdAt) ? format(safeToDate(project.createdAt)!, "MMM d, yyyy") : "N/A"}
                                         </p>
                                     </div>
                                     <div>
@@ -380,10 +389,10 @@ export default function ProjectDetailPage() {
                                                                 {task.assigneeName}
                                                             </span>
                                                         )}
-                                                        {task.dueDate && (
+                                                        {task.dueDate && safeToDate(task.dueDate) && (
                                                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                                 <Clock className="h-3 w-3" />
-                                                                {format(task.dueDate.toDate(), "MMM d")}
+                                                                {format(safeToDate(task.dueDate)!, "MMM d")}
                                                             </span>
                                                         )}
                                                     </div>

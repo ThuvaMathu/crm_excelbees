@@ -24,6 +24,7 @@ export async function createProject(data: ProjectInput, userId: string): Promise
   success: boolean;
   id: string | null;
   error: string | null;
+  data?: any;
 }> {
   try {
     console.log("📝 Creating project:", data.name);
@@ -31,6 +32,7 @@ export async function createProject(data: ProjectInput, userId: string): Promise
     const projectData = {
       ...data,
       ownerId: userId,
+      archived: false,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     };
@@ -38,17 +40,18 @@ export async function createProject(data: ProjectInput, userId: string): Promise
     const sanitizedData = sanitizeData(projectData);
     const docRef = await addDoc(collection(db, COLLECTION_NAME), sanitizedData);
     console.log("✅ Project created with ID:", docRef.id);
-    
+
     // Invalidate cache
     await redis.del("projects:list:all");
     if (userId) {
         await redis.del(`dashboard:stats:${userId}`);
     }
-    
+
     return {
       success: true,
       id: docRef.id,
       error: null,
+      data: { id: docRef.id, ...projectData },
     };
   } catch (error: any) {
     console.error("❌ Failed to create project:", error.message);
@@ -141,14 +144,43 @@ export async function getProjects(filters?: ProjectFilters): Promise<{
         const cached = await redis.get<Project[]>(cacheKey);
         if (cached) {
             console.log("⚡ HIT: Projects list from Redis");
-            // Rehydrate Timestamps
-            const hydrated = cached.map((p: any) => ({
-                ...p,
-                createdAt: p.createdAt ? new Timestamp(p.createdAt.seconds || 0, p.createdAt.nanoseconds || 0) : null,
-                updatedAt: p.updatedAt ? new Timestamp(p.updatedAt.seconds || 0, p.updatedAt.nanoseconds || 0) : null,
-                startDate: p.startDate ? new Timestamp(p.startDate.seconds || 0, p.startDate.nanoseconds || 0) : null,
-                endDate: p.endDate ? new Timestamp(p.endDate.seconds || 0, p.endDate.nanoseconds || 0) : null,
-            }));
+            // Rehydrate Timestamps - use defensive approach
+            const hydrated = cached.map((p: any) => {
+                const createTimestamp = (val: any) => {
+                    if (!val) return null;
+                    // If already a Timestamp with toDate method, return as-is
+                    if (typeof val?.toDate === 'function') return val;
+                    // Rehydrate from cached object with seconds/nanoseconds
+                    if (typeof val === 'object' && 'seconds' in val) {
+                        try {
+                            return new Timestamp(val.seconds || 0, val.nanoseconds || 0);
+                        } catch {
+                            return null;
+                        }
+                    }
+                    // Last resort: if it's a Date or string, convert to Timestamp
+                    if (val instanceof Date) {
+                        return Timestamp.fromDate(val);
+                    }
+                    if (typeof val === 'string') {
+                        try {
+                            return Timestamp.fromDate(new Date(val));
+                        } catch {
+                            return null;
+                        }
+                    }
+                    // Unknown format - return null to prevent errors
+                    return null;
+                };
+
+                return {
+                    ...p,
+                    createdAt: createTimestamp(p.createdAt),
+                    updatedAt: createTimestamp(p.updatedAt),
+                    startDate: createTimestamp(p.startDate),
+                    endDate: createTimestamp(p.endDate),
+                };
+            });
             return { projects: hydrated, error: null };
         }
     }

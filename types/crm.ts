@@ -204,6 +204,7 @@ export interface Project {
   tags: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  archived?: boolean;
 }
 
 // Task Types

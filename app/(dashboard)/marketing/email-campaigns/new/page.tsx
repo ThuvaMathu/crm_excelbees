@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MarketingLayout } from "@/components/marketing/shared/MarketingLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,18 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AITextarea } from "@/components/ui/ai-textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
-import { CampaignType } from "@/types/email-campaigns";
-import { Mail, Zap, Calendar, ArrowRight, Sparkles } from "lucide-react";
+import { CampaignType, Audience } from "@/types/email-campaigns";
+import { Mail, Zap, Calendar, ArrowRight, Sparkles, Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+type Step = "type" | "details" | "audience";
 
 export default function NewCampaignPage() {
     const router = useRouter();
     const { user } = useAuth();
-    const [step, setStep] = useState<"type" | "details">("type");
+    const [step, setStep] = useState<Step>("type");
     const [selectedType, setSelectedType] = useState<CampaignType | null>(null);
     const [loading, setLoading] = useState(false);
     const [aiGenerating, setAiGenerating] = useState(false);
+    const [loadingAudiences, setLoadingAudiences] = useState(false);
+    const [audiences, setAudiences] = useState<Audience[]>([]);
+    const [selectedAudienceIds, setSelectedAudienceIds] = useState<string[]>([]);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -57,15 +63,61 @@ export default function NewCampaignPage() {
         },
     ];
 
+    // Load audiences when component mounts
+    useEffect(() => {
+        if (user && (step === "details" || step === "audience")) {
+            loadAudiences();
+        }
+    }, [user, step]);
+
+    const loadAudiences = async () => {
+        try {
+            setLoadingAudiences(true);
+            const response = await fetch(`/api/marketing/campaigns/audiences?userId=${user?.uid}`);
+            if (!response.ok) throw new Error("Failed to load audiences");
+
+            const data = await response.json();
+            setAudiences(data.audiences || []);
+        } catch (error) {
+            console.error("Error loading audiences:", error);
+            // Non-blocking error - audiences can be added later
+        } finally {
+            setLoadingAudiences(false);
+        }
+    };
+
     const handleTypeSelect = (type: CampaignType) => {
         setSelectedType(type);
         setStep("details");
     };
 
-    const handleCreateCampaign = async () => {
+    const toggleAudience = (audienceId: string) => {
+        setSelectedAudienceIds((prev) =>
+            prev.includes(audienceId)
+                ? prev.filter((id) => id !== audienceId)
+                : [...prev, audienceId]
+        );
+    };
+
+    const getTotalRecipients = () => {
+        return selectedAudienceIds.reduce((total, audienceId) => {
+            const audience = audiences.find((a) => a.id === audienceId);
+            return total + (audience?.contactCount || 0);
+        }, 0);
+    };
+
+    const handleCreateCampaign = async (skipAudience = false) => {
         // Validation
         if (!formData.name || !formData.fromName || !formData.fromEmail || !formData.subject) {
             toast.error("Please fill in all required fields");
+            return;
+        }
+
+        // Calculate total recipients from selected audiences
+        const recipientCount = getTotalRecipients();
+
+        if (!skipAudience && recipientCount === 0) {
+            toast.error("Please select at least one audience");
             return;
         }
 
@@ -88,8 +140,8 @@ export default function NewCampaignPage() {
                     html: "",
                     plainText: "",
                 },
-                audienceIds: [],
-                recipientCount: 0,
+                audienceIds: selectedAudienceIds,
+                recipientCount,
                 throttling: {
                     emailsPerHour: 1000,
                     retryFailed: true,
@@ -119,9 +171,10 @@ export default function NewCampaignPage() {
 
             // Redirect to build page
             router.push(`/marketing/email-campaigns/${id}/build`);
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to create campaign";
             console.error("Error creating campaign:", error);
-            toast.error(error.message || "Failed to create campaign");
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -165,7 +218,7 @@ export default function NewCampaignPage() {
                         })}
                     </div>
                 </div>
-            ) : (
+            ) : step === "details" ? (
                 <div className="max-w-3xl mx-auto">
                     <Card>
                         <CardHeader>
@@ -295,25 +348,26 @@ export default function NewCampaignPage() {
                                                         method: "POST",
                                                         headers: { "Content-Type": "application/json" },
                                                         body: JSON.stringify({
-                                                            prompt: `Generate a compelling email subject line for a ${formData.type} campaign called "${formData.name}"`
+                                                            prompt: `Generate a compelling email subject line for a ${selectedType} campaign called "${formData.name}"`
                                                         }),
                                                     }).then(r => r.json());
-                                                    toast.success("Subject line generated!");
                                                     if (generated.subject) {
                                                         setFormData({ ...formData, subject: generated.subject });
+                                                        toast.success("Subject line generated!");
+                                                    } else {
+                                                        // Fallback to a simple generated subject
+                                                        const fallback = `${formData.name} - Special Offer Inside!`;
+                                                        setFormData({ ...formData, subject: fallback });
+                                                        toast.success("Subject line generated!");
                                                     }
-                                                } catch (error) {
+                                                } catch {
                                                     // Fallback to a simple generated subject
                                                     const fallback = `${formData.name} - Special Offer Inside!`;
                                                     setFormData({ ...formData, subject: fallback });
                                                     toast.success("Subject line generated!");
                                                 }
                                                 toast.dismiss(toastId);
-                                            } catch {
-                                                toast.error("Failed to generate subject line");
-                                            } finally {
                                                 setAiGenerating(false);
-                                            }
                                             }}
                                             disabled={aiGenerating}
                                         >
@@ -344,15 +398,154 @@ export default function NewCampaignPage() {
                                 <Button variant="outline" onClick={() => setStep("type")}>
                                     Back
                                 </Button>
-                                <Button onClick={handleCreateCampaign} disabled={loading}>
-                                    {loading ? "Creating..." : "Continue to Content Builder"}
+                                <Button onClick={() => handleCreateCampaign(false)} disabled={loading}>
+                                    {loading ? "Creating..." : "Continue to Audience Selection"}
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
-            )}
+            ) : step === "audience" ? (
+                <div className="max-w-4xl mx-auto space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Select Audience</CardTitle>
+                            <CardDescription>
+                                Choose which audiences to include in this campaign
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {loadingAudiences ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : audiences.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <Users className="h-12 w-12 mx-auto text-muted-foreground opacity-20 mb-4" />
+                                    <p className="text-muted-foreground mb-4">No audiences found</p>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => router.push("/marketing/email-campaigns/audiences/new")}
+                                    >
+                                        Create Your First Audience
+                                    </Button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="space-y-3">
+                                        {audiences.map((audience) => (
+                                            <div
+                                                key={audience.id}
+                                                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                                                    selectedAudienceIds.includes(audience.id)
+                                                        ? "border-primary bg-primary/5"
+                                                        : "border-border hover:border-primary/50"
+                                                }`}
+                                                onClick={() => toggleAudience(audience.id)}
+                                            >
+                                                <div className="flex items-start gap-4">
+                                                    <Checkbox
+                                                        id={audience.id}
+                                                        checked={selectedAudienceIds.includes(audience.id)}
+                                                        onCheckedChange={() => toggleAudience(audience.id)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <label
+                                                                htmlFor={audience.id}
+                                                                className="font-medium cursor-pointer"
+                                                            >
+                                                                {audience.name}
+                                                            </label>
+                                                            <span
+                                                                className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                                    audience.type === "static"
+                                                                        ? "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900"
+                                                                        : "text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900"
+                                                                }`}
+                                                            >
+                                                                {audience.type === "static" ? "Static" : "Dynamic"}
+                                                            </span>
+                                                        </div>
+                                                        {audience.description && (
+                                                            <p className="text-sm text-muted-foreground mb-2">
+                                                                {audience.description}
+                                                            </p>
+                                                        )}
+                                                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                                            <span className="flex items-center gap-1">
+                                                                <Users className="h-4 w-4" />
+                                                                {audience.contactCount.toLocaleString()} contacts
+                                                            </span>
+                                                            <span>Source: {audience.source}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Summary */}
+                                    <div className="border-t pt-4 mt-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm font-medium">
+                                                    {selectedAudienceIds.length} audience{selectedAudienceIds.length !== 1 ? "s" : ""} selected
+                                                </p>
+                                                <p className="text-2xl font-bold">
+                                                    {getTotalRecipients().toLocaleString()} recipients
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Actions */}
+                    <Card>
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setStep("details")}
+                                    disabled={loading}
+                                >
+                                    Back to Details
+                                </Button>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => handleCreateCampaign(true)}
+                                        disabled={loading}
+                                    >
+                                        Skip for Now
+                                    </Button>
+                                    <Button
+                                        onClick={() => handleCreateCampaign(false)}
+                                        disabled={loading || selectedAudienceIds.length === 0}
+                                    >
+                                        {loading ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                Creating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                Create Campaign
+                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            ) : null}
         </MarketingLayout>
     );
 }

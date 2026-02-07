@@ -3,7 +3,7 @@
 
 export type AnalysisStatus = 'discovering' | 'scraping' | 'analyzing' | 'complete' | 'failed';
 export type AnalysisDepth = 'quick' | 'standard' | 'deep';
-export type CompetitorSource = 'google_places' | 'web_search' | 'user_provided';
+export type CompetitorSource = 'gemini' | 'google_places' | 'web_search' | 'user_provided';
 export type ScrapingStatus = 'success' | 'failed' | 'limited_data';
 export type ThreatLevel = 'high' | 'medium' | 'low';
 export type OpportunityType = 'market_gap' | 'content' | 'pricing' | 'service' | 'audience';

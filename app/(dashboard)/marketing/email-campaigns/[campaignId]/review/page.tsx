@@ -5,11 +5,23 @@ import { useRouter, useParams } from "next/navigation";
 import { MarketingLayout } from "@/components/marketing/shared/MarketingLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { Campaign } from "@/types/email-campaigns";
 import { formatCampaignDate, estimateSendTime } from "@/lib/email-campaigns/utils";
-import { CheckCircle2, AlertCircle, Send, Loader2, Eye, Edit, Lock } from "lucide-react";
+import { CheckCircle2, AlertCircle, Send, Loader2, Eye, Edit, Lock, Play, Clock } from "lucide-react";
 import { toast } from "sonner";
+
+type SendMode = "now" | "schedule";
 
 export default function CampaignReviewPage() {
     const router = useRouter();
@@ -20,6 +32,11 @@ export default function CampaignReviewPage() {
     const [campaign, setCampaign] = useState<Campaign | null>(null);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
+    const [testDialogOpen, setTestDialogOpen] = useState(false);
+    const [testEmails, setTestEmails] = useState(user?.email || "");
+    const [sendingTest, setSendingTest] = useState(false);
+    const [sendMode, setSendMode] = useState<SendMode>("now");
+    const [scheduledFor, setScheduledFor] = useState("");
 
     // Role-based access control - only admins and managers can send campaigns
     const canSendCampaign = user?.role === "admin" || user?.role === "manager";
@@ -60,7 +77,24 @@ export default function CampaignReviewPage() {
 
         logPermissionCheck("send", true);
 
-        if (!confirm(`Send this campaign to ${campaign.recipientCount} recipients?`)) {
+        // Validate scheduled date if scheduling
+        if (sendMode === "schedule") {
+            if (!scheduledFor) {
+                toast.error("Please select a date and time to schedule");
+                return;
+            }
+            const scheduledDate = new Date(scheduledFor);
+            if (scheduledDate <= new Date()) {
+                toast.error("Scheduled time must be in the future");
+                return;
+            }
+        }
+
+        const confirmMessage = sendMode === "now"
+            ? `Send this campaign to ${campaign.recipientCount} recipients immediately?`
+            : `Schedule this campaign for ${new Date(scheduledFor).toLocaleString()}?`;
+
+        if (!confirm(confirmMessage)) {
             return;
         }
 
@@ -69,7 +103,10 @@ export default function CampaignReviewPage() {
             const response = await fetch(`/api/marketing/campaigns/${campaignId}/send`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: user?.uid }),
+                body: JSON.stringify({
+                    userId: user?.uid,
+                    scheduledFor: sendMode === "schedule" ? scheduledFor : undefined,
+                }),
             });
 
             if (!response.ok) {
@@ -77,13 +114,63 @@ export default function CampaignReviewPage() {
                 throw new Error(error.error || "Failed to send campaign");
             }
 
-            toast.success("Campaign is being sent!");
-            router.push(`/marketing/email-campaigns/${campaignId}/analytics`);
-        } catch (error: any) {
+            const data = await response.json();
+            toast.success(data.message || "Campaign scheduled successfully!");
+
+            if (sendMode === "now") {
+                router.push(`/marketing/email-campaigns/${campaignId}/analytics`);
+            } else {
+                // Reload campaign to show updated status
+                loadCampaign();
+            }
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to send campaign";
             console.error("Error sending campaign:", error);
-            toast.error(error.message || "Failed to send campaign");
+            toast.error(errorMessage);
         } finally {
             setSending(false);
+        }
+    };
+
+    const handleSendTest = async () => {
+        if (!testEmails.trim()) {
+            toast.error("Please enter at least one email address");
+            return;
+        }
+
+        const emails = testEmails.split(",").map((e) => e.trim()).filter(Boolean);
+
+        setSendingTest(true);
+        try {
+            const response = await fetch(`/api/marketing/campaigns/${campaignId}/test-send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId: user?.uid,
+                    testEmails: emails,
+                    personalizationData: {
+                        FirstName: user?.displayName?.split(" ")[0] || "Test",
+                        LastName: user?.displayName?.split(" ").slice(1).join(" ") || "User",
+                        Email: user?.email,
+                        Company: "Your Company",
+                    },
+                }),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || "Failed to send test email");
+            }
+
+            const data = await response.json();
+            toast.success(data.message || "Test email sent successfully!");
+            setTestDialogOpen(false);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to send test email";
+            console.error("Error sending test email:", error);
+            toast.error(errorMessage);
+        } finally {
+            setSendingTest(false);
         }
     };
 
@@ -236,12 +323,66 @@ export default function CampaignReviewPage() {
 
                 {/* Actions */}
                 <Card>
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
+                    <CardContent className="p-6 space-y-6">
+                        {/* Send Mode Selection */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setSendMode("now")}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                                        sendMode === "now"
+                                            ? "border-primary bg-primary/10 text-primary"
+                                            : "border-border hover:border-primary/50"
+                                    }`}
+                                >
+                                    <Send className="h-4 w-4" />
+                                    Send Now
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSendMode("schedule")}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                                        sendMode === "schedule"
+                                            ? "border-primary bg-primary/10 text-primary"
+                                            : "border-border hover:border-primary/50"
+                                    }`}
+                                >
+                                    <Clock className="h-4 w-4" />
+                                    Schedule for Later
+                                </button>
+                            </div>
+
+                            {/* Scheduling Options */}
+                            {sendMode === "schedule" && (
+                                <div className="p-4 border rounded-lg bg-muted/30 space-y-3">
+                                    <Label htmlFor="scheduledFor">Schedule Date & Time</Label>
+                                    <Input
+                                        id="scheduledFor"
+                                        type="datetime-local"
+                                        min={new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16)}
+                                        value={scheduledFor}
+                                        onChange={(e) => setScheduledFor(e.target.value)}
+                                        className="w-full md:w-1/2"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Campaign will be sent automatically at the scheduled time.
+                                        You can cancel scheduled campaigns from the campaigns list.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-between pt-4 border-t">
                             <div>
-                                <p className="font-medium">Ready to send?</p>
+                                <p className="font-medium">
+                                    {sendMode === "now" ? "Ready to send?" : "Schedule campaign?"}
+                                </p>
                                 <p className="text-sm text-muted-foreground">
-                                    This will send to {campaign.recipientCount} recipients
+                                    {sendMode === "now"
+                                        ? `This will send to ${campaign.recipientCount} recipients immediately`
+                                        : `This will schedule to ${campaign.recipientCount} recipients`}
                                 </p>
                                 {!canSendCampaign && (
                                     <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
@@ -253,24 +394,50 @@ export default function CampaignReviewPage() {
                             <div className="flex gap-2">
                                 <Button
                                     variant="outline"
+                                    onClick={() => setTestDialogOpen(true)}
+                                    disabled={sendingTest}
+                                >
+                                    {sendingTest ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Sending Test...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play className="h-4 w-4 mr-2" />
+                                            Send Test Email
+                                        </>
+                                    )}
+                                </Button>
+                                <Button
+                                    variant="outline"
                                     onClick={() => router.push(`/marketing/email-campaigns/${campaignId}/build`)}
                                 >
                                     Edit Campaign
                                 </Button>
                                 <Button
                                     onClick={handleSend}
-                                    disabled={!allChecked || sending || !canSendCampaign}
-                                    title={canSendCampaign ? "Send campaign now" : "You don't have permission to send campaigns"}
+                                    disabled={!allChecked || sending || !canSendCampaign || (sendMode === "schedule" && !scheduledFor)}
+                                    title={canSendCampaign ? (sendMode === "now" ? "Send campaign now" : "Schedule campaign") : "You don't have permission to send campaigns"}
                                 >
                                     {sending ? (
                                         <>
                                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                            Sending...
+                                            {sendMode === "now" ? "Sending..." : "Scheduling..."}
                                         </>
                                     ) : canSendCampaign ? (
                                         <>
-                                            <Send className="h-4 w-4 mr-2" />
-                                            Send Now
+                                            {sendMode === "now" ? (
+                                                <>
+                                                    <Send className="h-4 w-4 mr-2" />
+                                                    Send Now
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Clock className="h-4 w-4 mr-2" />
+                                                    Schedule Campaign
+                                                </>
+                                            )}
                                         </>
                                     ) : (
                                         <>
@@ -284,6 +451,56 @@ export default function CampaignReviewPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Test Email Dialog */}
+            <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Send Test Email</DialogTitle>
+                        <DialogDescription>
+                            Send a test email to verify the content and appearance before sending to your audience.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="testEmails">Test Email Addresses</Label>
+                            <Input
+                                id="testEmails"
+                                placeholder="email1@example.com, email2@example.com"
+                                value={testEmails}
+                                onChange={(e) => setTestEmails(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Separate multiple emails with commas
+                            </p>
+                        </div>
+                        <div className="bg-muted rounded-lg p-4">
+                            <p className="text-sm font-medium mb-2">Test Personalization</p>
+                            <p className="text-xs text-muted-foreground">
+                                The test email will use your information for personalization tags like {`{{FirstName}}`}, {`{{LastName}}`}, etc.
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setTestDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSendTest} disabled={sendingTest || !testEmails.trim()}>
+                            {sendingTest ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Sending...
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Send Test
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </MarketingLayout>
     );
 }

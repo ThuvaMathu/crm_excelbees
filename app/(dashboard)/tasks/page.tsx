@@ -23,6 +23,15 @@ export default function TasksPage() {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [view, setView] = useState<"list" | "calendar">("list");
 
+    // Helper to safely convert Firestore Timestamp or Date to JS Date
+    const safeToDate = (date: any): Date | null => {
+        if (!date) return null;
+        if (typeof date.toDate === 'function') return date.toDate();
+        if (date instanceof Date) return date;
+        if (typeof date === 'string') return new Date(date);
+        return null;
+    };
+
     const fetchTasks = async () => {
         const { tasks: fetchedTasks, error } = await getTasks();
 
@@ -181,9 +190,9 @@ export default function TasksPage() {
                                                     <span className={getPriorityColor(task.priority)}>
                                                         {task.priority}
                                                     </span>
-                                                    {task.dueDate && (
+                                                    {task.dueDate && safeToDate(task.dueDate) && (
                                                         <span className="text-muted-foreground">
-                                                            {format(task.dueDate.toDate(), "MMM d")}
+                                                            {format(safeToDate(task.dueDate)!, "MMM d")}
                                                         </span>
                                                     )}
                                                 </div>

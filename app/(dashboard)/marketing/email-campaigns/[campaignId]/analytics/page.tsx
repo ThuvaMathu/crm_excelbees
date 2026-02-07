@@ -8,6 +8,18 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Campaign, CampaignStats } from "@/types/email-campaigns";
 import { formatCampaignDate } from "@/lib/email-campaigns/utils";
+
+interface CampaignAnalytics {
+    stats: CampaignStats;
+    linkClicks?: Record<string, number>;
+    deviceBreakdown?: {
+        desktop: number;
+        mobile: number;
+        tablet: number;
+    };
+    timeline?: Record<string, { opens: number; clicks: number }>;
+    totalEvents: number;
+}
 import {
     ArrowLeft,
     Mail,
@@ -27,7 +39,7 @@ export default function CampaignAnalyticsPage() {
     const campaignId = params.campaignId as string;
 
     const [campaign, setCampaign] = useState<Campaign | null>(null);
-    const [analytics, setAnalytics] = useState<any>(null);
+    const [analytics, setAnalytics] = useState<CampaignAnalytics | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -83,12 +95,12 @@ export default function CampaignAnalyticsPage() {
         );
     }
 
-    const stats = analytics.stats as CampaignStats;
+    const stats = analytics.stats;
 
     return (
         <MarketingLayout
             title={`Analytics: ${campaign.name}`}
-            description={`Performance metrics for campaign sent ${campaign.sentAt ? formatCampaignDate(campaign.sentAt.toDate()) : ""}`}
+            description={`Performance metrics for campaign sent ${campaign.sentAt ? formatCampaignDate(campaign.sentAt.toDate()) : "N/A"}`}
             actions={
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => router.push("/marketing/email-campaigns")}>
@@ -213,7 +225,7 @@ export default function CampaignAnalyticsPage() {
                                 <div className="w-full bg-muted rounded-full h-2">
                                     <div
                                         className="bg-red-600 h-2 rounded-full"
-                                        style={{ width: `${(stats.bounced / stats.sent) * 100}%` }}
+                                        style={{ width: `${stats.sent > 0 ? (stats.bounced / stats.sent) * 100 : 0}%` }}
                                     />
                                 </div>
                             </div>
@@ -276,9 +288,9 @@ export default function CampaignAnalyticsPage() {
                         <CardContent>
                             <div className="space-y-3">
                                 {Object.entries(analytics.linkClicks)
-                                    .sort(([, a]: any, [, b]: any) => b - a)
+                                    .sort(([, a], [, b]) => b - a)
                                     .slice(0, 10)
-                                    .map(([url, clicks]: any) => (
+                                    .map(([url, clicks]) => (
                                         <div key={url} className="flex items-center justify-between">
                                             <span className="text-sm text-muted-foreground truncate flex-1 mr-4">
                                                 {url}
@@ -312,7 +324,9 @@ export default function CampaignAnalyticsPage() {
                                 <div>
                                     <p className="text-sm text-muted-foreground">Conversion Rate</p>
                                     <p className="text-2xl font-bold">
-                                        {((stats.conversions / stats.delivered) * 100).toFixed(1)}%
+                                        {stats.delivered > 0
+                                            ? `${((stats.conversions / stats.delivered) * 100).toFixed(1)}%`
+                                            : "N/A"}
                                     </p>
                                 </div>
                             </div>

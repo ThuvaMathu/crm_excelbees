@@ -6,10 +6,14 @@ import { MarketingLayout } from "@/components/marketing/shared/MarketingLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { Campaign, AIContentResponse } from "@/types/email-campaigns";
 import { AIContentGenerator } from "@/components/email-campaigns/AIContentGenerator";
-import { Sparkles, FileText, Edit3, Eye, ArrowRight, Loader2 } from "lucide-react";
+import { replaceMergeTags } from "@/lib/email-campaigns/utils";
+import { Sparkles, FileText, Edit3, Eye, ArrowRight, Loader2, User } from "lucide-react";
 import { toast } from "sonner";
 
 export default function CampaignBuildPage() {
@@ -23,6 +27,16 @@ export default function CampaignBuildPage() {
     const [activeTab, setActiveTab] = useState("ai");
     const [generatedContent, setGeneratedContent] = useState<AIContentResponse | null>(null);
     const [selectedSubject, setSelectedSubject] = useState(0);
+
+    // Personalization preview state
+    const [showPersonalization, setShowPersonalization] = useState(true);
+    const [previewContact, setPreviewContact] = useState({
+        firstName: "John",
+        lastName: "Smith",
+        email: "john.smith@example.com",
+        company: "Acme Corporation",
+    });
+    const [devicePreview, setDevicePreview] = useState<"desktop" | "mobile">("desktop");
 
     useEffect(() => {
         if (user && campaignId) {
@@ -136,10 +150,30 @@ export default function CampaignBuildPage() {
                         <div>
                             <Card className="sticky top-6">
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Eye className="h-5 w-5" />
-                                        Preview
-                                    </CardTitle>
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="flex items-center gap-2">
+                                            <Eye className="h-5 w-5" />
+                                            Preview
+                                        </CardTitle>
+                                        <div className="flex gap-1">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setDevicePreview("desktop")}
+                                                className={devicePreview === "desktop" ? "bg-primary/10" : ""}
+                                            >
+                                                Desktop
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setDevicePreview("mobile")}
+                                                className={devicePreview === "mobile" ? "bg-primary/10" : ""}
+                                            >
+                                                Mobile
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </CardHeader>
                                 <CardContent>
                                     {generatedContent ? (
@@ -151,13 +185,16 @@ export default function CampaignBuildPage() {
                                                     {generatedContent.subjectLines.map((subject, index) => (
                                                         <div
                                                             key={index}
-                                                            className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedSubject === index
+                                                            className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                                                                selectedSubject === index
                                                                     ? "border-primary bg-primary/5"
                                                                     : "border-border hover:border-primary/50"
-                                                                }`}
+                                                            }`}
                                                             onClick={() => setSelectedSubject(index)}
                                                         >
-                                                            <p className="text-sm font-medium">{subject}</p>
+                                                            <p className="text-sm font-medium">
+                                                                {replaceMergeTags(subject, previewContact)}
+                                                            </p>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -166,15 +203,68 @@ export default function CampaignBuildPage() {
                                             {/* Preview Text */}
                                             <div className="space-y-2">
                                                 <p className="text-sm font-medium">Preview Text:</p>
-                                                <p className="text-sm text-muted-foreground">{generatedContent.previewText}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {replaceMergeTags(generatedContent.previewText, previewContact)}
+                                                </p>
+                                            </div>
+
+                                            {/* Personalization Controls */}
+                                            <div className="p-3 bg-muted/30 rounded-lg border space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-sm font-medium flex items-center gap-2">
+                                                        <User className="h-4 w-4" />
+                                                        Personalization Preview
+                                                    </p>
+                                                </div>
+                                                <div className="grid gap-2 text-sm">
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <p className="text-muted-foreground">First Name</p>
+                                                            <Input
+                                                                value={previewContact.firstName}
+                                                                onChange={(e) =>
+                                                                    setPreviewContact({ ...previewContact, firstName: e.target.value })
+                                                                }
+                                                                className="h-8"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-muted-foreground">Last Name</p>
+                                                            <Input
+                                                                value={previewContact.lastName}
+                                                                onChange={(e) =>
+                                                                    setPreviewContact({ ...previewContact, lastName: e.target.value })
+                                                                }
+                                                                className="h-8"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-muted-foreground">Company</p>
+                                                        <Input
+                                                            value={previewContact.company}
+                                                            onChange={(e) =>
+                                                                setPreviewContact({ ...previewContact, company: e.target.value })
+                                                            }
+                                                            className="h-8"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Changes how merge tags appear in preview
+                                                </p>
                                             </div>
 
                                             {/* Email Content */}
                                             <div className="space-y-2">
                                                 <p className="text-sm font-medium">Email Content:</p>
                                                 <div
-                                                    className="prose dark:prose-invert max-w-none text-sm p-4 bg-muted/20 rounded-lg border max-h-96 overflow-y-auto"
-                                                    dangerouslySetInnerHTML={{ __html: generatedContent.html }}
+                                                    className={`prose dark:prose-invert max-w-none text-sm p-4 bg-white dark:bg-slate-900 rounded-lg border max-h-96 overflow-y-auto ${
+                                                        devicePreview === "mobile" ? "max-w-sm mx-auto" : ""
+                                                    }`}
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: replaceMergeTags(generatedContent.html, previewContact),
+                                                    }}
                                                 />
                                             </div>
 

@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { Campaign } from "@/types/email-campaigns";
-import { addEmailJob } from "@/lib/email-campaigns/queue";
+import { addEmailJob, addScheduledJob } from "@/lib/email-campaigns/queue";
 import { wrapLinksWithTracking, injectTrackingPixel, replaceMergeTags } from "@/lib/email-campaigns/utils";
 import { addUnsubscribeLink } from "@/lib/email-campaigns/mailer";
 import { Timestamp } from "firebase-admin/firestore";
 
-// POST /api/marketing/campaigns/[campaignId]/send - Send campaign
+interface SendRequest {
+  userId: string;
+  scheduledFor?: string | Date; // ISO date string for scheduled sends
+}
+
+// POST /api/marketing/campaigns/[campaignId]/send - Send or schedule campaign
 export async function POST(
   request: NextRequest,
   { params }: { params: { campaignId: string } }
 ) {
   try {
     const body = await request.json();
-    const { userId } = body as { userId: string };
+    const { userId, scheduledFor } = body as SendRequest;
     const { campaignId } = params;
 
     if (!userId) {
@@ -33,7 +38,7 @@ export async function POST(
     const campaign = campaignDoc.data() as Campaign;
 
     // Validate campaign is ready to send
-    if (!campaign.content.html) {
+    if (!campaign.content?.html) {
       return NextResponse.json({ error: "Campaign has no content" }, { status: 400 });
     }
 
@@ -41,10 +46,57 @@ export async function POST(
       return NextResponse.json({ error: "Campaign has no recipients" }, { status: 400 });
     }
 
-    if (campaign.status === "sent" || campaign.status === "sending") {
-      return NextResponse.json({ error: "Campaign already sent or sending" }, { status: 400 });
+    if (campaign.status === "sent" || campaign.status === "sending" || campaign.status === "scheduled") {
+      return NextResponse.json(
+        { error: `Campaign already ${campaign.status}` },
+        { status: 400 }
+      );
     }
 
+    // Check if this is a scheduled send
+    if (scheduledFor) {
+      const scheduledDate = new Date(scheduledFor);
+
+      // Validate scheduled date is in the future
+      if (scheduledDate <= new Date()) {
+        return NextResponse.json(
+          { error: "Scheduled time must be in the future" },
+          { status: 400 }
+        );
+      }
+
+      // Don't allow scheduling more than 1 year in advance
+      const maxDate = new Date();
+      maxDate.setFullYear(maxDate.getFullYear() + 1);
+      if (scheduledDate > maxDate) {
+        return NextResponse.json(
+          { error: "Cannot schedule more than 1 year in advance" },
+          { status: 400 }
+        );
+      }
+
+      // Update campaign to scheduled status
+      await campaignRef.update({
+        status: "scheduled",
+        scheduledFor: Timestamp.fromDate(scheduledDate) as any,
+        updatedAt: Timestamp.now() as any,
+      });
+
+      // Add scheduled job to queue
+      await addScheduledJob({
+        campaignId,
+        userId,
+        scheduledFor: scheduledDate,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Campaign scheduled for ${scheduledDate.toLocaleString()}`,
+        scheduledFor: scheduledDate.toISOString(),
+      });
+    }
+
+    // Immediate send
     // Update campaign status to sending
     await campaignRef.update({
       status: "sending",
@@ -52,32 +104,55 @@ export async function POST(
       updatedAt: Timestamp.now() as any,
     });
 
-    // For now, create a mock recipient list
-    // TODO: Fetch actual recipients from audiences
-    const mockRecipients = Array.from({ length: Math.min(campaign.recipientCount, 10) }, (_, i) => ({
-      id: `contact_${i}`,
-      email: `test${i}@example.com`,
-      firstName: `Test${i}`,
-      lastName: `User`,
-    }));
+    // Fetch recipients from audiences
+    const recipients: Array<{
+      id: string;
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      company?: string;
+    }> = [];
+
+    for (const audienceId of campaign.audienceIds || []) {
+      const audienceDoc = await adminDb
+        .collection(`marketing/email-campaigns/users/${userId}/audiences`)
+        .doc(audienceId)
+        .get();
+
+      if (audienceDoc.exists) {
+        const audience = audienceDoc.data();
+        const contacts = audience?.contacts || [];
+        for (const contact of contacts) {
+          if (contact.subscribed && !contact.bounced && !contact.complained) {
+            recipients.push({
+              id: contact.id,
+              email: contact.email,
+              firstName: contact.firstName,
+              lastName: contact.lastName,
+              company: contact.company,
+            });
+          }
+        }
+      }
+    }
 
     // Queue email jobs
     const jobIds: string[] = [];
-    for (const recipient of mockRecipients) {
+    for (const recipient of recipients) {
       // Prepare email content
       let html = campaign.content.html;
-      
+
       // Replace merge tags
       html = replaceMergeTags(html, recipient);
-      
+
       // Add tracking
-      if (campaign.tracking.trackClicks) {
+      if (campaign.tracking?.trackClicks) {
         html = wrapLinksWithTracking(html, campaignId, recipient.id);
       }
-      if (campaign.tracking.trackOpens) {
+      if (campaign.tracking?.trackOpens) {
         html = injectTrackingPixel(html, campaignId, recipient.id);
       }
-      
+
       // Add unsubscribe link
       html = addUnsubscribeLink(html, campaignId, recipient.id);
 
@@ -96,8 +171,9 @@ export async function POST(
 
     // Update campaign with job info
     await campaignRef.update({
+      recipientCount: recipients.length,
       stats: {
-        sent: mockRecipients.length,
+        sent: recipients.length,
         delivered: 0,
         bounced: 0,
         opened: 0,
@@ -115,13 +191,73 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: `Campaign queued for sending to ${mockRecipients.length} recipients`,
+      message: `Campaign queued for sending to ${recipients.length} recipients`,
       jobsCreated: jobIds.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to send campaign";
     console.error("Error sending campaign:", error);
     return NextResponse.json(
-      { error: "Failed to send campaign", message: error.message },
+      { error: "Failed to send campaign", message: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/marketing/campaigns/[campaignId]/send - Cancel scheduled campaign
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { campaignId: string } }
+) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get("userId");
+    const { campaignId } = params;
+
+    if (!userId) {
+      return NextResponse.json({ error: "User ID required" }, { status: 400 });
+    }
+
+    const campaignRef = adminDb
+      .collection(`marketing/email-campaigns/users/${userId}/campaigns`)
+      .doc(campaignId);
+
+    const campaignDoc = await campaignRef.get();
+    if (!campaignDoc.exists) {
+      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+    }
+
+    const campaign = campaignDoc.data() as Campaign;
+
+    if (campaign.status !== "scheduled") {
+      return NextResponse.json(
+        { error: "Only scheduled campaigns can be cancelled" },
+        { status: 400 }
+      );
+    }
+
+    // Reset to draft status
+    await campaignRef.update({
+      status: "draft",
+      scheduledFor: null,
+      updatedAt: Timestamp.now() as any,
+    });
+
+    // Remove from scheduled queue (implementation depends on queue system)
+    await adminDb
+      .collection(`marketing/email-campaigns/scheduled`)
+      .doc(campaignId)
+      .delete();
+
+    return NextResponse.json({
+      success: true,
+      message: "Scheduled campaign cancelled",
+    });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Failed to cancel campaign";
+    console.error("Error cancelling campaign:", error);
+    return NextResponse.json(
+      { error: "Failed to cancel campaign", message: errorMessage },
       { status: 500 }
     );
   }

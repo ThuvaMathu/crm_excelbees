@@ -41,7 +41,7 @@ import { Timestamp } from "firebase/firestore";
 interface CreateProjectDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onSuccess?: () => void;
+    onSuccess?: (createdProject?: any) => void;
 }
 
 const PROJECT_STATUSES: ProjectStatus[] = [
@@ -144,15 +144,47 @@ export function CreateProjectDialog({
             Object.entries(projectData).filter(([_, v]) => v !== undefined)
         ) as any; // Type assertion needed after filtering
 
-        const { success, error } = await createProject(cleanProjectData, user.uid);
+        const { success, error, id } = await createProject(cleanProjectData, user.uid);
 
         setLoading(false);
 
         if (success) {
             toast.success("Project created successfully!");
             form.reset();
+            // Pass created project data to parent for optimistic update
+            const now = Timestamp.now();
+            const createdProject = {
+                id,
+                name: data.name,
+                description: data.description,
+                status: data.status,
+                priority: data.priority,
+                startDate: Timestamp.fromDate(data.startDate),
+                endDate: data.endDate ? Timestamp.fromDate(data.endDate) : undefined,
+                budget: data.budget,
+                companyId: data.companyId,
+                dealId: data.dealId,
+                companyName,
+                progress: 0,
+                tags: [],
+                teamMembers: data.teamMembers.length > 0 ? data.teamMembers : [user.uid],
+                financials: {
+                    initialCost: data.initialCost || 0,
+                    annualRecurringCost: data.annualRecurringCost || 0,
+                    managementBillingCycle: "None" as ManagementBillingCycle,
+                    isRecurringEnabled: false,
+                },
+                notificationSettings: {
+                    enabled: true,
+                    emailEnabled: true,
+                },
+                ownerId: user.uid,
+                archived: false,
+                createdAt: now,
+                updatedAt: now,
+            };
             onOpenChange(false);
-            onSuccess?.();
+            onSuccess?.(createdProject);
         } else {
             toast.error(error || "Failed to create project");
         }

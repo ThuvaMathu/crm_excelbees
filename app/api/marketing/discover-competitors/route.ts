@@ -1,18 +1,18 @@
 /**
  * API Route: Discover Competitors (Step 3)
  * POST /api/marketing/discover-competitors
- * 
- * Discovers competitors using Google Places API and/or OpenAI Web Search
+ *
+ * Discovers competitors using Gemini AI with Google Search Grounding and/or OpenAI Web Search
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { discoverCompetitors as discoverGooglePlaces, isGooglePlacesConfigured } from '@/services/googlePlaces';
+import { discoverCompetitors as discoverGeminiCompetitors, isGeminiDiscoveryConfigured } from '@/services/competitorDiscovery';
 import { getCompetitorValidationPrompt, getCompetitorDiscoveryPrompt } from '@/lib/competitor-analysis/prompts';
 import { adminDb as db } from '@/lib/firebase-admin';
-import type { 
+import type {
   DiscoverCompetitorsRequest,
   DiscoverCompetitorsResponse,
-  DiscoveredCompetitor 
+  DiscoveredCompetitor
 } from '@/types/competitor-analysis';
 import OpenAI from 'openai';
 
@@ -37,35 +37,35 @@ export async function POST(request: NextRequest) {
 
     let allCompetitors: DiscoveredCompetitor[] = [];
 
-    // METHOD A: Google Places API (for local competitors)
-    if (isGooglePlacesConfigured() && businessProfile.geographicScope !== 'Global') {
-      console.log('🔄 [API] Discover Competitors: Searching Google Places...');
+    // METHOD A: Gemini AI with Google Search Grounding (for local and global competitors)
+    if (isGeminiDiscoveryConfigured()) {
+      console.log('🔄 [API] Discover Competitors: Searching with Gemini AI...');
       try {
-        const googleCompetitors = await discoverGooglePlaces(
+        const geminiResult = await discoverGeminiCompetitors(
           businessProfile.industry,
           location,
           15
         );
 
-        allCompetitors.push(...googleCompetitors.map(c => ({
+        allCompetitors.push(...geminiResult.competitors.map(c => ({
           name: c.name,
           website: cleanCompetitorUrl(c.website),
-          source: 'google_places' as const,
+          source: 'gemini' as const,
           selected: true,
           rating: c.rating,
           reviewCount: c.reviewCount,
         })));
 
-        console.log(`✅ [API] Discover Competitors: Found ${googleCompetitors.length} via Google Places`);
+        console.log(`✅ [API] Discover Competitors: Found ${geminiResult.competitors.length} via Gemini AI`);
       } catch (error) {
-        console.error('❌ [API] Google Places API failed:', error);
+        console.error('❌ [API] Gemini AI failed:', error);
         // Continue to web search fallback
       }
     }
 
     // METHOD B: OpenAI Web Search (fallback or supplement)
-    if (allCompetitors.length < 5 || businessProfile.geographicScope === 'Global') {
-      console.log('🔄 [API] Discover Competitors: Searching OpenAI Web...');
+    if (allCompetitors.length < 5) {
+      console.log('🔄 [API] Discover Competitors: Searching OpenAI Web (fallback)...');
       try {
         const prompt = getCompetitorDiscoveryPrompt(
           businessProfile.industry,
