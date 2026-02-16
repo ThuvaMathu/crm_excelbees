@@ -9,9 +9,10 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase";
-
-export type UserRole = "admin" | "manager" | "team";
-export type UserStatus = "active" | "inactive";
+import type { UserProfile, UserRole, UserStatus } from "@/types/crm";
+export type { UserProfile, UserRole, UserStatus };
+import type { UserPermissions } from "@/types/crm";
+import { ROLE_DEFAULTS } from "@/types/crm";
 
 export interface UserDocument {
   id: string;
@@ -21,39 +22,7 @@ export interface UserDocument {
   uploadedAt: Timestamp;
 }
 
-export interface UserProfile {
-  uid: string;
-  email: string;
-  // Name fields
-  displayName: string; // Full name for display
-  firstName?: string;
-  lastName?: string;
-  // Profile
-  photoURL?: string;
-  phone?: string;
-  employeeId?: string;
-  // Role & Status
-  role: UserRole;
-  isFirstLogin: boolean; // Force password change on first login
-  isActive: boolean; // Soft delete flag (account deactivation)
-  status: UserStatus;
-  // Timestamps
-  createdAt: Timestamp;
-  createdBy: string; // Admin UID who created this user
-  lastLoginAt: Timestamp;
-  passwordChangedAt?: Timestamp; // Track password changes
-  updatedAt?: Timestamp; // Last profile update
-  // Auth Provider
-  provider: "password" | "google.com"; // Authentication method
-  // Documents
-  documents?: UserDocument[];
-  // Settings
-  settings?: {
-    theme?: "light" | "dark" | "system";
-    notifications?: boolean;
-    defaultCurrency?: string;
-  };
-}
+// UserProfile imported from types/crm
 
 // Create user profile in Firestore
 // Create or Update user profile in Firestore
@@ -298,6 +267,45 @@ export async function getUserInvoiceSettings(uid: string) {
     } catch (error: any) {
         return { settings: null, error: error.message };
     }
+}
+
+// Update User Permissions (Admin only)
+export async function updateUserPermissions(
+  uid: string,
+  permissions: UserPermissions
+): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const userRef = doc(db, "users", uid);
+    await updateDoc(userRef, {
+      permissions,
+      updatedAt: serverTimestamp(),
+    });
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Reset User Permissions to Role Defaults
+export async function resetUserPermissions(
+  uid: string,
+  role: UserRole
+): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const defaults = ROLE_DEFAULTS[role];
+    if (!defaults) {
+      return { success: false, error: "Invalid role" };
+    }
+
+    const userRef = doc(db, "users", uid);
+    await updateDoc(userRef, {
+      permissions: defaults,
+      updatedAt: serverTimestamp(),
+    });
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 // Set User Invoice Settings

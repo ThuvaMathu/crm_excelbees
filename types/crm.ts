@@ -1,17 +1,251 @@
 import { Timestamp } from "firebase/firestore";
 
+// ============================================================
+// USER & PERMISSION TYPES
+// ============================================================
+
 // User Types
 export type UserRole = "admin" | "manager" | "team";
 
+// Module Permission - Granular CRUD + EditAll control
+export interface ModulePermission {
+  read: boolean;
+  create: boolean;
+  edit: boolean;   // Own records only for non-admin
+  delete: boolean;
+  editAll: boolean; // Other users' records (admin/manager)
+}
+
+// Feature Toggle - Simple on/off for premium features
+export interface FeatureToggle {
+  enabled: boolean;
+}
+
+// Comprehensive User Permissions Interface
+export interface UserPermissions {
+  // CRM Core Modules
+  leads: ModulePermission;
+  contacts: ModulePermission;
+  companies: ModulePermission;
+  deals: ModulePermission;
+  projects: ModulePermission;
+  tasks: ModulePermission;
+  invoices: ModulePermission;
+  reports: ModulePermission;
+
+  // Premium / Marketing AI Modules
+  marketingAI: FeatureToggle;
+  competitorAnalysis: FeatureToggle;
+  keywordResearch: FeatureToggle;
+  blogWriter: FeatureToggle;
+  emailCampaigns: FeatureToggle;
+  marketingCalendar: FeatureToggle;
+  seoAnalyzer: FeatureToggle;
+  aiCopilot: FeatureToggle;
+
+  // Admin Module
+  userManagement: FeatureToggle;
+
+  // HR / Employee Management Module
+  hr: {
+    employees: ModulePermission;   // Directory access
+    attendance: ModulePermission;  // Time tracking
+    leaves: ModulePermission;      // Leave management
+    payroll: ModulePermission;     // Salary info
+  };
+}
+
+// Permission Keys for type-safe access
+export type ModuleKey = keyof UserPermissions;
+export type FeatureKey = Exclude<ModuleKey, "leads" | "contacts" | "companies" | "deals" | "projects" | "tasks" | "invoices" | "reports">;
+export type ActionKey = "read" | "create" | "edit" | "delete" | "editAll";
+
+// Default Permission Templates by Role
+export const ROLE_DEFAULTS: Record<UserRole, UserPermissions> = {
+  admin: {
+    // CRM Core - Full Access
+    leads: { read: true, create: true, edit: true, delete: true, editAll: true },
+    contacts: { read: true, create: true, edit: true, delete: true, editAll: true },
+    companies: { read: true, create: true, edit: true, delete: true, editAll: true },
+    deals: { read: true, create: true, edit: true, delete: true, editAll: true },
+    projects: { read: true, create: true, edit: true, delete: true, editAll: true },
+    tasks: { read: true, create: true, edit: true, delete: true, editAll: true },
+    invoices: { read: true, create: true, edit: true, delete: true, editAll: true },
+    reports: { read: true, create: true, edit: true, delete: false, editAll: true },
+
+    // Marketing AI - All Enabled
+    marketingAI: { enabled: true },
+    competitorAnalysis: { enabled: true },
+    keywordResearch: { enabled: true },
+    blogWriter: { enabled: true },
+    emailCampaigns: { enabled: true },
+    marketingCalendar: { enabled: true },
+    seoAnalyzer: { enabled: true },
+    aiCopilot: { enabled: true },
+
+    // Admin
+    userManagement: { enabled: true },
+
+    // HR - Full Access
+    hr: {
+      employees: { read: true, create: true, edit: true, delete: true, editAll: true },
+      attendance: { read: true, create: true, edit: true, delete: true, editAll: true },
+      leaves: { read: true, create: true, edit: true, delete: true, editAll: true },
+      payroll: { read: true, create: true, edit: true, delete: true, editAll: true },
+    },
+  },
+  manager: {
+    // CRM Core - Read All, Edit All (except delete some)
+    leads: { read: true, create: true, edit: true, delete: true, editAll: true },
+    contacts: { read: true, create: true, edit: true, delete: true, editAll: true },
+    companies: { read: true, create: true, edit: true, delete: true, editAll: true },
+    deals: { read: true, create: true, edit: true, delete: true, editAll: true },
+    projects: { read: true, create: true, edit: true, delete: true, editAll: true },
+    tasks: { read: true, create: true, edit: true, delete: false, editAll: false },
+    invoices: { read: true, create: true, edit: true, delete: false, editAll: true },
+    reports: { read: true, create: false, edit: false, delete: false, editAll: true },
+
+    // Marketing AI - Enabled
+    marketingAI: { enabled: true },
+    competitorAnalysis: { enabled: true },
+    keywordResearch: { enabled: true },
+    blogWriter: { enabled: true },
+    emailCampaigns: { enabled: true },
+    marketingCalendar: { enabled: true },
+    seoAnalyzer: { enabled: true },
+    aiCopilot: { enabled: true },
+
+    // Admin - View Only
+    userManagement: { enabled: false },
+
+    // HR - Manager can manage team, view all employees
+    hr: {
+      employees: { read: true, create: false, edit: false, delete: false, editAll: false },
+      attendance: { read: true, create: true, edit: false, delete: false, editAll: false },
+      leaves: { read: true, create: true, edit: true, delete: false, editAll: false },
+      payroll: { read: true, create: false, edit: false, delete: false, editAll: false },
+    },
+  },
+  team: {
+    // CRM Core - Own Records Only
+    leads: { read: true, create: true, edit: true, delete: false, editAll: false },
+    contacts: { read: true, create: true, edit: true, delete: false, editAll: false },
+    companies: { read: true, create: false, edit: false, delete: false, editAll: false },
+    deals: { read: true, create: true, edit: true, delete: false, editAll: false },
+    projects: { read: true, create: false, edit: false, delete: false, editAll: false },
+    tasks: { read: true, create: true, edit: true, delete: false, editAll: false },
+    invoices: { read: false, create: false, edit: false, delete: false, editAll: false },
+    reports: { read: false, create: false, edit: false, delete: false, editAll: false },
+
+    // Marketing AI - Disabled by Default (toggleable)
+    marketingAI: { enabled: false },
+    competitorAnalysis: { enabled: false },
+    keywordResearch: { enabled: false },
+    blogWriter: { enabled: false },
+    emailCampaigns: { enabled: false },
+    marketingCalendar: { enabled: false },
+    seoAnalyzer: { enabled: false },
+    aiCopilot: { enabled: false },
+
+    // Admin - No Access
+    userManagement: { enabled: false },
+
+    // HR - Basic employee access
+    hr: {
+      employees: { read: true, create: false, edit: false, delete: false, editAll: false },
+      attendance: { read: true, create: true, edit: false, delete: false, editAll: false },
+      leaves: { read: true, create: true, edit: false, delete: false, editAll: false },
+      payroll: { read: true, create: false, edit: false, delete: false, editAll: false },
+    },
+  },
+};
+
+// Audit Log Types
+export type AuditAction =
+  | "user_created"
+  | "user_deleted"
+  | "user_deactivated"
+  | "user_activated"
+  | "role_changed"
+  | "permission_changed"
+  | "permission_reset"
+  | "password_reset"
+  | "login_attempt"
+  | "login_success"
+  | "login_failed";
+
+export interface AuditLog {
+  id: string;
+  action: AuditAction;
+  targetUserId?: string;
+  targetUserName?: string;
+  performedBy: string;
+  performedByName: string;
+  details: Record<string, any>;
+  timestamp: Timestamp;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+// Role Template for Firestore
+export interface RoleTemplate {
+  id: UserRole | string;
+  name: string;
+  description: string;
+  isSystem: boolean;
+  defaultPermissions: UserPermissions;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Extended User Interface with Permissions
 export interface User {
   uid: string;
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
   role?: UserRole;
+  permissions?: UserPermissions; // NEW: Granular permissions
   invoiceSettings?: InvoiceUserSettings;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  isFirstLogin?: boolean;
+  isActive?: boolean;
+  createdBy?: string;
+  passwordChangedAt?: Date;
+  provider?: "password" | "google.com";
+}
+
+// Additional User Types for Firestore
+export type UserStatus = "active" | "inactive";
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName: string;
+  firstName?: string;
+  lastName?: string;
+  photoURL?: string;
+  phone?: string;
+  employeeId?: string;
+  role: UserRole;
+  isFirstLogin: boolean;
+  isActive: boolean;
+  status: UserStatus;
+  createdAt: Timestamp;
+  createdBy: string;
+  lastLoginAt: Timestamp;
+  passwordChangedAt?: Timestamp;
+  updatedAt?: Timestamp;
+  provider?: "password" | "google.com";
+  permissions?: UserPermissions;
+  invoiceSettings?: InvoiceUserSettings;
+  documents?: any[];
+  settings?: {
+    theme?: "light" | "dark" | "system";
+    notifications?: boolean;
+    defaultCurrency?: string;
+  };
 }
 
 // Lead Types
@@ -371,6 +605,7 @@ export type ProjectInput = Omit<Project, "id" | "createdAt" | "updatedAt" | "own
 export type TaskInput = Omit<Task, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName" | "completedAt">;
 export type InvoiceInput = Omit<Invoice, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName" | "paidDate">;
 
+
 // Filter Types
 export interface LeadFilters {
   status?: LeadStatus;
@@ -421,6 +656,7 @@ export interface TaskFilters {
   assigneeId?: string;
   projectId?: string;
   contactId?: string;
+  leadId?: string;
   ownerId?: string;
   search?: string;
   dueDateFrom?: Date;
@@ -440,3 +676,151 @@ export interface PaginatedResponse<T> {
   pageSize: number;
   totalPages: number;
 }
+
+// ============================================================
+// HR / EMPLOYEE MANAGEMENT TYPES
+// ============================================================
+
+export type EmploymentType = "Full-Time" | "Part-Time" | "Contract" | "Intern";
+export type OnboardingStatus = "Pending" | "In Progress" | "Completed";
+export type AttendanceStatus = "Present" | "Absent" | "Half-Day" | "Late";
+export type LeaveType = "Sick" | "Vacation" | "Personal" | "Unpaid";
+export type LeaveStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
+export type PayrollStatus = "Draft" | "Processing" | "Paid";
+
+// Employee Profile - Extends base user with HR-specific info
+export interface EmployeeProfile {
+  id: string;                  // Firestore Document ID (primary key)
+  userId?: string | null;      // Links to users/{uid} - null if no CRM access
+  hasCRMAccess?: boolean;      // Whether employee has CRM access
+  email: string;               // Employee email
+  firstName: string;           // First name
+  lastName: string;            // Last name
+  displayName: string;         // Full name for display
+  photoURL?: string;           // Profile photo
+
+  // HR Details
+  department: string;          // e.g., "Sales", "Engineering", "HR"
+  jobTitle: string;            // e.g., "Senior Developer"
+  startDate: Timestamp;        // Date of joining
+  employmentType: EmploymentType;
+  reportsTo?: string;          // UID of the manager
+
+  // Personal Info (Access Restricted)
+  phone?: string;
+  address?: string;
+  emergencyContact?: {
+    name: string;
+    relationship: string;
+    phone: string;
+  };
+  
+  // Documents
+  documents?: {
+    id: string;
+    name: string;
+    url: string;
+    type: string;
+    size: number;
+    uploadedAt: Timestamp;
+  }[];
+
+  // Leave Balance
+  leaveBalance?: {
+    vacation: number;
+    sick: number;
+    personal: number;
+    usedVacation?: number;
+    usedSick?: number;
+    usedPersonal?: number;
+  };
+
+  // Salary Info (Basic)
+  salary?: {
+    baseSalary: number;
+    currency: string;
+    payFrequency: "monthly" | "bi-weekly" | "hourly";
+  };
+
+  // System Metadata
+  onboardingStatus: OnboardingStatus;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export type EmployeeProfileInput = Omit<EmployeeProfile, "id" | "createdAt" | "updatedAt"> & {
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+};
+
+// Attendance Record
+export interface AttendanceRecord {
+  id: string;
+  userId: string;              // Employee UID
+  userName: string;            // Snapshot for display
+  date: string;                // YYYY-MM-DD (Query index)
+
+  clockIn: Timestamp;
+  clockOut?: Timestamp;
+  breakStart?: Timestamp;
+  breakEnd?: Timestamp;
+
+  totalHours: number;          // Calculated on clock out (hours)
+  status: AttendanceStatus;
+  notes?: string;              // "Forgot to clock out", etc.
+
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Leave Request
+export interface LeaveRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  department?: string;         // Snapshot for filtering
+
+  type: LeaveType;
+  startDate: string;           // YYYY-MM-DD
+  endDate: string;             // YYYY-MM-DD
+  daysCount: number;           // 1, 2, 0.5, etc.
+  reason?: string;
+
+  status: LeaveStatus;
+  managerId?: string;          // Who approved/rejected (from reportsTo or Admin)
+  managerName?: string;
+  approvedAt?: Timestamp;
+  rejectionReason?: string;
+
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Payroll Record
+export interface PayrollRecord {
+  id: string;
+  userId: string;
+  userName: string;
+
+  periodStart: string;         // YYYY-MM-DD
+  periodEnd: string;           // YYYY-MM-DD
+  payoutDate: string;          // YYYY-MM-DD
+
+  baseSalary: number;          // Monthly/Bi-weekly gross
+  currency: string;            // "USD"
+
+  // Simple structure - No complex tax engine yet
+  additions?: { description: string; amount: number }[]; // Bonuses
+  deductions?: { description: string; amount: number }[]; // Tax/Insurance
+
+  netSalary: number;           // Base + Additions - Deductions
+  status: PayrollStatus;
+
+  payslipUrl?: string;         // Link to generated PDF in Storage
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// Input Types (without Firestore fields)
+
+export type LeaveRequestInput = Omit<LeaveRequest, "id" | "createdAt" | "updatedAt" | "status" | "managerId" | "managerName" | "approvedAt" | "rejectionReason">;

@@ -38,6 +38,7 @@ export async function createUserAction(data: {
   displayName: string;
   phoneNumber?: string;
   role: "admin" | "manager" | "team";
+  employeeId?: string; // Optional: Link to existing employee record
   createdBy: string; // Admin UID
 }) {
   try {
@@ -53,7 +54,7 @@ export async function createUserAction(data: {
     });
 
     // Create user profile in Firestore
-    await adminDb.collection("users").doc(userRecord.uid).set({
+    const userDoc: any = {
       uid: userRecord.uid,
       email: data.email,
       displayName: data.displayName,
@@ -73,7 +74,29 @@ export async function createUserAction(data: {
         notifications: true,
         defaultCurrency: "USD",
       },
-    });
+    };
+
+    // Add employeeId if provided
+    if (data.employeeId) {
+      userDoc.employeeId = data.employeeId;
+    }
+
+    await adminDb.collection("users").doc(userRecord.uid).set(userDoc);
+
+    // If employeeId is provided, link the employee to this user
+    if (data.employeeId) {
+      try {
+        await adminDb.collection("employees").doc(data.employeeId).update({
+          userId: userRecord.uid,
+          hasCRMAccess: true,
+          updatedAt: new Date(),
+        });
+        console.log("✅ Employee linked to user:", data.employeeId);
+      } catch (linkError) {
+        console.error("⚠️ Failed to link employee to user:", linkError);
+        // Don't fail user creation if linking fails
+      }
+    }
 
     console.log("✅ User created successfully:", userRecord.uid);
 

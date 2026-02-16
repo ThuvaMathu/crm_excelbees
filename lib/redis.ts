@@ -22,3 +22,10 @@ export const redis = isServer && process.env.UPSTASH_REDIS_REST_URL && process.e
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
     })
     : dummyRedis;
+
+export const CACHE_TTL = {
+  SEO_METRICS: 60 * 60 * 24 * 1000, // 24 hours
+  ANALYSIS_RESULT: 60 * 60 * 24 * 7 * 1000, // 7 days
+  USER_PROFILE: 60 * 60 * 1000, // 1 hour
+  PAGE_CONTENT: 60 * 60 * 24 * 30 * 1000, // 30 days
+};

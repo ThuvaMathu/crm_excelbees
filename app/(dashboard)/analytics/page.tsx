@@ -11,6 +11,7 @@ import { getActivities } from "@/lib/firestore/activities";
 import type { Deal } from "@/types/crm";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
+import { RBACGuard } from "@/components/auth/RBACGuard";
 
 export default function AnalyticsPage() {
     const [loading, setLoading] = useState(true);
@@ -93,32 +94,35 @@ export default function AnalyticsPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <PageHeader
-                title="Analytics"
-                breadcrumbs={[
-                    { label: "Dashboard", href: "/dashboard" },
-                    { label: "Analytics" },
-                ]}
-                description="Visualize your CRM data and track performance"
-            />
+        <RBACGuard requirePermission={{ module: "reports", action: "read" }}>
+            <div className="space-y-6">
+                <PageHeader
+                    title="Analytics"
+                    breadcrumbs={[
+                        { label: "Dashboard", href: "/dashboard" },
+                        { label: "Analytics" },
+                    ]}
+                    description="Visualize your CRM data and track performance"
+                />
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <RevenueChart data={revenueData} />
-                <PipelineChart data={pipelineData} />
-            </div>
+                <div className="grid gap-6 md:grid-cols-2">
+                    <RevenueChart data={revenueData} />
+                    <PipelineChart data={pipelineData} />
+                </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <ActivityChart data={activityData} />
+                <div className="grid gap-6 md:grid-cols-2">
+                    <ActivityChart data={activityData} />
 
-                {/* Placeholder for future charts */}
-                <div className="border-2 border-dashed rounded-lg p-8 flex items-center justify-center text-muted-foreground">
-                    <div className="text-center">
-                        <p className="font-medium">More charts coming soon</p>
-                        <p className="text-sm mt-1">Lead conversion, team performance, etc.</p>
+                    {/* Placeholder for future charts */}
+                    <div className="border-2 border-dashed rounded-lg p-8 flex items-center justify-center text-muted-foreground">
+                        <div className="text-center">
+                            <p className="font-medium">More charts coming soon</p>
+                            <p className="text-sm mt-1">Lead conversion, team performance, etc.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+        </RBACGuard>
     );
 }

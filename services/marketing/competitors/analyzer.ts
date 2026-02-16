@@ -36,7 +36,6 @@ export class CompetitorAnalyzerService {
 
     return AIProviderFactory.extractJson<CompetitorInsight>(
       prompt,
-      "See prompt",
       { domain },
       { 
         feature: "competitor_analysis", 

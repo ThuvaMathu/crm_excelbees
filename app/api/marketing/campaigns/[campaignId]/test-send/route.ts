@@ -10,7 +10,7 @@ import nodemailer from "nodemailer";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const body = await request.json();
@@ -19,7 +19,7 @@ export async function POST(
       testEmails: string[];
       personalizationData?: Record<string, any>;
     };
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     if (!userId || !testEmails || testEmails.length === 0) {
       return NextResponse.json(
@@ -95,12 +95,11 @@ export async function POST(
 
     // Default personalization data for test emails
     const defaultPersonalization = {
-      FirstName: "Test",
-      LastName: "User",
-      Email: testEmails[0],
-      Company: "Acme Corp",
-      ...personalizationData,
-    };
+      FirstName: "Friend",
+      LastName: "",
+      Email: "test@example.com",
+      Company: "Company",
+    } as any; // Cast to any to avoid Partial<Contact> mismatch if field names differ
 
     // Prepare email content with merge tag replacement
     let htmlContent = campaign.content.html;

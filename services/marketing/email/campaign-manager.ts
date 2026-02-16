@@ -22,7 +22,6 @@ export class EmailCampaignService {
 
     return AIProviderFactory.extractJson<string[]>(
       prompt,
-      "See prompt",
       { topic, audience },
       { 
         feature: "email_campaign", 

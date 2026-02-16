@@ -7,6 +7,7 @@ import { auth, db } from "@/lib/firebase";
 import { updateLastLogin } from "@/lib/firestore/users";
 import { doc, onSnapshot } from "firebase/firestore";
 import { User as CustomUser } from "@/hooks/useAuth";
+import type { UserPermissions } from "@/types/crm";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { setUser, setLoading, setHydrated } = useAuthStore();
@@ -14,13 +15,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         // STRICT ASYNC FLOW:
-        // 1. Start Loading
+        //1. Start Loading
         setLoading(true);
 
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
             try {
                 if (firebaseUser) {
-                    // 2. Auth Found -> Wait for Firestore (Do NOT set loading=false yet)
+                    //2. Auth Found -> Wait for Firestore (Do NOT set loading=false yet)
 
                     // Cleanup previous listener if any
                     if (unsubscribeDoc.current) {
@@ -48,11 +49,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             const extendedUser: CustomUser = {
                                 ...firebaseUser,
                                 role: userData.role || "team",
-                                isFirstLogin: userData.isFirstLogin === true, // NEW: First login check
-                                createdBy: userData.createdBy, // NEW: Track creator
-                                passwordChangedAt: userData.passwordChangedAt?.toDate(), // NEW: Password change tracking
-                                updatedAt: userData.updatedAt?.toDate(), // NEW: Last update
-                                provider: userData.provider || "password", // NEW: Auth provider
+                                permissions: userData.permissions as UserPermissions | undefined, // NEW: Include permissions
+                                isFirstLogin: userData.isFirstLogin === true,
+                                createdBy: userData.createdBy,
+                                passwordChangedAt: userData.passwordChangedAt?.toDate(),
+                                updatedAt: userData.updatedAt?.toDate(),
+                                provider: userData.provider || "password",
+                                isActive: userData.isActive,
                             };
 
                             setUser(extendedUser);
@@ -67,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             } else {
                                 console.log("⏳ Cached data loaded. Waiting for server confirmation...");
                                 // We purposefully leave loading=true here to keep the spinner visible
-                                // until the server version arrives (preventing the "Pending -> Dashboard" glitch).
+                                // until server version arrives (preventing the "Pending -> Dashboard" glitch).
                             }
 
                         } else {
@@ -101,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     updateLastLogin(firebaseUser.uid).catch(console.error);
 
                 } else {
-                    // 2. No Auth -> Cleanup and Reset
+                    //2. No Auth -> Cleanup and Reset
                     if (unsubscribeDoc.current) {
                         unsubscribeDoc.current();
                         unsubscribeDoc.current = null;

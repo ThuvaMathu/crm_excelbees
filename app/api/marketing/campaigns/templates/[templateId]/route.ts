@@ -10,12 +10,12 @@ import { Timestamp } from "firebase-admin/firestore";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { templateId: string } }
+  { params }: { params: Promise<{ templateId: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const { templateId } = params;
+    const { templateId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
@@ -43,12 +43,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { templateId: string } }
+  { params }: { params: Promise<{ templateId: string }> }
 ) {
   try {
     const body = await request.json();
     const { userId, updates } = body as { userId: string; updates: Partial<EmailTemplate> };
-    const { templateId } = params;
+    const { templateId } = await params;
 
     if (!userId || !updates) {
       return NextResponse.json(
@@ -88,12 +88,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { templateId: string } }
+  { params }: { params: Promise<{ templateId: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const { templateId } = params;
+    const { templateId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });

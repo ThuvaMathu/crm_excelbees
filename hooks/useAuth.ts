@@ -5,12 +5,13 @@ import { useAuthStore } from "@/store/auth";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { updateLastLogin } from "@/lib/firestore/users";
-import { UserRole } from "@/types/crm";
+import { UserRole, UserPermissions } from "@/types/crm";
 import { doc, onSnapshot } from "firebase/firestore";
 
 // Custom User Interface
 export interface User extends FirebaseUser {
   role?: UserRole;
+  permissions?: UserPermissions; // NEW: Granular permissions
   isFirstLogin?: boolean; // Force password change on first login
   isActive?: boolean; // Account activation status
   createdBy?: string; // Admin UID who created this user

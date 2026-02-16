@@ -79,10 +79,10 @@ export class SEOAnalyzerService {
     // 4. Call AI (using "complex" logic implementation via factory if needed, acting as JSON extractor)
     const auditData = await AIProviderFactory.extractJson<Partial<MarketingSEOAudit>>(
         prompt,
-        "See prompt", // Schema implied in prompt
+
         context,
         { 
-            feature: "seo", 
+            feature: "seoAnalyzer", 
             complexity: "routine", // Gemini Flash is good enough for this
             userId, 
             workspaceId 

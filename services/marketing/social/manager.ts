@@ -36,10 +36,10 @@ export class SocialMediaManagerService {
 
     return AIProviderFactory.extractJson<SocialPostContent[]>(
       prompt,
-      "See prompt",
+
       { topic, platforms, tone },
       { 
-        feature: "social_media", 
+        feature: "marketingAI", 
         complexity: "creative",
         userId, 
         workspaceId 

@@ -386,7 +386,9 @@ export default function DealsPage() {
                                                                 {deal.title}
                                                             </h4>
                                                             {!dealEditable && (
-                                                                <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" title="You don't have permission to edit this deal" />
+                                                                <span title="You don't have permission to edit this deal">
+                                                                    <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                                                </span>
                                                             )}
                                                         </div>
                                                         <div className="flex items-center justify-between text-xs">

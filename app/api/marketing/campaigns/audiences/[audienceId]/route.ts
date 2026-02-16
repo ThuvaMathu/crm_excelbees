@@ -7,12 +7,12 @@ import { Timestamp } from "firebase-admin/firestore";
 // GET /api/marketing/campaigns/audiences/[audienceId]
 export async function GET(
   request: NextRequest,
-  { params }: { params: { audienceId: string } }
+  { params }: { params: Promise<{ audienceId: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const { audienceId } = params;
+    const { audienceId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
@@ -41,12 +41,12 @@ export async function GET(
 // PUT /api/marketing/campaigns/audiences/[audienceId]
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { audienceId: string } }
+  { params }: { params: Promise<{ audienceId: string }> }
 ) {
   try {
     const body = await request.json();
     const { userId, updates } = body as { userId: string; updates: Partial<Audience> };
-    const { audienceId } = params;
+    const { audienceId } = await params;
 
     if (!userId || !updates) {
       return NextResponse.json(
@@ -87,12 +87,12 @@ export async function PUT(
 // DELETE /api/marketing/campaigns/audiences/[audienceId]
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { audienceId: string } }
+  { params }: { params: Promise<{ audienceId: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const { audienceId } = params;
+    const { audienceId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });

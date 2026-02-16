@@ -5,7 +5,7 @@ import { AIExecutiveSummary } from "@/components/reports/AIExecutiveSummary";
 import { ReportQueryInput } from "@/components/reports/ReportQueryInput";
 import { RevenueForecastChart } from "@/components/reports/RevenueForecastChart";
 import { useReportsData } from "@/components/reports/ReportsDataManager";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Download, Calendar, ArrowUpRight, ArrowDownRight, Users, DollarSign, Activity, Shield, Lock } from "lucide-react";
@@ -223,11 +223,10 @@ export default function ReportsPage() {
                                 <div className="space-y-4">
                                     {insights.length > 0 ? insights.map((insight, idx) => (
                                         <div key={idx} className="flex items-start">
-                                            <div className={`w-2 h-2 rounded-full mt-1.5 mr-3 ${
-                                                insight.type === "positive" ? "bg-green-500" :
-                                                insight.type === "negative" ? "bg-red-500" :
-                                                "bg-amber-500"
-                                            }`} />
+                                            <div className={`w-2 h-2 rounded-full mt-1.5 mr-3 ${insight.type === "positive" ? "bg-green-500" :
+                                                    insight.type === "negative" ? "bg-red-500" :
+                                                        "bg-amber-500"
+                                                }`} />
                                             <div className="flex-1">
                                                 <p className="text-sm">{insight.text}</p>
                                             </div>
@@ -302,7 +301,7 @@ export default function ReportsPage() {
                                                 <span className="text-sm font-medium">High Score (80-100)</span>
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                        Ready for conversion • High probability
+                                                Ready for conversion • High probability
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -311,7 +310,7 @@ export default function ReportsPage() {
                                                 <span className="text-sm font-medium">Medium Score (50-79)</span>
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                        Needs nurturing • Follow up required
+                                                Needs nurturing • Follow up required
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -320,7 +319,7 @@ export default function ReportsPage() {
                                                 <span className="text-sm font-medium">Low Score (0-49)</span>
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                        {churnRiskCount} leads at risk • Action needed
+                                                {churnRiskCount} leads at risk • Action needed
                                             </div>
                                         </div>
                                     </div>

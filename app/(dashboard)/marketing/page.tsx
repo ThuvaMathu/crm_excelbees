@@ -15,6 +15,7 @@ import {
     Key,
     Globe
 } from "lucide-react";
+import { RBACGuard } from "@/components/auth/RBACGuard";
 
 export default function MarketingDashboardPage() {
     const features = [
@@ -46,20 +47,22 @@ export default function MarketingDashboardPage() {
     ];
 
     return (
-        <MarketingLayout
-            title="Marketing Suite"
-            description="AI-powered tools to supercharge your growth engine."
-        >
-            <div className="space-y-6">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {features.map((feature) => (
-                        <MarketingFeatureCard
-                            key={feature.title}
-                            {...feature}
-                        />
-                    ))}
+        <RBACGuard requireFeature="marketingAI">
+            <MarketingLayout
+                title="Marketing Suite"
+                description="AI-powered tools to supercharge your growth engine."
+            >
+                <div className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {features.map((feature) => (
+                            <MarketingFeatureCard
+                                key={feature.title}
+                                {...feature}
+                            />
+                        ))}
+                    </div>
                 </div>
-            </div>
-        </MarketingLayout>
+            </MarketingLayout>
+        </RBACGuard>
     );
 }

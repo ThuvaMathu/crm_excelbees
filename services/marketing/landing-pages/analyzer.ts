@@ -99,7 +99,6 @@ export class LandingPageAnalyzerService {
 
       const aiResult = await AIProviderFactory.extractJson<any>(
           prompt, 
-          "See prompt", 
           { url }, 
           { feature: "landing_page", complexity: "complex", userId, workspaceId }
       );

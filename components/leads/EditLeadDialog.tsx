@@ -78,7 +78,7 @@ export function EditLeadDialog({
                 jobTitle: lead.jobTitle || "",
                 status: lead.status,
                 source: lead.source,
-                value: lead.value ? String(lead.value) : "",
+                value: lead.value ?? "",
                 tags: lead.tags || [],
                 notes: lead.notes || "",
             });

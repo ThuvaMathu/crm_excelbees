@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Update contact status if bounced/complained
-        if (event.eventType === "bounced" || event.eventType === "complained") {
+        if ((event.eventType === "bounced" || event.eventType === "complained") && event.userId && event.contactId) {
           await updateContactStatus(event.userId, event.contactId, event);
         }
 

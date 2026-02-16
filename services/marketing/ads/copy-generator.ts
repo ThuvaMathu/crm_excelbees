@@ -41,7 +41,6 @@ export class AdCopyGeneratorService {
 
     return AIProviderFactory.extractJson<AdCopyVariant[]>(
       prompt,
-      "See prompt",
       { product, audience, benefit, platform },
       { 
         feature: "ad_copy", 

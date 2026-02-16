@@ -3,7 +3,7 @@
  * Uses Google AI with Google Search Grounding for discovering local and global competitors
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, DynamicRetrievalMode } from "@google/generative-ai";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -70,7 +70,7 @@ export async function discoverCompetitors(
         {
           googleSearchRetrieval: {
             dynamicRetrievalConfig: {
-              mode: "MODE_DYNAMIC",
+              mode: DynamicRetrievalMode.MODE_DYNAMIC,
               dynamicThreshold: 0.3,
             },
           },
@@ -253,7 +253,7 @@ Only include businesses with valid websites.`;
         {
           googleSearchRetrieval: {
             dynamicRetrievalConfig: {
-              mode: "MODE_DYNAMIC",
+              mode: DynamicRetrievalMode.MODE_DYNAMIC,
               dynamicThreshold: 0.3,
             },
           },

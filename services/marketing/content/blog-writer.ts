@@ -29,7 +29,6 @@ export class BlogWriterService {
 
     return AIProviderFactory.extractJson<BlogOutline>(
       prompt,
-      "See prompt",
       { topic, tone },
       { 
         feature: "blog_writer", 

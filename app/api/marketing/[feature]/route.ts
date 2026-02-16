@@ -132,11 +132,11 @@ export async function POST(
        // We need a schema for this feature.
        // For now, assuming schema is passed in context or predefined (Simplified for Step 3)
        const schema = context.schema || "{}"; 
-       const result = await AIProviderFactory.extractJson(
+       const result = await AIProviderFactory.extractData(
          prompt, 
          schema, 
          context, 
-         { feature, complexity, userId, workspaceId }
+         { feature, complexity: "routine", userId, workspaceId }
        );
        return NextResponse.json(result);
     } else {

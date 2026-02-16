@@ -51,7 +51,8 @@ export default function CompaniesPage() {
                 filters.search = searchQuery;
             }
 
-            const { companies: fetchedCompanies, error } = await getCompanies(filters, {
+            const { companies: fetchedCompanies, error } = await getCompanies({
+                ...filters,
                 pageSize,
                 page: currentPage,
             });

@@ -1,6 +1,39 @@
 import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 import { AICompletionRequest, AICompletionResponse, AIService } from "./types";
 
+const API_KEY = process.env.GEMINI_API_KEY || "";
+export const geminiClient = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
+
+/**
+ * Simple genAI function for agentic keyword research
+ */
+export async function genAI(options: {
+  model: string;
+  config?: {
+    responseMimeType?: string;
+    temperature?: number;
+  };
+  contents: Array<{
+    role: string;
+    parts: Array<{ text: string }>;
+  }>;
+}) {
+  if (!geminiClient) {
+    throw new Error("GEMINI_API_KEY not configured");
+  }
+
+  const model = geminiClient.getGenerativeModel({
+    model: options.model,
+    generationConfig: options.config,
+  });
+
+  const result = await model.generateContent({
+    contents: options.contents,
+  });
+
+  return result;
+}
+
 export class GeminiService implements AIService {
   private client: GoogleGenerativeAI;
   private model: GenerativeModel;

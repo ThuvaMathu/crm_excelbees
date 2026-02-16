@@ -322,12 +322,12 @@ export default function CampaignDetailPage() {
                                         <p className="text-sm">{formatCampaignDate(campaign.createdAt.toDate())}</p>
                                     </div>
                                 </div>
-                                {campaign.scheduledFor && (
+                                {campaign.scheduledAt && (
                                     <div className="flex items-center gap-3">
                                         <Clock className="h-4 w-4 text-amber-600" />
                                         <div>
                                             <p className="text-sm text-muted-foreground">Scheduled For</p>
-                                            <p className="text-sm">{formatCampaignDate(campaign.scheduledFor.toDate())}</p>
+                                            <p className="text-sm">{formatCampaignDate(campaign.scheduledAt.toDate())}</p>
                                         </div>
                                     </div>
                                 )}
@@ -394,7 +394,7 @@ export default function CampaignDetailPage() {
                                     <div className="p-4 border rounded-lg">
                                         <p className="text-sm text-muted-foreground">Est. Send Time</p>
                                         <p className="text-lg font-bold">
-                                            {formatCampaignDate(campaign.recipientCount, campaign.throttling.emailsPerHour)}
+                                            {campaign.throttling.emailsPerHour} emails/hour
                                         </p>
                                     </div>
                                 </div>

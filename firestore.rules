@@ -71,13 +71,15 @@ service cloud.firestore {
     }
 
     // ============================================================================
-    // DEFAULT PROTECTION FOR OTHER COLLECTIONS
-    // Only approved AND active users can access CRM data
+    // DEFAULT PROTECTION REMOVED
+    // The previous catch-all rule allowed any approved user to read/write ANY collection.
+    // This is insecure for HR/Payroll data.
+    // All collections must be explicitly defined below.
     // ============================================================================
     
-    match /{collection}/{docId} {
-      allow read, write: if isAuthenticated() && isApproved();
-    }
+    // match /{collection}/{docId} {
+    //   allow read, write: if isAuthenticated() && isApproved();
+    // }
     
     // ============================================================================
     // SPECIFIC COLLECTION RULES
@@ -142,5 +144,41 @@ service cloud.firestore {
     match /marketing/blog-writer/users/{userId}/blogs/{blogId} {
       allow read, write: if isOwner(userId) && isApproved();
     }
+    // ============================================================================
+    // HR / EMPLOYEE MANAGEMENT (Strict RBAC)
+    // ============================================================================
+
+    match /employees/{employeeId} {
+      // Read: Users can see themselves. Managers/Admins can see all.
+      allow read: if isOwner(employeeId) || isManager();
+      // Write: Only Admins can modify employee profiles.
+      allow write: if isAdmin();
+    }
+
+    match /attendance/{attendanceId} {
+      // Read: Enable if user owns the record or if manager
+      allow read: if (resource == null && request.auth.uid != null) || 
+                   isOwner(resource.data.userId) || isManager();
+                   
+      // Create: Users can clock in (userId must match auth)
+      allow create: if isOwner(request.resource.data.userId);
+      
+      // Update: Users can clock out. Managers can edit.
+      allow update: if isOwner(resource.data.userId) || isManager();
+    }
+
+    match /leaves/{leaveId} {
+      allow read: if (resource == null && request.auth.uid != null) || 
+                   isOwner(resource.data.userId) || isManager();
+      allow create: if isOwner(request.resource.data.userId);
+      allow update: if isOwner(resource.data.userId) || isManager();
+    }
+
+    match /payroll/{payrollId} {
+      // Only owner can read their own payroll. Admin can write.
+      allow read: if isOwner(resource.data.userId);
+      allow write: if isAdmin();
+    }
+
   }
 }

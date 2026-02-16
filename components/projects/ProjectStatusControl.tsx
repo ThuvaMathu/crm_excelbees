@@ -74,7 +74,9 @@ export function ProjectStatusControl({ project, onUpdate, canEdit = true }: Proj
                                 {isCurrent && <Check className="h-4 w-4" />}
                                 {status}
                                 {!canEdit && isCurrent && (
-                                    <Lock className="h-3 w-3 ml-1 opacity-70" title="Status locked - you don't have permission to change" />
+                                    <span title="Status locked - you don't have permission to change">
+                                        <Lock className="h-3 w-3 ml-1 opacity-70" />
+                                    </span>
                                 )}
                             </button>
                             {index < STATUS_FLOW.length - 1 && (

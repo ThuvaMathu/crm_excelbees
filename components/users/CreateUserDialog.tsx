@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { createUserAction } from "@/app/actions/admin-users";
 import { Button } from "@/components/ui/button";
@@ -23,30 +23,62 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-import { Loader2, UserPlus, Copy, CheckCircle2 } from "lucide-react";
+import { Loader2, UserPlus, Copy, CheckCircle2, Link2, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "../ui/alert";
+import { getEmployeesWithoutAccess } from "@/lib/firestore/hr";
+import type { EmployeeProfile } from "@/types/crm";
 
 interface CreateUserDialogProps {
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
     onUserCreated?: () => void;
 }
 
-export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
+export function CreateUserDialog({ onUserCreated, open: controlledOpen, onOpenChange }: CreateUserDialogProps) {
     const { user } = useAuth();
-    const [open, setOpen] = useState(false);
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    const isControlled = controlledOpen !== undefined;
+    const open = isControlled ? controlledOpen : internalOpen;
+    const setOpen = isControlled ? onOpenChange! : setInternalOpen;
+
     const [loading, setLoading] = useState(false);
     const [createdUser, setCreatedUser] = useState<{
         email: string;
         tempPassword: string;
     } | null>(null);
     const [copied, setCopied] = useState(false);
+    const [availableEmployees, setAvailableEmployees] = useState<EmployeeProfile[]>([]);
+    const [loadingEmployees, setLoadingEmployees] = useState(false);
 
     const [formData, setFormData] = useState({
         email: "",
         displayName: "",
         phoneNumber: "",
         role: "team" as "admin" | "manager" | "team",
+        employeeId: "",
     });
+
+    // Fetch employees without CRM access when dialog opens
+    useEffect(() => {
+        if (open) {
+            const fetchEmployees = async () => {
+                setLoadingEmployees(true);
+                try {
+                    const result = await getEmployeesWithoutAccess();
+                    if (result.employees) {
+                        setAvailableEmployees(result.employees);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch employees:", error);
+                } finally {
+                    setLoadingEmployees(false);
+                }
+            };
+            fetchEmployees();
+        }
+    }, [open]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -58,9 +90,26 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
 
         setLoading(true);
 
+        // Validate and clean phone number
+        let formattedPhone = formData.phoneNumber.trim();
+
+        if (formattedPhone) {
+            // Remove spaces, dashes, parentheses
+            formattedPhone = formattedPhone.replace(/[\s\-\(\)]/g, "");
+
+            // Basic E.164 check: must start with + and contain digits
+            if (!/^\+[1-9]\d{1,14}$/.test(formattedPhone)) {
+                toast.error("Phone number must be in international format (e.g., +61412345678)");
+                setLoading(false);
+                return;
+            }
+        }
+
         try {
             const result = await createUserAction({
                 ...formData,
+                phoneNumber: formattedPhone || undefined, // Send undefined if empty
+                employeeId: formData.employeeId || undefined, // Pass employeeId if selected
                 createdBy: user.uid,
             });
 
@@ -77,6 +126,7 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
                     displayName: "",
                     phoneNumber: "",
                     role: "team",
+                    employeeId: "",
                 });
 
                 // Trigger refresh in parent
@@ -111,12 +161,14 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Create User
-                </Button>
-            </DialogTrigger>
+            {!isControlled && (
+                <DialogTrigger asChild>
+                    <Button>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Create User
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Create New User</DialogTitle>
@@ -175,6 +227,55 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
                 ) : (
                     // Form state
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {/* Link to Employee (Optional) */}
+                        {availableEmployees.length > 0 && (
+                            <div className="space-y-2">
+                                <Label htmlFor="employeeId" className="flex items-center gap-2">
+                                    <Link2 className="h-4 w-4" />
+                                    Link to Existing Employee (Optional)
+                                </Label>
+                                <Select
+                                    value={formData.employeeId}
+                                    onValueChange={(value) => {
+                                        const finalValue = value === "no_selection" ? "" : value;
+                                        setFormData({ ...formData, employeeId: finalValue });
+
+                                        if (finalValue) {
+                                            // Auto-fill form when employee is selected
+                                            const selectedEmployee = availableEmployees.find(e => e.id === finalValue);
+                                            if (selectedEmployee) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    employeeId: finalValue,
+                                                    displayName: selectedEmployee.displayName || "",
+                                                    email: selectedEmployee.email || "",
+                                                }));
+                                            }
+                                        }
+                                    }}
+                                    disabled={loading || loadingEmployees}
+                                >
+                                    <SelectTrigger id="employeeId">
+                                        <SelectValue placeholder="Select an employee to link..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="no_selection">No employee selected</SelectItem>
+                                        {availableEmployees.map((emp) => (
+                                            <SelectItem key={emp.id} value={emp.id}>
+                                                <div className="flex items-center gap-2">
+                                                    <UserCheck className="h-3 w-3 text-green-600" />
+                                                    {emp.displayName} ({emp.department})
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-[0.8rem] text-muted-foreground">
+                                    Select an employee to link this user account to their HR record.
+                                </p>
+                            </div>
+                        )}
+
                         <div className="space-y-2">
                             <Label htmlFor="displayName">Full Name *</Label>
                             <Input
@@ -214,8 +315,11 @@ export function CreateUserDialog({ onUserCreated }: CreateUserDialogProps) {
                                     setFormData({ ...formData, phoneNumber: e.target.value })
                                 }
                                 disabled={loading}
-                                placeholder="+1234567890"
+                                placeholder="+61412345678"
                             />
+                            <p className="text-[0.8rem] text-muted-foreground">
+                                Must include country code (e.g., +61 for Australia)
+                            </p>
                         </div>
 
                         <div className="space-y-2">

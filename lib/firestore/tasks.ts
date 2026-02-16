@@ -120,7 +120,7 @@ export async function getTasks(filters?: TaskFilters): Promise<{
         if (cached) {
             console.log("⚡ HIT: Tasks list from Redis");
             // Rehydrate Timestamps
-            const hydrated = cached.map((t: any) => ({
+            let hydrated = cached.map((t: any) => ({
                 ...t,
                 createdAt: t.createdAt ? new Timestamp(t.createdAt.seconds || 0, t.createdAt.nanoseconds || 0) : null,
                 updatedAt: t.updatedAt ? new Timestamp(t.updatedAt.seconds || 0, t.updatedAt.nanoseconds || 0) : null,
@@ -128,6 +128,15 @@ export async function getTasks(filters?: TaskFilters): Promise<{
                 startDate: t.startDate ? new Timestamp(t.startDate.seconds || 0, t.startDate.nanoseconds || 0) : null,
                 completedAt: t.completedAt ? new Timestamp(t.completedAt.seconds || 0, t.completedAt.nanoseconds || 0) : null,
             }));
+
+            // Apply filters to cached data if needed
+            if (filters?.assigneeId) {
+                hydrated = hydrated.filter((t: Task) => t.assigneeId === filters.assigneeId);
+            }
+            // Client-side search is handled later in the function, but since we return early here, we should apply search too if needed?
+            // The isUnfiltered logic allows search === "". If search is present, isUnfiltered is false.
+            // So search doesn't need to be handled here.
+
             return { tasks: hydrated, error: null };
         }
     }

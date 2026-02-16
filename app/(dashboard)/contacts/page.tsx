@@ -61,7 +61,8 @@ export default function ContactsPage() {
                 filters.search = searchQuery;
             }
 
-            const { contacts: fetchedContacts, error } = await getContacts(filters, {
+            const { contacts: fetchedContacts, error } = await getContacts({
+                ...filters,
                 pageSize,
                 page: currentPage,
             });

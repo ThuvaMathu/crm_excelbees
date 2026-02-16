@@ -20,6 +20,28 @@ export interface DashboardStats {
     upcomingTasks: any[];
 }
 
+const getMillis = (d: any) => {
+    if (!d) return 0;
+    if (typeof d.toMillis === 'function') return d.toMillis();
+    if (d instanceof Date) return d.getTime();
+    if (typeof d === 'string') return new Date(d).getTime();
+    // Handle serialized Timestamp { seconds, nanoseconds }
+    if (d && typeof d.seconds === 'number') return d.seconds * 1000;
+    return 0;
+};
+
+const serializeDate = (d: any): string | null => {
+    if (!d) return null;
+    if (typeof d.toDate === 'function') return d.toDate().toISOString();
+    if (d instanceof Date) return d.toISOString();
+    if (typeof d === 'string') return d; // Assume already string
+    // Handle serialized Timestamp { seconds, nanoseconds }
+    if (d && typeof d.seconds === 'number') {
+        return new Date(d.seconds * 1000).toISOString();
+    }
+    return null;
+};
+
 export async function getCachedDashboardStats(userId: string): Promise<DashboardStats | null> {
     if (!userId) return null;
 
@@ -66,29 +88,30 @@ export async function getCachedDashboardStats(userId: string): Promise<Dashboard
             (t) => t.status !== "Done"
         );
         
-        // Get upcoming tasks (next 5, not done)
-        // Serialize dates to strings for JSON compatibility if needed, 
-        // but typically client components need serializable data anyway.
-        // We need to be careful with Firestore Timestamps. `redis` stores JSON string.
-        // We should map tasks to a simple format.
-
+        // Process upcoming tasks safely
         const upcomingTasks = tasksResult.tasks
             .filter((t) => t.status !== "Done")
             .sort((a, b) => {
-                if (!a.dueDate) return 1;
-                if (!b.dueDate) return -1;
-                return a.dueDate.toMillis() - b.dueDate.toMillis();
+                const aTime = getMillis(a.dueDate);
+                const bTime = getMillis(b.dueDate);
+                if (!aTime) return 1;
+                if (!bTime) return -1;
+                return aTime - bTime;
             })
             .slice(0, 5)
             .map(t => ({
-                ...t,
-                // Check if dueDate is a Firestore Timestamp and convert to ISO string or null
-                dueDate: t.dueDate && typeof t.dueDate.toDate === 'function' 
-                    ? t.dueDate.toDate().toISOString() 
-                    : t.dueDate,
-                 // Ensure createdAt/updatedAt are also handled if needed, or just stripped
-                 createdAt: t.createdAt && typeof t.createdAt.toDate === 'function' ? t.createdAt.toDate().toISOString() : t.createdAt,
-                 updatedAt: t.updatedAt && typeof t.updatedAt.toDate === 'function' ? t.updatedAt.toDate().toISOString() : t.updatedAt,
+                id: t.id,
+                title: t.title,
+                status: t.status,
+                priority: t.priority,
+                type: t.type,
+                projectName: t.projectName,
+                // Serialize all date fields safely
+                dueDate: serializeDate(t.dueDate),
+                createdAt: serializeDate(t.createdAt),
+                updatedAt: serializeDate(t.updatedAt),
+                startDate: serializeDate(t.startDate),
+                completedAt: serializeDate(t.completedAt),
             }));
 
         const stats = {
@@ -106,9 +129,9 @@ export async function getCachedDashboardStats(userId: string): Promise<Dashboard
 
         return stats;
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Redis Cache Error:", error);
-        // Fallback: Return null or throw, likely just return null to let client handle or retry
-        throw error;
+        // Fallback: Return null to let client handle safely
+        return null;
     }
 }

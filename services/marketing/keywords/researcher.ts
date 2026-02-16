@@ -34,7 +34,6 @@ export class KeywordResearcherService {
     try {
         const results = await AIProviderFactory.extractJson<Partial<MarketingKeyword>[]>(
             prompt,
-            "See prompt",
             { seed },
             { 
                 feature: "keyword_research", 
