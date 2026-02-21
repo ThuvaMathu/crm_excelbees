@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getProjects } from "@/lib/firestore/projects";
 import type { Project } from "@/types/crm";
-import { Plus, Briefcase } from "lucide-react";
+import { Plus, Briefcase, Archive } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
@@ -16,6 +16,7 @@ export default function ProjectsPage() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [showArchived, setShowArchived] = useState(false);
 
     // Helper to safely convert Firestore Timestamp or Date to JS Date
     const safeToDate = (date: any): Date | null => {
@@ -23,24 +24,30 @@ export default function ProjectsPage() {
         if (typeof date.toDate === 'function') return date.toDate();
         if (date instanceof Date) return date;
         if (typeof date === 'string') return new Date(date);
+        // Handle plain {seconds, nanoseconds} objects from Redis cache
+        if (typeof date === 'object' && typeof date.seconds === 'number') {
+            return new Date(date.seconds * 1000);
+        }
         return null;
     };
 
     const fetchProjects = async () => {
-        const { projects: fetchedProjects, error } = await getProjects();
+        setLoading(true);
+
+        const { projects: fetchedProjects, error } = await getProjects(
+            showArchived ? { archived: true } : undefined
+        );
 
         if (error) {
             console.error("Error fetching projects:", error);
-        } else {
-            setProjects(fetchedProjects);
         }
-
+        setProjects(fetchedProjects || []);
         setLoading(false);
     };
 
     useEffect(() => {
         fetchProjects();
-    }, []);
+    }, [showArchived]);
 
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
@@ -81,13 +88,23 @@ export default function ProjectsPage() {
                 ]}
                 description="Manage your projects and track progress"
                 action={
-                    <Button
-                        onClick={() => setCreateDialogOpen(true)}
-                        className="bg-primary hover:bg-primary/90 gap-2"
-                    >
-                        <Plus className="h-4 w-4" />
-                        New Project
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant={showArchived ? "secondary" : "outline"}
+                            onClick={() => setShowArchived(!showArchived)}
+                            className="gap-2"
+                        >
+                            <Archive className="h-4 w-4" />
+                            {showArchived ? "View Active" : "View Archived"}
+                        </Button>
+                        <Button
+                            onClick={() => setCreateDialogOpen(true)}
+                            className="bg-primary hover:bg-primary/90 gap-2"
+                        >
+                            <Plus className="h-4 w-4" />
+                            New Project
+                        </Button>
+                    </div>
                 }
             />
 
@@ -129,6 +146,11 @@ export default function ProjectsPage() {
                                         <span className={`text-xs font-medium ${getPriorityColor(project.priority)}`}>
                                             {project.priority}
                                         </span>
+                                        {project.archived && (
+                                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
+                                                Archived
+                                            </span>
+                                        )}
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4">

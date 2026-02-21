@@ -310,16 +310,22 @@ export function RichTextEditor({
                     )}
                 </div>
 
-                {onSubmit && (
-                    <Button
-                        type="button"
-                        onClick={onSubmit}
-                        disabled={disabled || (!value.trim() && attachments.length === 0)}
-                        size="sm"
-                    >
-                        Post
-                    </Button>
-                )}
+                {onSubmit && (() => {
+                    const strippedText = value.replace(/<[^>]*>/g, "").trim();
+                    const isEditorEmpty = !strippedText || value === "<p><br></p>" || value === "<p></p>";
+                    const hasContent = !isEditorEmpty || attachments.length > 0;
+
+                    return (
+                        <Button
+                            type="button"
+                            onClick={onSubmit}
+                            disabled={disabled || !hasContent}
+                            size="sm"
+                        >
+                            Post
+                        </Button>
+                    );
+                })()}
             </div>
         </div>
     );

@@ -5,7 +5,7 @@ import { AIExecutiveSummary } from "@/components/reports/AIExecutiveSummary";
 import { ReportQueryInput } from "@/components/reports/ReportQueryInput";
 import { RevenueForecastChart } from "@/components/reports/RevenueForecastChart";
 import { useReportsData } from "@/components/reports/ReportsDataManager";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Download, Calendar, ArrowUpRight, ArrowDownRight, Users, DollarSign, Activity, Shield, Lock } from "lucide-react";
@@ -88,6 +88,34 @@ export default function ReportsPage() {
         return <div className="p-8 text-red-500">Error loading data: {error}</div>;
     }
 
+    const handleExport = () => {
+        // Build CSV from monthly metrics
+        const headers = ["Month", "Revenue ($)", "Deals", "Leads"];
+        const rows = monthlyMetrics.map((m: any) => [
+            m.month || m.label || "",
+            m.revenue ?? 0,
+            m.deals ?? 0,
+            m.leads ?? 0,
+        ]);
+
+        // Add summary row
+        rows.push([]);
+        rows.push(["Summary"]);
+        rows.push(["Total Revenue", totalRevenue]);
+        rows.push(["Active Pipeline", activeDealsValue]);
+        rows.push(["Total Leads", totalLeads]);
+        rows.push(["Churn Risk Count", churnRiskCount]);
+
+        const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `crm-report-${format(new Date(), "yyyy-MM-dd")}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="flex-1 space-y-6 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -102,7 +130,7 @@ export default function ReportsPage() {
                         <Calendar className="mr-2 h-4 w-4" />
                         {format(new Date(), "MMM yyyy")}
                     </Button>
-                    <Button>
+                    <Button onClick={handleExport} disabled={isLoading}>
                         <Download className="mr-2 h-4 w-4" />
                         Export
                     </Button>
@@ -223,11 +251,10 @@ export default function ReportsPage() {
                                 <div className="space-y-4">
                                     {insights.length > 0 ? insights.map((insight, idx) => (
                                         <div key={idx} className="flex items-start">
-                                            <div className={`w-2 h-2 rounded-full mt-1.5 mr-3 ${
-                                                insight.type === "positive" ? "bg-green-500" :
+                                            <div className={`w-2 h-2 rounded-full mt-1.5 mr-3 ${insight.type === "positive" ? "bg-green-500" :
                                                 insight.type === "negative" ? "bg-red-500" :
-                                                "bg-amber-500"
-                                            }`} />
+                                                    "bg-amber-500"
+                                                }`} />
                                             <div className="flex-1">
                                                 <p className="text-sm">{insight.text}</p>
                                             </div>
@@ -302,7 +329,7 @@ export default function ReportsPage() {
                                                 <span className="text-sm font-medium">High Score (80-100)</span>
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                        Ready for conversion • High probability
+                                                Ready for conversion • High probability
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -311,7 +338,7 @@ export default function ReportsPage() {
                                                 <span className="text-sm font-medium">Medium Score (50-79)</span>
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                        Needs nurturing • Follow up required
+                                                Needs nurturing • Follow up required
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between p-3 border rounded-lg">
@@ -320,7 +347,7 @@ export default function ReportsPage() {
                                                 <span className="text-sm font-medium">Low Score (0-49)</span>
                                             </div>
                                             <div className="text-sm text-muted-foreground">
-                                        {churnRiskCount} leads at risk • Action needed
+                                                {churnRiskCount} leads at risk • Action needed
                                             </div>
                                         </div>
                                     </div>

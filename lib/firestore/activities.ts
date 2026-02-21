@@ -30,15 +30,22 @@ export async function createActivity(data: ActivityInput): Promise<{
 }> {
   try {
     console.log("📝 Creating activity:", data.type);
-    
-    const activityData = {
+
+    const activityData: Record<string, any> = {
       ...data,
       createdAt: Timestamp.now(),
     };
 
+    // Remove undefined values — Firestore does not accept them
+    Object.keys(activityData).forEach((key) => {
+      if (activityData[key] === undefined) {
+        delete activityData[key];
+      }
+    });
+
     const docRef = await addDoc(collection(db, COLLECTION_NAME), activityData);
     console.log("✅ Activity created with ID:", docRef.id);
-    
+
     return {
       success: true,
       id: docRef.id,
@@ -65,7 +72,7 @@ export async function getActivities(
 }> {
   try {
     console.log("📋 Fetching activities for:", entityCollection, entityId);
-    
+
     const q = query(
       collection(db, COLLECTION_NAME),
       where("relatedTo.collection", "==", entityCollection),

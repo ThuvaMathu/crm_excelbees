@@ -67,7 +67,6 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@types/jspdf": "^1.3.3",
     "@types/node": "^22.10.5",
     "@types/nodemailer": "^7.0.4",
     "@types/papaparse": "^5.5.2",
