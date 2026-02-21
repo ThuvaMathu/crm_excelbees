@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { MarketingLayout } from "@/components/marketing/shared/MarketingLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { BlogPost } from "@/types/blog-writer";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import {
+    countWords,
+    calculateReadabilityScore,
+    calculateSEOScore,
+    analyzeKeywordUsage,
+} from "@/lib/blog-writer/utils";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -32,6 +38,28 @@ export default function EditPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [aiAction, setAiAction] = useState<string | null>(null);
+
+    // Live metrics computed from current content
+    const liveMetrics = useMemo(() => {
+        if (!content || !blog) return null;
+        const wordCount = countWords(content);
+        const readability = calculateReadabilityScore(content);
+        const seo = calculateSEOScore(
+            content,
+            blog.title || "",
+            blog.description || "",
+            blog.primaryKeyword || "",
+            blog.secondaryKeywords || [],
+            blog.configuration
+        );
+        const kwUsage = analyzeKeywordUsage(
+            content,
+            blog.title || "",
+            blog.primaryKeyword || "",
+            blog.secondaryKeywords || []
+        );
+        return { wordCount, readability, seo, kwUsage };
+    }, [content, blog]);
 
     useEffect(() => {
         if (!user || !blogId) return;
@@ -196,11 +224,11 @@ export default function EditPage() {
                             <div className="flex items-center justify-between">
                                 <CardTitle>Content Editor</CardTitle>
                                 <div className="flex gap-2 text-sm text-muted-foreground">
-                                    <span>{blog.actualWordCount} words</span>
+                                    <span>{liveMetrics?.wordCount ?? blog.actualWordCount} words</span>
                                     <span>•</span>
-                                    <span>SEO: {blog.seoScore}/100</span>
+                                    <span>SEO: {liveMetrics?.seo?.toFixed(0) ?? blog.seoScore}/100</span>
                                     <span>•</span>
-                                    <span>Readability: {blog.readabilityScore}</span>
+                                    <span>Readability: {liveMetrics?.readability?.toFixed(0) ?? blog.readabilityScore}</span>
                                 </div>
                             </div>
                         </CardHeader>
@@ -347,25 +375,25 @@ export default function EditPage() {
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Primary Keyword:</span>
                                         <span className="font-medium">
-                                            {blog.keywordUsage.primary.count} uses
+                                            {liveMetrics?.kwUsage?.primary?.count ?? blog.keywordUsage.primary.count} uses
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">Density:</span>
                                         <span className="font-medium">
-                                            {blog.keywordUsage.primary.density.toFixed(1)}%
+                                            {(liveMetrics?.kwUsage?.primary?.density ?? blog.keywordUsage.primary.density).toFixed(1)}%
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">In Title:</span>
                                         <span className="font-medium">
-                                            {blog.keywordUsage.primary.inTitle ? "✓" : "✗"}
+                                            {(liveMetrics?.kwUsage?.primary?.inTitle ?? blog.keywordUsage.primary.inTitle) ? "✓" : "✗"}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">In First Para:</span>
                                         <span className="font-medium">
-                                            {blog.keywordUsage.primary.inFirstParagraph ? "✓" : "✗"}
+                                            {(liveMetrics?.kwUsage?.primary?.inFirstParagraph ?? blog.keywordUsage.primary.inFirstParagraph) ? "✓" : "✗"}
                                         </span>
                                     </div>
                                 </div>

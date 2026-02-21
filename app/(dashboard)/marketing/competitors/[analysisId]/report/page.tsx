@@ -60,6 +60,88 @@ export default function ReportPage() {
         }
     };
 
+    const [isRerunning, setIsRerunning] = useState(false);
+
+    const handleRerunAnalysis = async () => {
+        if (!reportData) return;
+
+        setIsRerunning(true);
+        try {
+            const selectedCompetitors = reportData.competitors || [];
+
+            if (selectedCompetitors.length === 0) {
+                toast.error("No competitors found to re-analyze");
+                return;
+            }
+
+            // Step 1: Scrape competitors
+            toast.loading("Re-scraping competitor websites...", { id: "rerun" });
+
+            const scrapeRes = await fetch("/api/marketing/scrape-competitors", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    analysisId,
+                    competitors: selectedCompetitors.map((c: any) => ({
+                        name: c.name,
+                        website: c.website,
+                    })),
+                }),
+            });
+
+            if (!scrapeRes.ok) {
+                throw new Error("Failed to scrape competitors");
+            }
+
+            const { scrapedData } = await scrapeRes.json();
+
+            // Step 2: Analyze content
+            toast.loading("Re-analyzing competitor content...", { id: "rerun" });
+
+            const analyzeRes = await fetch("/api/marketing/analyze-competitor-content", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    analysisId,
+                    scrapedData,
+                }),
+            });
+
+            if (!analyzeRes.ok) {
+                throw new Error("Failed to analyze competitors");
+            }
+
+            // Step 3: Generate insights
+            toast.loading("Regenerating competitive insights...", { id: "rerun" });
+
+            const insightsRes = await fetch("/api/marketing/generate-insights", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    analysisId,
+                }),
+            });
+
+            if (!insightsRes.ok) {
+                throw new Error("Failed to generate insights");
+            }
+
+            toast.success("Re-analysis complete! Refreshing report...", { id: "rerun" });
+
+            // Reload the report data
+            await loadReport();
+
+        } catch (error) {
+            console.error("Re-run analysis failed:", error);
+            toast.error(
+                error instanceof Error ? error.message : "Failed to re-run analysis",
+                { id: "rerun" }
+            );
+        } finally {
+            setIsRerunning(false);
+        }
+    };
+
     const handleDownloadPDF = () => {
         if (!reportData) return;
         try {
@@ -142,9 +224,9 @@ export default function ReportPage() {
                             <Download className="h-4 w-4" />
                             Download PDF
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-2">
-                            <RefreshCw className="h-4 w-4" />
-                            Re-run Analysis
+                        <Button variant="outline" size="sm" className="gap-2" onClick={handleRerunAnalysis} disabled={isRerunning}>
+                            <RefreshCw className={`h-4 w-4 ${isRerunning ? "animate-spin" : ""}`} />
+                            {isRerunning ? "Re-running..." : "Re-run Analysis"}
                         </Button>
                     </div>
                 </div>

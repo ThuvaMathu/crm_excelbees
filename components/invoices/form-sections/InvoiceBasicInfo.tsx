@@ -253,7 +253,15 @@ export function InvoiceBasicInfo() {
                                                 <Input
                                                     type="date"
                                                     value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
-                                                    onChange={(e) => field.onChange(new Date(e.target.value))}
+                                                    onChange={(e) => {
+                                                        const newIssueDate = new Date(e.target.value);
+                                                        field.onChange(newIssueDate);
+                                                        // Auto-adjust due date if it's now before issue date
+                                                        const currentDueDate = form.getValues("dueDate");
+                                                        if (currentDueDate && newIssueDate > currentDueDate) {
+                                                            form.setValue("dueDate", newIssueDate);
+                                                        }
+                                                    }}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -263,19 +271,24 @@ export function InvoiceBasicInfo() {
                                 <FormField
                                     control={form.control}
                                     name="dueDate"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Due Date</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="date"
-                                                    value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
-                                                    onChange={(e) => field.onChange(new Date(e.target.value))}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                                    render={({ field }) => {
+                                        const issueDate = form.watch("issueDate");
+                                        const minDueDate = issueDate ? format(issueDate, "yyyy-MM-dd") : undefined;
+                                        return (
+                                            <FormItem>
+                                                <FormLabel>Due Date</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        type="date"
+                                                        min={minDueDate}
+                                                        value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
+                                                        onChange={(e) => field.onChange(new Date(e.target.value))}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        );
+                                    }}
                                 />
                             </div>
 

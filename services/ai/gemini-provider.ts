@@ -8,7 +8,7 @@ export class GeminiProvider {
   private model: GenerativeModel;
   private modelName: string;
 
-  constructor(modelName: string = "gemini-1.5-flash") {
+  constructor(modelName: string = "gemini-2.0-flash") {
     if (!API_KEY) throw new Error("GEMINI_API_KEY is missing");
     this.genAI = new GoogleGenerativeAI(API_KEY);
     this.modelName = modelName;
@@ -54,7 +54,7 @@ export class GeminiProvider {
     Return ONLY raw JSON, no markdown blocks.`;
 
     const text = await this.generateContent(jsonPrompt, context, userId, workspaceId, feature);
-    
+
     try {
       const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
       return JSON.parse(cleanJson) as T;

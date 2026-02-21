@@ -92,17 +92,17 @@ export default function ReportsPage() {
         // Build CSV from monthly metrics
         const headers = ["Month", "Revenue ($)", "Deals", "Leads"];
         const rows = monthlyMetrics.map((m: any) => [
-            m.month || m.label || "",
-            m.revenue ?? 0,
-            m.deals ?? 0,
+            m.name || "",
+            canViewFinancialData ? (m.revenue ?? 0) : "Restricted",
+            canViewFinancialData ? (m.pipeline ?? 0) : "Restricted",
             m.leads ?? 0,
         ]);
 
         // Add summary row
         rows.push([]);
         rows.push(["Summary"]);
-        rows.push(["Total Revenue", totalRevenue]);
-        rows.push(["Active Pipeline", activeDealsValue]);
+        rows.push(["Total Revenue", canViewFinancialData ? totalRevenue : "Restricted"]);
+        rows.push(["Active Pipeline", canViewFinancialData ? activeDealsValue : "Restricted"]);
         rows.push(["Total Leads", totalLeads]);
         rows.push(["Churn Risk Count", churnRiskCount]);
 

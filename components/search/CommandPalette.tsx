@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
+import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
     Search,
     FileText,
@@ -220,6 +222,10 @@ export function CommandPalette() {
             shouldFilter={false}
             className="fixed inset-0 z-50"
         >
+            <VisuallyHidden>
+                <DialogTitle>Global Search</DialogTitle>
+                <DialogDescription>Search across all modules including leads, contacts, companies, deals, projects, tasks, and invoices</DialogDescription>
+            </VisuallyHidden>
             {/* Overlay */}
             <div
                 className="fixed inset-0 bg-black/50 backdrop-blur-sm"

@@ -62,12 +62,24 @@ export default function NewPlanPage() {
             return;
         }
 
+        // Validate dates
+        const start = new Date(`${formData.startDate}T${formData.allDay ? "00:00" : formData.startTime}`);
+        const end = new Date(`${formData.endDate}T${formData.allDay ? "23:59" : formData.endTime}`);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            toast.error("Invalid date or time values");
+            return;
+        }
+
+        if (end <= start) {
+            toast.error("End date/time must be after start date/time");
+            return;
+        }
+
         setLoading(true);
 
         try {
-            // Combine date and time
-            const start = new Date(`${formData.startDate}T${formData.startTime}`);
-            const end = new Date(`${formData.endDate}T${formData.endTime}`);
+            // Use already-constructed start and end dates
 
             const metadata: any = {};
             if (formData.type === "content") {
@@ -238,7 +250,16 @@ export default function NewPlanPage() {
                                             id="startDate"
                                             type="date"
                                             value={formData.startDate}
-                                            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                                            min={new Date().toISOString().split("T")[0]}
+                                            onChange={(e) => {
+                                                const newStartDate = e.target.value;
+                                                const updates: any = { startDate: newStartDate };
+                                                // Auto-set end date if empty or if end date is before new start date
+                                                if (!formData.endDate || formData.endDate < newStartDate) {
+                                                    updates.endDate = newStartDate;
+                                                }
+                                                setFormData({ ...formData, ...updates });
+                                            }}
                                             required
                                         />
                                     </div>
@@ -262,6 +283,7 @@ export default function NewPlanPage() {
                                             id="endDate"
                                             type="date"
                                             value={formData.endDate}
+                                            min={formData.startDate || new Date().toISOString().split("T")[0]}
                                             onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                                             required
                                         />

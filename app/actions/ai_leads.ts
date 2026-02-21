@@ -4,6 +4,8 @@ import { getAIAdapter } from "@/lib/ai/service";
 import { updateLead } from "@/lib/firestore/leads";
 import type { Lead } from "@/types/crm";
 import { Timestamp } from "firebase/firestore";
+import { writeFileSync } from "fs";
+import { join } from "path";
 
 export interface AILeadScoreResult {
   score: number;
@@ -61,9 +63,9 @@ export async function scoreLead(lead: Lead): Promise<{ success: boolean; data?: 
     // Cache the result in the lead document
     await updateLead(lead.id, {
 
-        aiScore: result.score,
-        aiReasoning: result.reasoning,
-        aiLastUpdated: Timestamp.now(),
+      aiScore: result.score,
+      aiReasoning: result.reasoning,
+      aiLastUpdated: Timestamp.now(),
     });
 
     return { success: true, data: result };
@@ -98,11 +100,54 @@ export async function enrichLead(companyName: string, website?: string): Promise
     }
     `;
 
-    const result = await service.generateJSON<AICompanyEnrichmentResult>({
+    const rawResult = await service.generateJSON<Record<string, any>>({
       prompt,
       model,
       temperature,
     });
+
+    // Write raw response to a debug file for inspection
+    try {
+      const debugPath = join(process.cwd(), "enrich-debug.json");
+      writeFileSync(debugPath, JSON.stringify(rawResult, null, 2), "utf-8");
+      console.log("AI Enrichment raw response written to:", debugPath);
+      console.log("AI Enrichment raw response:", JSON.stringify(rawResult));
+    } catch (e) {
+      console.log("Could not write debug file:", e);
+    }
+
+    // Deep extraction: handle arrays and nested objects
+    let data: Record<string, any> = rawResult;
+    // If the response is an array, take the first element
+    if (Array.isArray(rawResult)) {
+      data = rawResult[0] || {};
+    }
+    // If the response has a single top-level key that contains an object, unwrap it
+    const keys = Object.keys(data);
+    if (keys.length === 1 && typeof data[keys[0]] === "object" && !Array.isArray(data[keys[0]])) {
+      data = data[keys[0]];
+    }
+
+    // Case-insensitive key lookup helper
+    const findValue = (obj: Record<string, any>, ...possibleKeys: string[]): any => {
+      for (const key of possibleKeys) {
+        // Direct match
+        if (obj[key] !== undefined) return obj[key];
+        // Case-insensitive match
+        const found = Object.keys(obj).find(k => k.toLowerCase() === key.toLowerCase());
+        if (found && obj[found] !== undefined) return obj[found];
+      }
+      return undefined;
+    };
+
+    const result: AICompanyEnrichmentResult = {
+      industry: findValue(data, "industry") || "Unknown",
+      employeeCount: String(findValue(data, "employeeCount", "employee_count", "employees", "size") || "Unknown"),
+      keyTech: findValue(data, "keyTech", "key_tech", "technologies", "tech_stack", "techStack") || [],
+      summary: findValue(data, "summary", "description", "overview", "about") || "No summary available",
+      location: findValue(data, "location", "headquarters", "hq", "address") || undefined,
+      foundedYear: String(findValue(data, "foundedYear", "founded_year", "founded", "yearFounded", "year_founded") || ""),
+    };
 
     return { success: true, data: result };
   } catch (error: any) {

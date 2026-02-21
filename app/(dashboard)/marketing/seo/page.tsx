@@ -146,26 +146,34 @@ export default function SEOAnalyzerPage() {
                                         <TabsTrigger value="ux">UX</TabsTrigger>
                                     </TabsList>
 
-                                    <div className="mt-4 max-h-[300px] overflow-y-auto space-y-3">
-                                        {report.issues.map((issue, idx) => (
-                                            <div key={idx} className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                                                {issue.impact === "high" && <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />}
-                                                {issue.impact === "medium" && <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />}
-                                                {issue.impact === "low" && <TrendingUp className="h-5 w-5 text-blue-500 mt-0.5" />}
+                                    {["all", "technical", "content", "ux"].map((tab) => {
+                                        const filtered = tab === "all"
+                                            ? report.issues
+                                            : report.issues.filter((issue) => issue.category?.toLowerCase() === tab);
 
-                                                <div>
-                                                    <h4 className="font-medium text-sm">{issue.issue}</h4>
-                                                    <p className="text-xs text-muted-foreground capitalize">{issue.category} • {issue.impact} Impact</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {report.issues.length === 0 && (
-                                            <div className="text-center py-8 text-muted-foreground">
-                                                <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                                                <p>No issues found!</p>
-                                            </div>
-                                        )}
-                                    </div>
+                                        return (
+                                            <TabsContent key={tab} value={tab} className="mt-4 max-h-[300px] overflow-y-auto space-y-3">
+                                                {filtered.map((issue, idx) => (
+                                                    <div key={idx} className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                                                        {issue.impact === "high" && <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />}
+                                                        {issue.impact === "medium" && <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />}
+                                                        {issue.impact === "low" && <TrendingUp className="h-5 w-5 text-blue-500 mt-0.5" />}
+
+                                                        <div>
+                                                            <h4 className="font-medium text-sm">{issue.issue}</h4>
+                                                            <p className="text-xs text-muted-foreground capitalize">{issue.category} • {issue.impact} Impact</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {filtered.length === 0 && (
+                                                    <div className="text-center py-8 text-muted-foreground">
+                                                        <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                                                        <p>No {tab === "all" ? "" : tab + " "}issues found!</p>
+                                                    </div>
+                                                )}
+                                            </TabsContent>
+                                        );
+                                    })}
                                 </Tabs>
                             </CardContent>
                         </Card>

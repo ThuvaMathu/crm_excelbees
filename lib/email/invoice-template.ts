@@ -1,5 +1,18 @@
 import type { Invoice } from "@/types/crm";
 
+function safeFormatDate(value: any): string {
+  if (!value) return "N/A";
+  // Firestore Timestamp
+  if (typeof value?.toDate === "function") return value.toDate().toLocaleDateString();
+  // Already a Date object
+  if (value instanceof Date) return value.toLocaleDateString();
+  // ISO string or other string
+  if (typeof value === "string") return new Date(value).toLocaleDateString();
+  // Seconds-based object (serialized Timestamp: { seconds, nanoseconds })
+  if (typeof value === "object" && value.seconds) return new Date(value.seconds * 1000).toLocaleDateString();
+  return String(value);
+}
+
 export function generateInvoiceEmailHtml(
   invoice: Invoice,
   companyInfo?: {
@@ -43,11 +56,11 @@ export function generateInvoiceEmailHtml(
               </tr>
               <tr>
                 <td>Invoice Date:</td>
-                <td>${invoice.issueDate.toDate().toLocaleDateString()}</td>
+                <td>${safeFormatDate(invoice.issueDate)}</td>
               </tr>
               <tr>
                 <td>Due Date:</td>
-                <td>${invoice.dueDate.toDate().toLocaleDateString()}</td>
+                <td>${safeFormatDate(invoice.dueDate)}</td>
               </tr>
               <tr>
                 <td>Amount Due:</td>

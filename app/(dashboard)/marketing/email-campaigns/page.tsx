@@ -55,13 +55,17 @@ export default function EmailCampaignsPage() {
             });
 
             const response = await fetch(`/api/marketing/campaigns?${params}`);
-            if (!response.ok) throw new Error("Failed to fetch campaigns");
+            if (!response.ok) {
+                console.warn("Campaigns API returned error, showing empty state");
+                setCampaigns([]);
+                return;
+            }
 
             const data = await response.json();
-            setCampaigns(data.campaigns);
+            setCampaigns(data.campaigns || []);
         } catch (error) {
             console.error("Error loading campaigns:", error);
-            // toast.error("Failed to load campaigns");
+            setCampaigns([]);
         } finally {
             setLoading(false);
         }

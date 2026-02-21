@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     let content = completion.choices[0].message.content || "";
-    
+
     // Remove markdown code blocks if present
     content = content
       .replace(/^```html\s*/i, "")
@@ -120,9 +120,9 @@ export async function POST(request: NextRequest) {
     const actualWordCount = countWords(content);
     const actualReadingTime = Math.ceil(actualWordCount / 250);
     const readabilityScore = calculateReadabilityScore(content);
-    
+
     const currentConfig = configuration || blog.configuration;
-    
+
     const keywordUsage = analyzeKeywordUsage(
       content,
       blog.title || "Blog Post",
@@ -155,9 +155,25 @@ export async function POST(request: NextRequest) {
       return obj;
     };
 
+    // Generate tags from keywords
+    const tagsSet = new Set<string>();
+    if (blog.primaryKeyword) tagsSet.add(blog.primaryKeyword.toLowerCase().trim());
+    (blog.secondaryKeywords || []).forEach((kw: string) => {
+      if (kw) tagsSet.add(kw.toLowerCase().trim());
+    });
+    // Also pull from outline keywords if available
+    const outlineData = outline || blog.outline;
+    if (outlineData?.seoStrategy?.internalLinkOpportunities) {
+      outlineData.seoStrategy.internalLinkOpportunities.forEach((kw: string) => {
+        if (kw) tagsSet.add(kw.toLowerCase().trim());
+      });
+    }
+    const generatedTags = Array.from(tagsSet).slice(0, 10); // Cap at 10 tags
+
     // Update blog in database
     const updatedBlog = cleanObject({
       content,
+      tags: generatedTags,
       actualWordCount,
       actualReadingTime,
       readabilityScore,
