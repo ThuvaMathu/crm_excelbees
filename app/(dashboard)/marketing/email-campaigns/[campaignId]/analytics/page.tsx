@@ -100,7 +100,7 @@ export default function CampaignAnalyticsPage() {
     return (
         <MarketingLayout
             title={`Analytics: ${campaign.name}`}
-            description={`Performance metrics for campaign sent ${campaign.sentAt ? formatCampaignDate(campaign.sentAt.toDate()) : "N/A"}`}
+            description={`Performance metrics for campaign sent ${campaign.sentAt ? formatCampaignDate((campaign.sentAt as any)?._seconds ? new Date((campaign.sentAt as any)._seconds * 1000) : new Date(campaign.sentAt as any)) : "N/A"}`}
             actions={
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => router.push("/marketing/email-campaigns")}>
