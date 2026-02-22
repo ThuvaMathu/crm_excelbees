@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { Campaign } from "@/types/email-campaigns";
 import { replaceMergeTags, injectTrackingPixel, wrapLinksWithTracking } from "@/lib/email-campaigns/utils";
-import nodemailer from "nodemailer";
+import { sendEmail } from "@/lib/email/email-service";
 
 /**
  * POST /api/marketing/campaigns/[campaignId]/test-send
@@ -10,7 +10,7 @@ import nodemailer from "nodemailer";
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const body = await request.json();
@@ -19,7 +19,7 @@ export async function POST(
       testEmails: string[];
       personalizationData?: Record<string, any>;
     };
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     if (!userId || !testEmails || testEmails.length === 0) {
       return NextResponse.json(
@@ -61,54 +61,20 @@ export async function POST(
       );
     }
 
-    // Get SMTP configuration from environment
-    const smtpConfig = {
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: parseInt(process.env.SMTP_PORT || "587"),
-      secure: process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER || "",
-        pass: process.env.SMTP_PASS || "",
-      },
-    };
-
-    if (!smtpConfig.auth.user) {
-      return NextResponse.json(
-        { error: "Email service not configured. Please set SMTP credentials." },
-        { status: 500 }
-      );
-    }
-
-    // Create transporter
-    const transporter = nodemailer.createTransport(smtpConfig);
-
-    // Verify SMTP connection
-    try {
-      await transporter.verify();
-    } catch (smtpError) {
-      console.error("SMTP verification failed:", smtpError);
-      return NextResponse.json(
-        { error: "Failed to connect to email server. Please check SMTP configuration." },
-        { status: 500 }
-      );
-    }
-
     // Default personalization data for test emails
     const defaultPersonalization = {
-      FirstName: "Test",
-      LastName: "User",
-      Email: testEmails[0],
-      Company: "Acme Corp",
+      firstName: "Test",
+      lastName: "User",
+      email: testEmails[0],
+      company: "Acme Corp",
       ...personalizationData,
     };
 
     // Prepare email content with merge tag replacement
     let htmlContent = campaign.content.html;
-    let plainTextContent = campaign.content.plainText || "";
 
     // Replace merge tags with test data
     htmlContent = replaceMergeTags(htmlContent, defaultPersonalization);
-    plainTextContent = replaceMergeTags(plainTextContent, defaultPersonalization);
 
     // Inject tracking for test (optional - helps verify tracking works)
     if (campaign.tracking?.trackOpens) {
@@ -119,33 +85,35 @@ export async function POST(
       htmlContent = wrapLinksWithTracking(htmlContent, campaignId, "test_contact");
     }
 
-    // Send test emails
+    // Send test emails using the existing working email service
+    console.log("[TEST-SEND API] Sending to emails:", validEmails);
     const sendResults = await Promise.allSettled(
       validEmails.map((email) =>
-        transporter.sendMail({
-          from: `"${campaign.from.name}" <${campaign.from.email}>`,
-          to: email,
-          subject: `[TEST] ${campaign.subject}`,
-          text: plainTextContent,
-          html: htmlContent,
-          headers: {
-            "X-Campaign-ID": campaignId,
-            "X-Email-Category": "test-send",
-          },
-        })
+        sendEmail(
+          email,
+          `[TEST] ${campaign.subject}`,
+          htmlContent
+        )
       )
     );
 
-    const successful = sendResults.filter((r) => r.status === "fulfilled").length;
-    const failed = sendResults.filter((r) => r.status === "rejected").length;
+    const successful = sendResults.filter(
+      (r) => r.status === "fulfilled" && r.value.success
+    ).length;
+    const failed = validEmails.length - successful;
 
     if (failed === validEmails.length) {
+      const errors = sendResults
+        .filter((r) => r.status === "fulfilled" && !r.value.success)
+        .map((r: any) => r.value.error);
+      const rejectedErrors = sendResults
+        .filter((r) => r.status === "rejected")
+        .map((r: any) => r.reason?.message);
+
       return NextResponse.json(
         {
           error: "All test emails failed",
-          details: sendResults
-            .filter((r) => r.status === "rejected")
-            .map((r: any) => r.reason?.message),
+          details: [...errors, ...rejectedErrors],
         },
         { status: 500 }
       );

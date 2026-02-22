@@ -33,7 +33,7 @@ export default function CampaignReviewPage() {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [testDialogOpen, setTestDialogOpen] = useState(false);
-    const [testEmails, setTestEmails] = useState(user?.email || "");
+    const [testEmails, setTestEmails] = useState("");
     const [sendingTest, setSendingTest] = useState(false);
     const [sendMode, setSendMode] = useState<SendMode>("now");
     const [scheduledFor, setScheduledFor] = useState("");
@@ -50,6 +50,13 @@ export default function CampaignReviewPage() {
             loadCampaign();
         }
     }, [user, campaignId]);
+
+    // Initialize test email when user loads
+    useEffect(() => {
+        if (user?.email && !testEmails) {
+            setTestEmails(user.email);
+        }
+    }, [user?.email]);
 
     const loadCampaign = async () => {
         try {
@@ -139,6 +146,8 @@ export default function CampaignReviewPage() {
         }
 
         const emails = testEmails.split(",").map((e) => e.trim()).filter(Boolean);
+        console.log("[TEST SEND] testEmails state:", testEmails);
+        console.log("[TEST SEND] Sending to emails:", emails);
 
         setSendingTest(true);
         try {

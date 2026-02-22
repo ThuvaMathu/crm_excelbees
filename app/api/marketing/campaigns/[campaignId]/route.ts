@@ -7,12 +7,12 @@ import { Timestamp } from "firebase-admin/firestore";
 // GET /api/marketing/campaigns/[campaignId] - Get single campaign
 export async function GET(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
@@ -41,18 +41,18 @@ export async function GET(
 // PUT /api/marketing/campaigns/[campaignId] - Update campaign
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const body = await request.json();
     const { userId, updates } = body as { userId: string; updates: Partial<Campaign> };
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     if (!userId || !updates) {
       return NextResponse.json(
         { error: "User ID and updates required" },
         { status: 400 }
-    );
+      );
     }
 
     const campaignRef = adminDb
@@ -87,12 +87,12 @@ export async function PUT(
 // DELETE /api/marketing/campaigns/[campaignId] - Delete campaign
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });

@@ -5,12 +5,12 @@ import { Campaign } from "@/types/email-campaigns";
 // POST /api/marketing/campaigns/[campaignId]/clone - Clone campaign
 export async function POST(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const body = await request.json();
     const { userId } = body as { userId: string };
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });

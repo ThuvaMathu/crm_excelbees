@@ -14,12 +14,12 @@ interface SendRequest {
 // POST /api/marketing/campaigns/[campaignId]/send - Send or schedule campaign
 export async function POST(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const body = await request.json();
     const { userId, scheduledFor } = body as SendRequest;
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
@@ -207,12 +207,12 @@ export async function POST(
 // DELETE /api/marketing/campaigns/[campaignId]/send - Cancel scheduled campaign
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });

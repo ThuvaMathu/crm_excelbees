@@ -18,12 +18,12 @@ interface AnalyticsResponse {
 // GET /api/marketing/campaigns/[campaignId]/analytics - Get campaign analytics
 export async function GET(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
