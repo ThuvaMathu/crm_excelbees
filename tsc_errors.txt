@@ -1,2 +1,0 @@
-﻿.next/dev/types/validator.ts(287,39): error TS2307: Cannot find module '../../../app/api/ai/generate/route.js' or its corresponding type declarations.
-components/ai/CopilotWidget.tsx(30,27): error TS2307: Cannot find module 'react-markdown' or its corresponding type declarations.
