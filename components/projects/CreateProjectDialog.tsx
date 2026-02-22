@@ -287,6 +287,7 @@ export function CreateProjectDialog({
                                         <FormControl>
                                             <Input
                                                 type="date"
+                                                min={new Date().toISOString().split("T")[0]}
                                                 {...field}
                                                 value={
                                                     field.value
@@ -308,28 +309,35 @@ export function CreateProjectDialog({
                             <FormField
                                 control={form.control}
                                 name="endDate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>End Date</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="date"
-                                                {...field}
-                                                value={
-                                                    field.value
-                                                        ? new Date(field.value).toISOString().split("T")[0]
-                                                        : ""
-                                                }
-                                                onChange={(e) =>
-                                                    field.onChange(
-                                                        e.target.value ? new Date(e.target.value) : undefined
-                                                    )
-                                                }
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
+                                render={({ field }) => {
+                                    const startDate = form.watch("startDate");
+                                    const minEndDate = startDate
+                                        ? new Date(startDate).toISOString().split("T")[0]
+                                        : new Date().toISOString().split("T")[0];
+                                    return (
+                                        <FormItem>
+                                            <FormLabel>End Date</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="date"
+                                                    min={minEndDate}
+                                                    {...field}
+                                                    value={
+                                                        field.value
+                                                            ? new Date(field.value).toISOString().split("T")[0]
+                                                            : ""
+                                                    }
+                                                    onChange={(e) =>
+                                                        field.onChange(
+                                                            e.target.value ? new Date(e.target.value) : undefined
+                                                        )
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    );
+                                }}
                             />
                         </div>
 

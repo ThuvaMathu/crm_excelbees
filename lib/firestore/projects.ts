@@ -28,7 +28,7 @@ export async function createProject(data: ProjectInput, userId: string): Promise
 }> {
   try {
     console.log("📝 Creating project:", data.name);
-    
+
     const projectData = {
       ...data,
       ownerId: userId,
@@ -44,7 +44,7 @@ export async function createProject(data: ProjectInput, userId: string): Promise
     // Invalidate cache
     await redis.del("projects:list:all");
     if (userId) {
-        await redis.del(`dashboard:stats:${userId}`);
+      await redis.del(`dashboard:stats:${userId}`);
     }
 
     return {
@@ -68,10 +68,10 @@ export async function archiveProject(id: string): Promise<{ success: boolean; er
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, { archived: true, updatedAt: Timestamp.now() });
-    
+
     // Invalidate cache
     await redis.del("projects:list:all");
-    
+
     return { success: true, error: null };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -83,10 +83,10 @@ export async function unarchiveProject(id: string): Promise<{ success: boolean; 
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, { archived: false, updatedAt: Timestamp.now() });
-    
+
     // Invalidate cache
     await redis.del("projects:list:all");
-    
+
     return { success: true, error: null };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -100,101 +100,56 @@ export async function getProjects(filters?: ProjectFilters): Promise<{
 }> {
   try {
     console.log("📋 Fetching projects with filters:", filters);
-    const constraints: QueryConstraint[] = [];
 
-    // Apply filters
-    if (filters?.status) {
-      constraints.push(where("status", "==", filters.status));
-    }
-    if (filters?.priority) {
-      constraints.push(where("priority", "==", filters.priority));
-    }
-    if (filters?.ownerId) {
-      constraints.push(where("ownerId", "==", filters.ownerId));
-    }
-    if (filters?.companyId) {
-      constraints.push(where("companyId", "==", filters.companyId));
-    }
-    if (filters?.dealId) {
-      constraints.push(where("dealId", "==", filters.dealId));
-    }
-    
-    // Default to active only unless specified
-    if (filters?.archived !== undefined) {
-      constraints.push(where("archived", "==", filters.archived));
-    } else {
-      // By default, exclude archived projects
-      constraints.push(where("archived", "==", false));
-    }
-
-    // Only add ordering if we have filters (to avoid index requirements)
-    if (constraints.length > 0) {
-      constraints.push(orderBy("createdAt", "desc"));
-    }
-
-    const q = constraints.length > 0
-      ? query(collection(db, COLLECTION_NAME), ...constraints)
-      : collection(db, COLLECTION_NAME);
-      
-    // Try Cache for unfiltered requests
-    const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.search === "");
     const cacheKey = "projects:list:all";
+    let projects: Project[] = [];
 
-    if (isUnfiltered) {
-        const cached = await redis.get<Project[]>(cacheKey);
-        if (cached) {
-            console.log("⚡ HIT: Projects list from Redis");
-            // Rehydrate Timestamps - use defensive approach
-            const hydrated = cached.map((p: any) => {
-                const createTimestamp = (val: any) => {
-                    if (!val) return null;
-                    // If already a Timestamp with toDate method, return as-is
-                    if (typeof val?.toDate === 'function') return val;
-                    // Rehydrate from cached object with seconds/nanoseconds
-                    if (typeof val === 'object' && 'seconds' in val) {
-                        try {
-                            return new Timestamp(val.seconds || 0, val.nanoseconds || 0);
-                        } catch {
-                            return null;
-                        }
-                    }
-                    // Last resort: if it's a Date or string, convert to Timestamp
-                    if (val instanceof Date) {
-                        return Timestamp.fromDate(val);
-                    }
-                    if (typeof val === 'string') {
-                        try {
-                            return Timestamp.fromDate(new Date(val));
-                        } catch {
-                            return null;
-                        }
-                    }
-                    // Unknown format - return null to prevent errors
-                    return null;
-                };
+    // Helper to rehydrate timestamps
+    const createTimestamp = (val: any) => {
+      if (!val) return null;
+      if (typeof val?.toDate === 'function') return val;
+      if (typeof val === 'object' && 'seconds' in val) {
+        try { return new Timestamp(val.seconds || 0, val.nanoseconds || 0); } catch { return null; }
+      }
+      if (val instanceof Date) return Timestamp.fromDate(val);
+      if (typeof val === 'string') { try { return Timestamp.fromDate(new Date(val)); } catch { return null; } }
+      return null;
+    };
 
-                return {
-                    ...p,
-                    createdAt: createTimestamp(p.createdAt),
-                    updatedAt: createTimestamp(p.updatedAt),
-                    startDate: createTimestamp(p.startDate),
-                    endDate: createTimestamp(p.endDate),
-                };
-            });
-            return { projects: hydrated, error: null };
-        }
+    // Try cache first
+    const cached = await redis.get<Project[]>(cacheKey);
+    if (cached) {
+      console.log("⚡ HIT: Projects list from Redis");
+      projects = cached.map((p: any) => ({
+        ...p,
+        createdAt: createTimestamp(p.createdAt),
+        updatedAt: createTimestamp(p.updatedAt),
+        startDate: createTimestamp(p.startDate),
+        endDate: createTimestamp(p.endDate),
+      }));
     }
-      
-    const querySnapshot = await getDocs(q);
-    console.log("📊 Projects fetched:", querySnapshot.size);
 
-    const projects: Project[] = [];
-    querySnapshot.forEach((doc) => {
-      projects.push({ id: doc.id, ...doc.data() } as Project);
-    });
+    // If no cached data, fetch from Firestore
+    if (projects.length === 0) {
+      const constraints: QueryConstraint[] = [];
 
-    if (projects.length > 0 && isUnfiltered) {
+      if (filters?.ownerId) {
+        constraints.push(where("ownerId", "==", filters.ownerId));
+      }
+
+      constraints.push(orderBy("createdAt", "desc"));
+
+      const q = query(collection(db, COLLECTION_NAME), ...constraints);
+      const querySnapshot = await getDocs(q);
+      console.log("📊 Projects fetched:", querySnapshot.size);
+
+      querySnapshot.forEach((doc) => {
+        projects.push({ id: doc.id, ...doc.data() } as Project);
+      });
+
+      if (projects.length > 0) {
         await redis.set(cacheKey, projects, { ex: 300 });
+      }
     }
 
     // Sort by createdAt on client side
@@ -204,27 +159,56 @@ export async function getProjects(filters?: ProjectFilters): Promise<{
       return bTime - aTime;
     });
 
-    // Apply client-side search filter if provided
+    // Apply all filters client-side
     let filteredProjects = projects;
+
+    // Archived filter — treats missing field as not archived
+    if (filters?.archived !== undefined) {
+      filteredProjects = filteredProjects.filter((p) => (p.archived ?? false) === filters.archived);
+    } else {
+      filteredProjects = filteredProjects.filter((p) => !p.archived);
+    }
+
+    // Status filter
+    if (filters?.status) {
+      filteredProjects = filteredProjects.filter((p) => p.status === filters.status);
+    }
+
+    // Priority filter
+    if (filters?.priority) {
+      filteredProjects = filteredProjects.filter((p) => p.priority === filters.priority);
+    }
+
+    // Company filter
+    if (filters?.companyId) {
+      filteredProjects = filteredProjects.filter((p) => p.companyId === filters.companyId);
+    }
+
+    // Deal filter
+    if (filters?.dealId) {
+      filteredProjects = filteredProjects.filter((p) => p.dealId === filters.dealId);
+    }
+
+    // Search filter
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase();
-      filteredProjects = projects.filter(
+      filteredProjects = filteredProjects.filter(
         (project) =>
-          project.name.toLowerCase().includes(searchLower) ||
+          project.name?.toLowerCase().includes(searchLower) ||
           project.description?.toLowerCase().includes(searchLower) ||
           project.companyName?.toLowerCase().includes(searchLower)
       );
     }
 
-    // Apply date range filters
+    // Date range filters
     if (filters?.startDateFrom) {
       filteredProjects = filteredProjects.filter(
-        (project) => project.startDate.toDate() >= filters.startDateFrom!
+        (project) => project.startDate?.toDate?.() && project.startDate.toDate() >= filters.startDateFrom!
       );
     }
     if (filters?.startDateTo) {
       filteredProjects = filteredProjects.filter(
-        (project) => project.startDate.toDate() <= filters.startDateTo!
+        (project) => project.startDate?.toDate?.() && project.startDate.toDate() <= filters.startDateTo!
       );
     }
 
@@ -282,7 +266,7 @@ export async function updateProject(id: string, data: Partial<ProjectInput>): Pr
   try {
     console.log("📝 Updating project:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
-    
+
     const updateData = {
       ...data,
       updatedAt: Timestamp.now(),

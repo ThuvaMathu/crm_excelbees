@@ -69,18 +69,22 @@ export default function LeadsPage() {
             filters.search = searchQuery;
         }
 
-        const { leads: fetchedLeads } = await getLeads(filters, {
+        const { leads: fetchedLeads, total } = await getLeads(filters, {
             pageSize,
             page: currentPage,
         });
         setLeads(fetchedLeads);
-        setTotalLeads(fetchedLeads.length);
+        setTotalLeads(total ?? fetchedLeads.length);
         setLoading(false);
     };
 
     useEffect(() => {
+        setCurrentPage(1);
+    }, [statusFilter, sourceFilter, searchQuery]);
+
+    useEffect(() => {
         fetchLeads();
-    }, [statusFilter, sourceFilter, currentPage]);
+    }, [statusFilter, sourceFilter, searchQuery, currentPage]);
 
     const handleSearch = () => {
         fetchLeads();

@@ -3,8 +3,19 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
-import { Search, FileText, Users, Building2, Handshake, Briefcase, CheckSquare, DollarSign } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import {
+    Search,
+    FileText,
+    Users,
+    Building2,
+    Handshake,
+    Briefcase,
+    CheckSquare,
+    DollarSign,
+    Loader2,
+} from "lucide-react";
 import { getLeads } from "@/lib/firestore/leads";
 import { getContacts } from "@/lib/firestore/contacts";
 import { getCompanies } from "@/lib/firestore/companies";
@@ -12,6 +23,7 @@ import { getDeals } from "@/lib/firestore/deals";
 import { getProjects } from "@/lib/firestore/projects";
 import { getTasks } from "@/lib/firestore/tasks";
 import { getInvoices } from "@/lib/firestore/invoices";
+import { useUIStore } from "@/store/ui";
 
 interface SearchResult {
     id: string;
@@ -21,7 +33,25 @@ interface SearchResult {
     url: string;
 }
 
-import { useUIStore } from "@/store/ui";
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+    lead: <Users className="h-4 w-4 text-blue-500" />,
+    contact: <Users className="h-4 w-4 text-green-500" />,
+    company: <Building2 className="h-4 w-4 text-purple-500" />,
+    deal: <Handshake className="h-4 w-4 text-amber-500" />,
+    project: <Briefcase className="h-4 w-4 text-cyan-500" />,
+    task: <CheckSquare className="h-4 w-4 text-pink-500" />,
+    invoice: <DollarSign className="h-4 w-4 text-emerald-500" />,
+};
+
+const TYPE_LABELS: Record<string, string> = {
+    lead: "Leads",
+    contact: "Contacts",
+    company: "Companies",
+    deal: "Deals",
+    project: "Projects",
+    task: "Tasks",
+    invoice: "Invoices",
+};
 
 export function CommandPalette() {
     const router = useRouter();
@@ -30,18 +60,27 @@ export function CommandPalette() {
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Keyboard shortcut
+    // Keyboard shortcut: Cmd+K / Ctrl+K
     useEffect(() => {
         const down = (e: KeyboardEvent) => {
             if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
+                e.stopPropagation();
                 toggleSearch();
             }
         };
 
-        document.addEventListener("keydown", down);
-        return () => document.removeEventListener("keydown", down);
+        document.addEventListener("keydown", down, true);
+        return () => document.removeEventListener("keydown", down, true);
     }, [toggleSearch]);
+
+    // Reset state when dialog closes
+    useEffect(() => {
+        if (!isSearchOpen) {
+            setSearch("");
+            setResults([]);
+        }
+    }, [isSearchOpen]);
 
     // Search function
     const performSearch = useCallback(async (query: string) => {
@@ -56,13 +95,13 @@ export function CommandPalette() {
         try {
             // Search all collections in parallel
             const [leads, contacts, companies, deals, projects, tasks, invoices] = await Promise.all([
-                getLeads({ search: query }),
-                getContacts({ search: query }),
-                getCompanies({ search: query }),
-                getDeals({ search: query }),
-                getProjects({ search: query }),
-                getTasks({ search: query }),
-                getInvoices({ search: query }),
+                getLeads({ search: query }).catch(() => ({ leads: [] })),
+                getContacts({ search: query }).catch(() => ({ contacts: [] })),
+                getCompanies({ search: query }).catch(() => ({ companies: [] })),
+                getDeals({ search: query }).catch(() => ({ deals: [] })),
+                getProjects({ search: query }).catch(() => ({ projects: [] })),
+                getTasks({ search: query }).catch(() => ({ tasks: [] })),
+                getInvoices({ search: query }).catch(() => ({ invoices: [] })),
             ]);
 
             // Add leads
@@ -103,7 +142,7 @@ export function CommandPalette() {
                 searchResults.push({
                     id: deal.id,
                     title: deal.title,
-                    subtitle: `$${deal.value.toLocaleString()}`,
+                    subtitle: `$${deal.value?.toLocaleString() ?? "0"}`,
                     type: "deal",
                     url: `/deals/${deal.id}`,
                 });
@@ -136,7 +175,7 @@ export function CommandPalette() {
                 searchResults.push({
                     id: invoice.id,
                     title: invoice.invoiceNumber,
-                    subtitle: `$${invoice.total.toLocaleString()}`,
+                    subtitle: `$${invoice.total?.toLocaleString() ?? "0"}`,
                     type: "invoice",
                     url: `/invoices/${invoice.id}`,
                 });
@@ -162,20 +201,8 @@ export function CommandPalette() {
     const handleSelect = (url: string) => {
         setSearchOpen(false);
         setSearch("");
+        setResults([]);
         router.push(url);
-    };
-
-    const getIcon = (type: string) => {
-        const icons: Record<string, React.ReactElement> = {
-            lead: <Users className="h-4 w-4" />,
-            contact: <Users className="h-4 w-4" />,
-            company: <Building2 className="h-4 w-4" />,
-            deal: <Handshake className="h-4 w-4" />,
-            project: <Briefcase className="h-4 w-4" />,
-            task: <CheckSquare className="h-4 w-4" />,
-            invoice: <DollarSign className="h-4 w-4" />,
-        };
-        return icons[type] || <FileText className="h-4 w-4" />;
     };
 
     // Group results by type
@@ -188,78 +215,135 @@ export function CommandPalette() {
     }, {} as Record<string, SearchResult[]>);
 
     return (
-        <Dialog open={isSearchOpen} onOpenChange={setSearchOpen}>
-            <DialogContent className="p-0 max-w-2xl">
-                <Command className="rounded-lg border shadow-md">
-                    <div className="flex items-center border-b px-3">
-                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+        <Command.Dialog
+            open={isSearchOpen}
+            onOpenChange={setSearchOpen}
+            label="Global Search"
+            shouldFilter={false}
+            className="fixed inset-0 z-50"
+        >
+            <VisuallyHidden>
+                <DialogTitle>Global Search</DialogTitle>
+                <DialogDescription>Search across all modules including leads, contacts, companies, deals, projects, tasks, and invoices</DialogDescription>
+            </VisuallyHidden>
+            {/* Overlay */}
+            <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                onClick={() => setSearchOpen(false)}
+            />
+
+            {/* Dialog Content */}
+            <div className="fixed left-[50%] top-[50%] z-50 w-full max-w-2xl translate-x-[-50%] translate-y-[-50%]">
+                <div className="rounded-lg border bg-background shadow-2xl overflow-hidden">
+                    {/* Search Input */}
+                    <div className="flex items-center border-b px-4">
+                        <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
                         <Command.Input
-                            placeholder="Search leads, contacts, deals..."
+                            placeholder="Search leads, contacts, companies, deals..."
                             value={search}
                             onValueChange={setSearch}
-                            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-12 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         />
-                    </div>
-                    <Command.List className="max-h-[400px] overflow-y-auto p-2">
                         {loading && (
-                            <Command.Loading>
-                                <div className="py-6 text-center text-sm text-muted-foreground">
-                                    Searching...
-                                </div>
-                            </Command.Loading>
+                            <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
+                        )}
+                    </div>
+
+                    {/* Results */}
+                    <Command.List className="max-h-[400px] overflow-y-auto p-2">
+                        {/* Loading state */}
+                        {loading && results.length === 0 && (
+                            <div className="py-8 text-center text-sm text-muted-foreground">
+                                Searching across all modules...
+                            </div>
                         )}
 
-                        {!loading && search && results.length === 0 && (
+                        {/* Empty state */}
+                        {!loading && search.length >= 2 && results.length === 0 && (
                             <Command.Empty>
-                                <div className="py-6 text-center text-sm text-muted-foreground">
-                                    No results found.
+                                <div className="py-8 text-center text-sm text-muted-foreground">
+                                    No results found for &ldquo;{search}&rdquo;
                                 </div>
                             </Command.Empty>
                         )}
 
-                        {!loading && results.length > 0 && (
-                            <>
-                                {Object.entries(groupedResults).map(([type, items]) => (
-                                    <Command.Group key={type} heading={type.charAt(0).toUpperCase() + type.slice(1) + "s"}>
-                                        {items.map((result) => (
-                                            <Command.Item
-                                                key={result.id}
-                                                value={result.id}
-                                                onSelect={() => handleSelect(result.url)}
-                                                className="flex items-center gap-2 px-2 py-2 cursor-pointer rounded-sm hover:bg-accent"
-                                            >
-                                                {getIcon(result.type)}
-                                                <div className="flex-1">
-                                                    <div className="font-medium">{result.title}</div>
-                                                    {result.subtitle && (
-                                                        <div className="text-xs text-muted-foreground">{result.subtitle}</div>
-                                                    )}
-                                                </div>
-                                            </Command.Item>
-                                        ))}
-                                    </Command.Group>
-                                ))}
-                            </>
+                        {/* Results grouped by type */}
+                        {results.length > 0 &&
+                            Object.entries(groupedResults).map(([type, items]) => (
+                                <Command.Group
+                                    key={type}
+                                    heading={TYPE_LABELS[type] || type}
+                                    className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider"
+                                >
+                                    {items.map((result) => (
+                                        <Command.Item
+                                            key={result.id}
+                                            value={`${result.type}-${result.id}`}
+                                            onSelect={() => handleSelect(result.url)}
+                                            className="flex items-center gap-3 px-3 py-2.5 cursor-pointer rounded-md text-sm hover:bg-accent aria-selected:bg-accent transition-colors"
+                                        >
+                                            <span className="flex-shrink-0">
+                                                {TYPE_ICONS[result.type] || <FileText className="h-4 w-4" />}
+                                            </span>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-medium truncate">{result.title}</div>
+                                                {result.subtitle && (
+                                                    <div className="text-xs text-muted-foreground truncate">
+                                                        {result.subtitle}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <span className="text-xs text-muted-foreground capitalize flex-shrink-0">
+                                                {result.type}
+                                            </span>
+                                        </Command.Item>
+                                    ))}
+                                </Command.Group>
+                            ))}
+
+                        {/* Default state - no search query */}
+                        {!search && (
+                            <div className="py-8 text-center text-sm text-muted-foreground">
+                                <p className="font-medium">Type to search across all modules</p>
+                                <p className="text-xs mt-2 opacity-70">
+                                    Leads • Contacts • Companies • Deals • Projects • Tasks • Invoices
+                                </p>
+                            </div>
                         )}
 
-                        {!search && (
-                            <div className="py-6 text-center text-sm text-muted-foreground">
-                                <p>Type to search across all modules</p>
-                                <p className="text-xs mt-2">Leads • Contacts • Companies • Deals • Projects • Tasks • Invoices</p>
+                        {/* Minimum characters hint */}
+                        {search && search.length < 2 && (
+                            <div className="py-8 text-center text-sm text-muted-foreground">
+                                Type at least 2 characters to search...
                             </div>
                         )}
                     </Command.List>
-                    <div className="border-t px-3 py-2 text-xs text-muted-foreground">
-                        <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                            <span className="text-xs">⌘</span>K
-                        </kbd>{" "}
-                        to open • <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                            ESC
-                        </kbd>{" "}
-                        to close
+
+                    {/* Footer */}
+                    <div className="border-t px-4 py-2 flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-3">
+                            <span className="flex items-center gap-1">
+                                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium">
+                                    ↑↓
+                                </kbd>
+                                Navigate
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium">
+                                    ↵
+                                </kbd>
+                                Open
+                            </span>
+                        </div>
+                        <span className="flex items-center gap-1">
+                            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium">
+                                ESC
+                            </kbd>
+                            Close
+                        </span>
                     </div>
-                </Command>
-            </DialogContent>
-        </Dialog>
+                </div>
+            </div>
+        </Command.Dialog>
     );
 }

@@ -370,7 +370,7 @@ export default function DealsPage() {
                                         ${totalValue.toLocaleString()}
                                     </div>
 
-                                    <div className="space-y-2 min-h-[200px]">
+                                    <div className="space-y-2 min-h-[200px] max-h-[45vh] overflow-y-auto scrollbar-hide">
                                         {deals.map((deal) => {
                                             const dealEditable = canEditDeal(deal);
                                             return (

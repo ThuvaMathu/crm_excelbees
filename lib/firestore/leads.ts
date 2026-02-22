@@ -37,9 +37,9 @@ export async function createLead(data: LeadInput, userId: string) {
     // Invalidate cache
     await redis.del("leads:list:all");
     if (userId) {
-        await redis.del(`dashboard:stats:${userId}`);
+      await redis.del(`dashboard:stats:${userId}`);
     }
-    
+
     return {
       success: true,
       id: docRef.id,
@@ -62,84 +62,108 @@ export async function getLeads(
 ) {
   console.log("📋 Fetching leads with filters:", filters);
   try {
-    const constraints: QueryConstraint[] = [];
+    // Check if we only have client-side filters (search, status, source)
+    // If so, fetch all leads and filter client-side to avoid composite index issues
+    const hasOnlyClientFilters = !filters?.ownerId;
 
-    // Apply filters
-    if (filters?.status) {
-      constraints.push(where("status", "==", filters.status));
-    }
-    if (filters?.source) {
-      constraints.push(where("source", "==", filters.source));
-    }
-    if (filters?.ownerId) {
-      constraints.push(where("ownerId", "==", filters.ownerId));
-    }
-
-    // Add ordering
-    constraints.push(orderBy("createdAt", "desc"));
-
-    // Add pagination
-    if (pagination) {
-      constraints.push(limit(pagination.pageSize));
-    }
-
-    const q = query(collection(db, COLLECTION_NAME), ...constraints);
-    
-    // Try Cache for unfiltered requests (and no pagination for now, or page 1)
-    const isUnfiltered = (!filters || Object.keys(filters).length === 0) && (!pagination);
     const cacheKey = "leads:list:all";
 
-    if (isUnfiltered) {
-        const cached = await redis.get<Lead[]>(cacheKey);
-        if (cached) {
-                console.log("⚡ HIT: Leads list from Redis");
-                // Rehydrate Timestamps
-                const hydrated = cached.map((l: any) => ({
-                ...l,
-                createdAt: l.createdAt ? new Timestamp(l.createdAt.seconds || 0, l.createdAt.nanoseconds || 0) : null,
-                updatedAt: l.updatedAt ? new Timestamp(l.updatedAt.seconds || 0, l.updatedAt.nanoseconds || 0) : null,
-                lastContactedAt: l.lastContactedAt ? new Timestamp(l.lastContactedAt.seconds || 0, l.lastContactedAt.nanoseconds || 0) : null,
-                aiLastUpdated: l.aiLastUpdated ? new Timestamp(l.aiLastUpdated.seconds || 0, l.aiLastUpdated.nanoseconds || 0) : null,
-                }));
-                return { leads: hydrated, error: null };
-        }
+    let leads: Lead[] = [];
+
+    // Try cache first for all requests (we filter client-side anyway)
+    if (hasOnlyClientFilters) {
+      const cached = await redis.get<Lead[]>(cacheKey);
+      if (cached) {
+        console.log("⚡ HIT: Leads list from Redis");
+        leads = cached.map((l: any) => ({
+          ...l,
+          createdAt: l.createdAt ? new Timestamp(l.createdAt.seconds || 0, l.createdAt.nanoseconds || 0) : null,
+          updatedAt: l.updatedAt ? new Timestamp(l.updatedAt.seconds || 0, l.updatedAt.nanoseconds || 0) : null,
+          lastContactedAt: l.lastContactedAt ? new Timestamp(l.lastContactedAt.seconds || 0, l.lastContactedAt.nanoseconds || 0) : null,
+          aiLastUpdated: l.aiLastUpdated ? new Timestamp(l.aiLastUpdated.seconds || 0, l.aiLastUpdated.nanoseconds || 0) : null,
+        }));
+      }
     }
 
-    const querySnapshot = await getDocs(q);
-    console.log("📊 Leads fetched from Firestore:", querySnapshot.size);
+    // If no cached data, fetch from Firestore
+    if (leads.length === 0) {
+      const constraints: QueryConstraint[] = [];
 
-    const leads: Lead[] = [];
-    querySnapshot.forEach((doc) => {
-      leads.push({ id: doc.id, ...doc.data() } as Lead);
-    });
+      // Only add ownerId filter at Firestore level (simple single-field query)
+      if (filters?.ownerId) {
+        constraints.push(where("ownerId", "==", filters.ownerId));
+      }
 
-    if (leads.length > 0 && isUnfiltered) {
+      // Add ordering
+      constraints.push(orderBy("createdAt", "desc"));
+
+      const q = query(collection(db, COLLECTION_NAME), ...constraints);
+      const querySnapshot = await getDocs(q);
+      console.log("📊 Leads fetched from Firestore:", querySnapshot.size);
+
+      querySnapshot.forEach((doc) => {
+        leads.push({ id: doc.id, ...doc.data() } as Lead);
+      });
+
+      // Cache the full unfiltered result
+      if (leads.length > 0 && hasOnlyClientFilters) {
         await redis.set(cacheKey, leads, { ex: 300 });
+      }
     }
 
-    // Apply client-side search filter if provided
+    // Apply all filters client-side
     let filteredLeads = leads;
+
+    // Status filter
+    if (filters?.status) {
+      filteredLeads = filteredLeads.filter(
+        (lead) => lead.status === filters.status
+      );
+      console.log("🔍 After status filter:", filteredLeads.length, "leads");
+    }
+
+    // Source filter
+    if (filters?.source) {
+      filteredLeads = filteredLeads.filter(
+        (lead) => lead.source === filters.source
+      );
+      console.log("🔍 After source filter:", filteredLeads.length, "leads");
+    }
+
+    // Search filter
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase();
-      filteredLeads = leads.filter(
+      filteredLeads = filteredLeads.filter(
         (lead) =>
-          lead.firstName.toLowerCase().includes(searchLower) ||
-          lead.lastName.toLowerCase().includes(searchLower) ||
-          lead.email.toLowerCase().includes(searchLower) ||
-          lead.companyName?.toLowerCase().includes(searchLower)
+          lead.firstName?.toLowerCase().includes(searchLower) ||
+          lead.lastName?.toLowerCase().includes(searchLower) ||
+          `${lead.firstName ?? ""} ${lead.lastName ?? ""}`.toLowerCase().includes(searchLower) ||
+          lead.email?.toLowerCase().includes(searchLower) ||
+          lead.companyName?.toLowerCase().includes(searchLower) ||
+          lead.phone?.toLowerCase().includes(searchLower) ||
+          lead.jobTitle?.toLowerCase().includes(searchLower)
       );
       console.log("🔍 After search filter:", filteredLeads.length, "leads");
     }
 
-    console.log("✅ Returning", filteredLeads.length, "leads");
+    // Apply pagination AFTER all filters
+    const totalCount = filteredLeads.length;
+    if (pagination) {
+      const start = (pagination.page - 1) * pagination.pageSize;
+      filteredLeads = filteredLeads.slice(start, start + pagination.pageSize);
+    }
+
+    console.log("✅ Returning", filteredLeads.length, "of", totalCount, "leads");
     return {
       leads: filteredLeads,
+      total: totalCount,
       error: null,
     };
   } catch (error: any) {
     console.error("❌ Failed to fetch leads:", error.message);
     return {
       leads: [],
+      total: 0,
       error: error.message,
     };
   }
@@ -286,7 +310,7 @@ export async function convertLeadToContact(leadId: string, userId: string, userN
     };
 
     const contactResult = await createContact(contactData, userId);
-    
+
     if (!contactResult.success || !contactResult.id) {
       return {
         success: false,
@@ -395,7 +419,7 @@ export async function convertLeadToDeal(leadId: string, userId: string, userName
     };
 
     const dealResult = await createDeal(dealData, userId);
-    
+
     if (!dealResult.success || !dealResult.id) {
       return { success: false, dealId: null, error: dealResult.error || "Failed to create deal" };
     }
@@ -422,7 +446,7 @@ export async function convertLeadToDeal(leadId: string, userId: string, userName
       relatedTo: { collection: "leads", id: leadId },
       metadata: { dealId, action: "convert_to_deal" },
     });
-    
+
     // Log on Deal side
     await createActivity({
       type: "created",
@@ -478,7 +502,7 @@ export async function convertLeadToProject(leadId: string, userId: string, userN
     };
 
     const projectResult = await createProject(projectData, userId);
-    
+
     if (!projectResult.success || !projectResult.id) {
       return { success: false, projectId: null, error: projectResult.error || "Failed to create project" };
     }

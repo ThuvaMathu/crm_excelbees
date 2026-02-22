@@ -29,7 +29,7 @@ export async function createContact(data: ContactInput, userId: string) {
     };
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), contactData);
-    
+
     // Invalidate cache
     await redis.del("contacts:list:all");
 
@@ -66,7 +66,7 @@ export async function getContacts(filters?: ContactFilters) {
       constraints.push(orderBy("createdAt", "desc"));
     }
 
-    const q = constraints.length > 0 
+    const q = constraints.length > 0
       ? query(collection(db, COLLECTION_NAME), ...constraints)
       : collection(db, COLLECTION_NAME);
 
@@ -75,19 +75,19 @@ export async function getContacts(filters?: ContactFilters) {
     const cacheKey = "contacts:list:all";
 
     if (isUnfiltered) {
-        const cached = await redis.get<Contact[]>(cacheKey);
-        if (cached) {
-             console.log("⚡ HIT: Contacts list from Redis");
-             const hydrated = cached.map((c: any) => ({
-                ...c,
-                createdAt: c.createdAt ? new Timestamp(c.createdAt.seconds || 0, c.createdAt.nanoseconds || 0) : null,
-                updatedAt: c.updatedAt ? new Timestamp(c.updatedAt.seconds || 0, c.updatedAt.nanoseconds || 0) : null,
-                lastContactedAt: c.lastContactedAt ? new Timestamp(c.lastContactedAt.seconds || 0, c.lastContactedAt.nanoseconds || 0) : null,
-             }));
-             return { contacts: hydrated, error: null };
-        }
+      const cached = await redis.get<Contact[]>(cacheKey);
+      if (cached) {
+        console.log("⚡ HIT: Contacts list from Redis");
+        const hydrated = cached.map((c: any) => ({
+          ...c,
+          createdAt: c.createdAt ? new Timestamp(c.createdAt.seconds || 0, c.createdAt.nanoseconds || 0) : null,
+          updatedAt: c.updatedAt ? new Timestamp(c.updatedAt.seconds || 0, c.updatedAt.nanoseconds || 0) : null,
+          lastContactedAt: c.lastContactedAt ? new Timestamp(c.lastContactedAt.seconds || 0, c.lastContactedAt.nanoseconds || 0) : null,
+        }));
+        return { contacts: hydrated, error: null };
+      }
     }
-      
+
     const querySnapshot = await getDocs(q);
     console.log("Contacts fetched:", querySnapshot.size);
 
@@ -95,9 +95,9 @@ export async function getContacts(filters?: ContactFilters) {
     querySnapshot.forEach((doc) => {
       contacts.push({ id: doc.id, ...doc.data() } as Contact);
     });
-    
+
     if (contacts.length > 0 && isUnfiltered) {
-        await redis.set(cacheKey, contacts, { ex: 300 });
+      await redis.set(cacheKey, contacts, { ex: 300 });
     }
 
     // Sort by createdAt on client side
@@ -113,10 +113,13 @@ export async function getContacts(filters?: ContactFilters) {
       const searchLower = filters.search.toLowerCase();
       filteredContacts = contacts.filter(
         (contact) =>
-          contact.firstName.toLowerCase().includes(searchLower) ||
-          contact.lastName.toLowerCase().includes(searchLower) ||
-          contact.email.toLowerCase().includes(searchLower) ||
-          contact.companyName?.toLowerCase().includes(searchLower)
+          contact.firstName?.toLowerCase().includes(searchLower) ||
+          contact.lastName?.toLowerCase().includes(searchLower) ||
+          `${contact.firstName ?? ""} ${contact.lastName ?? ""}`.toLowerCase().includes(searchLower) ||
+          contact.email?.toLowerCase().includes(searchLower) ||
+          contact.companyName?.toLowerCase().includes(searchLower) ||
+          contact.phone?.toLowerCase().includes(searchLower) ||
+          contact.jobTitle?.toLowerCase().includes(searchLower)
       );
     }
 

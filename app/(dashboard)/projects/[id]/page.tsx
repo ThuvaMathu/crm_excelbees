@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { getProject } from "@/lib/firestore/projects";
+import { getProject, updateProject } from "@/lib/firestore/projects";
+import { uploadFiles, type UploadedFile } from "@/lib/storage/upload";
 import { getTasks } from "@/lib/firestore/tasks";
 import type { Project, Task } from "@/types/crm";
 import {
@@ -31,6 +32,7 @@ import {
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
+import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 import { ProjectFinancialsCard } from "@/components/projects/ProjectFinancialsCard";
 import { ProjectStatusControl } from "@/components/projects/ProjectStatusControl";
 import { toast } from "sonner";
@@ -53,6 +55,9 @@ export default function ProjectDetailPage() {
         if (typeof date.toDate === 'function') return date.toDate();
         if (date instanceof Date) return date;
         if (typeof date === 'string') return new Date(date);
+        if (typeof date === 'object' && typeof date.seconds === 'number') {
+            return new Date(date.seconds * 1000);
+        }
         return null;
     };
 
@@ -66,6 +71,10 @@ export default function ProjectDetailPage() {
 
         if (projectResult.project) {
             setProject(projectResult.project);
+            // Load saved files from project data
+            if (projectResult.project.files && projectResult.project.files.length > 0) {
+                setUploadedFiles(projectResult.project.files);
+            }
         }
 
         if (tasksResult.tasks) {
@@ -461,21 +470,32 @@ export default function ProjectDetailPage() {
                                     Project documents and resources
                                 </CardDescription>
                             </div>
-                            <Button size="sm" className="gap-2" onClick={() => {
+                            <Button size="sm" className="gap-2" onClick={async () => {
                                 const input = document.createElement("input");
                                 input.type = "file";
                                 input.multiple = true;
-                                input.onchange = (e) => {
-                                    const files = (e.target as HTMLInputElement).files;
-                                    if (files) {
-                                        Array.from(files).forEach(file => {
-                                            setUploadedFiles(prev => [...prev, {
-                                                name: file.name,
-                                                size: file.size,
-                                                type: file.type,
-                                                uploadedAt: new Date()
-                                            }]);
-                                        });
+                                input.onchange = async (e) => {
+                                    const fileList = (e.target as HTMLInputElement).files;
+                                    if (!fileList || fileList.length === 0) return;
+
+                                    const files = Array.from(fileList);
+                                    toast.info(`Uploading ${files.length} file(s)...`);
+
+                                    const { success, files: uploaded, error } = await uploadFiles(files, `projects/${params.id}/files`);
+                                    if (!success) {
+                                        toast.error(error || "Failed to upload files");
+                                        return;
+                                    }
+
+                                    // Save file metadata to Firestore on the project document
+                                    const allFiles = [...uploadedFiles, ...uploaded];
+                                    const { success: updateSuccess } = await updateProject(params.id as string, { files: allFiles } as any);
+
+                                    if (updateSuccess) {
+                                        setUploadedFiles(allFiles);
+                                        toast.success(`${uploaded.length} file(s) uploaded successfully`);
+                                    } else {
+                                        toast.error("Files uploaded but failed to save to project");
                                     }
                                 };
                                 input.click();
@@ -489,20 +509,34 @@ export default function ProjectDetailPage() {
                                 <div className="space-y-2">
                                     {uploadedFiles.map((file, index) => (
                                         <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                                            <div className="flex items-center gap-3">
-                                                <FileText className="h-5 w-5 text-muted-foreground" />
-                                                <div>
-                                                    <p className="font-medium text-sm">{file.name}</p>
+                                            <a
+                                                href={file.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-3 flex-1 min-w-0 hover:text-primary transition-colors"
+                                            >
+                                                <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-sm truncate">{file.name}</p>
                                                     <p className="text-xs text-muted-foreground">
                                                         {(file.size / 1024).toFixed(1)} KB
                                                     </p>
                                                 </div>
-                                            </div>
+                                            </a>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-6 w-6 text-destructive"
-                                                onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== index))}
+                                                className="h-6 w-6 text-destructive flex-shrink-0"
+                                                onClick={async () => {
+                                                    const newFiles = uploadedFiles.filter((_, i) => i !== index);
+                                                    const { success } = await updateProject(params.id as string, { files: newFiles } as any);
+                                                    if (success) {
+                                                        setUploadedFiles(newFiles);
+                                                        toast.success("File removed");
+                                                    } else {
+                                                        toast.error("Failed to remove file");
+                                                    }
+                                                }}
                                             >
                                                 <X className="h-4 w-4" />
                                             </Button>
@@ -525,6 +559,13 @@ export default function ProjectDetailPage() {
                 open={createTaskOpen}
                 onOpenChange={setCreateTaskOpen}
                 defaultProjectId={project.id}
+                onSuccess={fetchData}
+            />
+
+            <EditProjectDialog
+                open={editModalOpen}
+                onOpenChange={setEditModalOpen}
+                project={project}
                 onSuccess={fetchData}
             />
         </div >

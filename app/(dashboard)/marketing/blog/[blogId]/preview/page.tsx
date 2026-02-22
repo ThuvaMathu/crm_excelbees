@@ -317,7 +317,16 @@ export default function PreviewPage() {
                                 <Button
                                     variant="outline"
                                     className="w-full justify-start"
-                                    onClick={() => handleCopy(blog.tags.join(", "), "Tags")}
+                                    onClick={() => {
+                                        const tags = blog.tags && blog.tags.length > 0
+                                            ? blog.tags
+                                            : [blog.primaryKeyword, ...(blog.secondaryKeywords || [])].filter(Boolean);
+                                        if (tags.length === 0) {
+                                            toast.error("No tags available for this blog post");
+                                            return;
+                                        }
+                                        handleCopy(tags.join(", "), "Tags");
+                                    }}
                                 >
                                     <Copy className="mr-2 h-4 w-4" />
                                     Copy Tags
@@ -327,7 +336,7 @@ export default function PreviewPage() {
                                     className="w-full justify-start"
                                     onClick={() =>
                                         handleCopy(
-                                            `${blog.primaryKeyword}, ${blog.secondaryKeywords.join(", ")}`,
+                                            `${blog.primaryKeyword}, ${(blog.secondaryKeywords || []).join(", ")}`,
                                             "Keywords"
                                         )
                                     }

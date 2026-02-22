@@ -5,7 +5,7 @@ import { AIExecutiveSummary } from "@/components/reports/AIExecutiveSummary";
 import { ReportQueryInput } from "@/components/reports/ReportQueryInput";
 import { RevenueForecastChart } from "@/components/reports/RevenueForecastChart";
 import { useReportsData } from "@/components/reports/ReportsDataManager";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Download, Calendar, ArrowUpRight, ArrowDownRight, Users, DollarSign, Activity, Shield, Lock } from "lucide-react";
@@ -88,6 +88,34 @@ export default function ReportsPage() {
         return <div className="p-8 text-red-500">Error loading data: {error}</div>;
     }
 
+    const handleExport = () => {
+        // Build CSV from monthly metrics
+        const headers = ["Month", "Revenue ($)", "Deals", "Leads"];
+        const rows = monthlyMetrics.map((m: any) => [
+            m.name || "",
+            canViewFinancialData ? (m.revenue ?? 0) : "Restricted",
+            canViewFinancialData ? (m.pipeline ?? 0) : "Restricted",
+            m.leads ?? 0,
+        ]);
+
+        // Add summary row
+        rows.push([]);
+        rows.push(["Summary"]);
+        rows.push(["Total Revenue", canViewFinancialData ? totalRevenue : "Restricted"]);
+        rows.push(["Active Pipeline", canViewFinancialData ? activeDealsValue : "Restricted"]);
+        rows.push(["Total Leads", totalLeads]);
+        rows.push(["Churn Risk Count", churnRiskCount]);
+
+        const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `crm-report-${format(new Date(), "yyyy-MM-dd")}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="flex-1 space-y-6 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -102,7 +130,7 @@ export default function ReportsPage() {
                         <Calendar className="mr-2 h-4 w-4" />
                         {format(new Date(), "MMM yyyy")}
                     </Button>
-                    <Button>
+                    <Button onClick={handleExport} disabled={isLoading}>
                         <Download className="mr-2 h-4 w-4" />
                         Export
                     </Button>
@@ -224,8 +252,8 @@ export default function ReportsPage() {
                                     {insights.length > 0 ? insights.map((insight, idx) => (
                                         <div key={idx} className="flex items-start">
                                             <div className={`w-2 h-2 rounded-full mt-1.5 mr-3 ${insight.type === "positive" ? "bg-green-500" :
-                                                    insight.type === "negative" ? "bg-red-500" :
-                                                        "bg-amber-500"
+                                                insight.type === "negative" ? "bg-red-500" :
+                                                    "bg-amber-500"
                                                 }`} />
                                             <div className="flex-1">
                                                 <p className="text-sm">{insight.text}</p>

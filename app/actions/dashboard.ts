@@ -50,7 +50,7 @@ export async function getCachedDashboardStats(userId: string): Promise<Dashboard
     try {
         // 1. Try to get from Redis
         const cachedData = await redis.get<DashboardStats>(cacheKey);
-        
+
         if (cachedData) {
             console.log("⚡ HIT: Dashboard stats served from Redis cache");
             return cachedData;
@@ -87,31 +87,56 @@ export async function getCachedDashboardStats(userId: string): Promise<Dashboard
         const pendingTasks = tasksResult.tasks.filter(
             (t) => t.status !== "Done"
         );
-        
-        // Process upcoming tasks safely
+
+        // Get upcoming tasks (next 5, not done)
+        // Serialize dates to strings for JSON compatibility if needed, 
+        // but typically client components need serializable data anyway.
+        // We need to be careful with Firestore Timestamps. `redis` stores JSON string.
+        // We should map tasks to a simple format.
+
+        // Helper to safely get millis from Timestamp or plain {seconds, nanoseconds} object
+        const toMillis = (ts: any): number => {
+            if (!ts) return Infinity;
+            if (typeof ts.toMillis === 'function') return ts.toMillis();
+            if (typeof ts.seconds === 'number') return ts.seconds * 1000 + (ts.nanoseconds || 0) / 1000000;
+            if (ts instanceof Date) return ts.getTime();
+            if (typeof ts === 'string') return new Date(ts).getTime();
+            return Infinity;
+        };
+
+        // Helper to safely convert any timestamp-like value to ISO string
+        const toISO = (ts: any): string | null => {
+            if (!ts) return null;
+            if (typeof ts.toDate === 'function') return ts.toDate().toISOString();
+            if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000).toISOString();
+            if (ts instanceof Date) return ts.toISOString();
+            if (typeof ts === 'string') return ts;
+            return null;
+        };
+
         const upcomingTasks = tasksResult.tasks
             .filter((t) => t.status !== "Done")
             .sort((a, b) => {
-                const aTime = getMillis(a.dueDate);
-                const bTime = getMillis(b.dueDate);
-                if (!aTime) return 1;
-                if (!bTime) return -1;
-                return aTime - bTime;
+                return toMillis(a.dueDate) - toMillis(b.dueDate);
             })
             .slice(0, 5)
             .map(t => ({
                 id: t.id,
                 title: t.title,
+                description: t.description,
                 status: t.status,
                 priority: t.priority,
                 type: t.type,
+                projectId: t.projectId,
                 projectName: t.projectName,
-                // Serialize all date fields safely
-                dueDate: serializeDate(t.dueDate),
-                createdAt: serializeDate(t.createdAt),
-                updatedAt: serializeDate(t.updatedAt),
-                startDate: serializeDate(t.startDate),
-                completedAt: serializeDate(t.completedAt),
+                assigneeId: t.assigneeId,
+                assigneeName: t.assigneeName,
+                tags: t.tags,
+                dueDate: toISO(t.dueDate),
+                startDate: toISO(t.startDate),
+                createdAt: toISO(t.createdAt),
+                updatedAt: toISO(t.updatedAt),
+                completedAt: toISO(t.completedAt),
             }));
 
         const stats = {

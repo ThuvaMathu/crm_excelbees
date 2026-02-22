@@ -28,7 +28,7 @@ export async function createTask(data: TaskInput, userId: string): Promise<{
 }> {
   try {
     console.log("📝 Creating task:", data.title);
-    
+
     const taskData = {
       ...data,
       ownerId: userId,
@@ -43,21 +43,21 @@ export async function createTask(data: TaskInput, userId: string): Promise<{
     // Notify assignee if different from creator
     if (data.assigneeId && data.assigneeId !== userId) {
       await createNotification(
-        data.assigneeId, 
-        "task_assigned", 
-        "New Task Assigned", 
-        `You have been assigned the task: "${data.title}"`, 
-        "task", 
+        data.assigneeId,
+        "task_assigned",
+        "New Task Assigned",
+        `You have been assigned the task: "${data.title}"`,
+        "task",
         docRef.id
       );
     }
-    
+
     // Invalidate cache
     await redis.del("tasks:list:all");
     if (userId) {
-        await redis.del(`dashboard:stats:${userId}`);
+      await redis.del(`dashboard:stats:${userId}`);
     }
-    
+
     return {
       success: true,
       id: docRef.id,
@@ -110,37 +110,28 @@ export async function getTasks(filters?: TaskFilters): Promise<{
     const q = constraints.length > 0
       ? query(collection(db, COLLECTION_NAME), ...constraints)
       : collection(db, COLLECTION_NAME);
-      
+
     // Try Cache for unfiltered requests
     const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && (filters.search === "" || filters.assigneeId));
     const cacheKey = "tasks:list:all";
 
     if (isUnfiltered) {
-        const cached = await redis.get<Task[]>(cacheKey);
-        if (cached) {
-            console.log("⚡ HIT: Tasks list from Redis");
-            // Rehydrate Timestamps
-            let hydrated = cached.map((t: any) => ({
-                ...t,
-                createdAt: t.createdAt ? new Timestamp(t.createdAt.seconds || 0, t.createdAt.nanoseconds || 0) : null,
-                updatedAt: t.updatedAt ? new Timestamp(t.updatedAt.seconds || 0, t.updatedAt.nanoseconds || 0) : null,
-                dueDate: t.dueDate ? new Timestamp(t.dueDate.seconds || 0, t.dueDate.nanoseconds || 0) : null,
-                startDate: t.startDate ? new Timestamp(t.startDate.seconds || 0, t.startDate.nanoseconds || 0) : null,
-                completedAt: t.completedAt ? new Timestamp(t.completedAt.seconds || 0, t.completedAt.nanoseconds || 0) : null,
-            }));
-
-            // Apply filters to cached data if needed
-            if (filters?.assigneeId) {
-                hydrated = hydrated.filter((t: Task) => t.assigneeId === filters.assigneeId);
-            }
-            // Client-side search is handled later in the function, but since we return early here, we should apply search too if needed?
-            // The isUnfiltered logic allows search === "". If search is present, isUnfiltered is false.
-            // So search doesn't need to be handled here.
-
-            return { tasks: hydrated, error: null };
-        }
+      const cached = await redis.get<Task[]>(cacheKey);
+      if (cached) {
+        console.log("⚡ HIT: Tasks list from Redis");
+        // Rehydrate Timestamps
+        const hydrated = cached.map((t: any) => ({
+          ...t,
+          createdAt: t.createdAt ? new Timestamp(t.createdAt.seconds || 0, t.createdAt.nanoseconds || 0) : null,
+          updatedAt: t.updatedAt ? new Timestamp(t.updatedAt.seconds || 0, t.updatedAt.nanoseconds || 0) : null,
+          dueDate: t.dueDate ? new Timestamp(t.dueDate.seconds || 0, t.dueDate.nanoseconds || 0) : null,
+          startDate: t.startDate ? new Timestamp(t.startDate.seconds || 0, t.startDate.nanoseconds || 0) : null,
+          completedAt: t.completedAt ? new Timestamp(t.completedAt.seconds || 0, t.completedAt.nanoseconds || 0) : null,
+        }));
+        return { tasks: hydrated, error: null };
+      }
     }
-      
+
     const querySnapshot = await getDocs(q);
     console.log("📊 Tasks fetched:", querySnapshot.size);
 
@@ -150,7 +141,7 @@ export async function getTasks(filters?: TaskFilters): Promise<{
     });
 
     if (tasks.length > 0 && isUnfiltered) {
-        await redis.set(cacheKey, tasks, { ex: 300 });
+      await redis.set(cacheKey, tasks, { ex: 300 });
     }
 
     // Sort by createdAt on client side
@@ -166,9 +157,10 @@ export async function getTasks(filters?: TaskFilters): Promise<{
       const searchLower = filters.search.toLowerCase();
       filteredTasks = tasks.filter(
         (task) =>
-          task.title.toLowerCase().includes(searchLower) ||
+          task.title?.toLowerCase().includes(searchLower) ||
           task.description?.toLowerCase().includes(searchLower) ||
-          task.projectName?.toLowerCase().includes(searchLower)
+          task.projectName?.toLowerCase().includes(searchLower) ||
+          task.assigneeName?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -238,7 +230,7 @@ export async function updateTask(id: string, data: Partial<TaskInput>): Promise<
   try {
     console.log("📝 Updating task:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
-    
+
     // Fetch current task to compare changes
     const currentTaskSnap = await getDoc(docRef);
     if (!currentTaskSnap.exists()) throw new Error("Task not found");
@@ -259,14 +251,14 @@ export async function updateTask(id: string, data: Partial<TaskInput>): Promise<
 
     // Notify assignee if changed
     if (data.assigneeId && data.assigneeId !== currentTask.assigneeId) {
-        await createNotification(
-          data.assigneeId, 
-          "task_assigned", 
-          "Task Assigned", 
-          `You have been assigned the task: "${currentTask.title}"`, 
-          "task", 
-          id
-        );
+      await createNotification(
+        data.assigneeId,
+        "task_assigned",
+        "Task Assigned",
+        `You have been assigned the task: "${currentTask.title}"`,
+        "task",
+        id
+      );
     }
 
     console.log("✅ Task updated successfully");
@@ -274,7 +266,7 @@ export async function updateTask(id: string, data: Partial<TaskInput>): Promise<
     // Invalidate cache
     await redis.del("tasks:list:all");
     if (currentTask.ownerId) {
-        await redis.del(`dashboard:stats:${currentTask.ownerId}`);
+      await redis.del(`dashboard:stats:${currentTask.ownerId}`);
     }
 
     return {
@@ -298,7 +290,7 @@ export async function updateTaskStatus(id: string, status: TaskStatus): Promise<
   try {
     console.log("📝 Updating task status:", id, "to", status);
     const docRef = doc(db, COLLECTION_NAME, id);
-    
+
     const updateData: any = {
       status,
       updatedAt: Timestamp.now(),

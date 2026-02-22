@@ -29,6 +29,7 @@ export async function createDeal(data: DealInput, userId: string): Promise<{
     const dealData: any = {
       ...data,
       contactIds: data.contactIds || [],
+      archived: false,
       ownerId: userId,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
@@ -42,13 +43,13 @@ export async function createDeal(data: DealInput, userId: string): Promise<{
     });
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), dealData);
-    
+
     // Invalidate cache
     await redis.del("deals:list:all");
     if (userId) {
-        await redis.del(`dashboard:stats:${userId}`);
+      await redis.del(`dashboard:stats:${userId}`);
     }
-    
+
     return {
       success: true,
       id: docRef.id,
@@ -93,7 +94,7 @@ export async function createProjectFromDeal(dealId: string, userId: string, user
     };
 
     const projectResult = await createProject(projectData, userId);
-    
+
     if (!projectResult.success || !projectResult.id) {
       return { success: false, projectId: null, error: projectResult.error || "Failed to create project" };
     }
@@ -139,10 +140,10 @@ export async function archiveDeal(id: string): Promise<{ success: boolean; error
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, { archived: true, updatedAt: Timestamp.now() });
-    
+
     // Invalidate cache
     await redis.del("deals:list:all");
-    
+
     return { success: true, error: null };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -154,10 +155,10 @@ export async function unarchiveDeal(id: string): Promise<{ success: boolean; err
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, { archived: false, updatedAt: Timestamp.now() });
-    
+
     // Invalidate cache
     await redis.del("deals:list:all");
-    
+
     return { success: true, error: null };
   } catch (error: any) {
     return { success: false, error: error.message };
@@ -171,65 +172,45 @@ export async function getDeals(filters?: DealFilters): Promise<{
 }> {
   try {
     console.log("Fetching deals with filters:", filters);
-    const constraints: QueryConstraint[] = [];
 
-    // Apply filters
-    if (filters?.stage) {
-      constraints.push(where("stage", "==", filters.stage));
-    }
-    if (filters?.ownerId) {
-      constraints.push(where("ownerId", "==", filters.ownerId));
-    }
-    if (filters?.companyId) {
-      constraints.push(where("companyId", "==", filters.companyId));
-    }
-    
-    // Default to active only unless specified
-    if (filters?.archived !== undefined) {
-      constraints.push(where("archived", "==", filters.archived));
-    } else {
-      // By default, exclude archived deals
-      constraints.push(where("archived", "==", false));
-    }
-
-    // Only add ordering if we have filters (to avoid index requirements)
-    if (constraints.length > 0) {
-      constraints.push(orderBy("createdAt", "desc"));
-    }
-
-    const q = constraints.length > 0
-      ? query(collection(db, COLLECTION_NAME), ...constraints)
-      : collection(db, COLLECTION_NAME);
-      
-    // Try Cache for unfiltered requests
-    const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.search === "");
     const cacheKey = "deals:list:all";
+    let deals: Deal[] = [];
 
-    if (isUnfiltered) {
-        const cached = await redis.get<Deal[]>(cacheKey);
-        if (cached) {
-            console.log("⚡ HIT: Deals list from Redis");
-            // Rehydrate Timestamps
-            const hydrated = cached.map((d: any) => ({
-                ...d,
-                createdAt: d.createdAt ? new Timestamp(d.createdAt.seconds || 0, d.createdAt.nanoseconds || 0) : null,
-                updatedAt: d.updatedAt ? new Timestamp(d.updatedAt.seconds || 0, d.updatedAt.nanoseconds || 0) : null,
-                closeDate: d.closeDate ? new Timestamp(d.closeDate.seconds || 0, d.closeDate.nanoseconds || 0) : null,
-            }));
-            return { deals: hydrated, error: null };
-        }
+    // Try cache first
+    const cached = await redis.get<Deal[]>(cacheKey);
+    if (cached) {
+      console.log("⚡ HIT: Deals list from Redis");
+      deals = cached.map((d: any) => ({
+        ...d,
+        createdAt: d.createdAt ? new Timestamp(d.createdAt.seconds || 0, d.createdAt.nanoseconds || 0) : null,
+        updatedAt: d.updatedAt ? new Timestamp(d.updatedAt.seconds || 0, d.updatedAt.nanoseconds || 0) : null,
+        closeDate: d.closeDate ? new Timestamp(d.closeDate.seconds || 0, d.closeDate.nanoseconds || 0) : null,
+      }));
     }
-      
-    const querySnapshot = await getDocs(q);
-    console.log("Deals fetched:", querySnapshot.size);
 
-    const deals: Deal[] = [];
-    querySnapshot.forEach((doc) => {
-      deals.push({ id: doc.id, ...doc.data() } as Deal);
-    });
+    // If no cached data, fetch from Firestore
+    if (deals.length === 0) {
+      const constraints: QueryConstraint[] = [];
 
-    if (deals.length > 0 && isUnfiltered) {
+      // Only add simple single-field filters at Firestore level
+      if (filters?.ownerId) {
+        constraints.push(where("ownerId", "==", filters.ownerId));
+      }
+
+      constraints.push(orderBy("createdAt", "desc"));
+
+      const q = query(collection(db, COLLECTION_NAME), ...constraints);
+      const querySnapshot = await getDocs(q);
+      console.log("Deals fetched:", querySnapshot.size);
+
+      querySnapshot.forEach((doc) => {
+        deals.push({ id: doc.id, ...doc.data() } as Deal);
+      });
+
+      // Cache the full result
+      if (deals.length > 0) {
         await redis.set(cacheKey, deals, { ex: 300 });
+      }
     }
 
     // Sort by createdAt on client side
@@ -239,16 +220,36 @@ export async function getDeals(filters?: DealFilters): Promise<{
       return bTime - aTime;
     });
 
-    // Apply client-side filters
+    // Apply all filters client-side
     let filteredDeals = deals;
 
+    // Archived filter — treats missing `archived` field as not archived
+    if (filters?.archived !== undefined) {
+      filteredDeals = filteredDeals.filter((deal) => (deal.archived ?? false) === filters.archived);
+    } else {
+      // By default, exclude archived deals (missing field = not archived)
+      filteredDeals = filteredDeals.filter((deal) => !deal.archived);
+    }
+
+    // Stage filter
+    if (filters?.stage) {
+      filteredDeals = filteredDeals.filter((deal) => deal.stage === filters.stage);
+    }
+
+    // Company filter
+    if (filters?.companyId) {
+      filteredDeals = filteredDeals.filter((deal) => deal.companyId === filters.companyId);
+    }
+
+    // Search filter
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase();
-      filteredDeals = deals.filter(
+      filteredDeals = filteredDeals.filter(
         (deal) =>
-          deal.title.toLowerCase().includes(searchLower) ||
+          deal.title?.toLowerCase().includes(searchLower) ||
           deal.companyName?.toLowerCase().includes(searchLower) ||
-          deal.description?.toLowerCase().includes(searchLower)
+          deal.description?.toLowerCase().includes(searchLower) ||
+          deal.ownerName?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -341,7 +342,7 @@ export async function updateDeal(id: string, data: Partial<DealInput>): Promise<
 }> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
-    
+
     // Fetch current deal to compare changes and get owner
     const currentDealSnap = await getDoc(docRef);
     if (!currentDealSnap.exists()) throw new Error("Deal not found");
@@ -357,13 +358,13 @@ export async function updateDeal(id: string, data: Partial<DealInput>): Promise<
       const type = data.stage === "Won" ? "deal_won" : "deal_lost";
       const title = `Deal ${data.stage}`;
       const message = `Deal "${currentDeal.title}" has been marked as ${data.stage}.`;
-      
+
       await createNotification(
-        currentDeal.ownerId, 
-        type, 
-        title, 
-        message, 
-        "deal", 
+        currentDeal.ownerId,
+        type,
+        title,
+        message,
+        "deal",
         id
       );
     }
@@ -387,7 +388,7 @@ export async function updateDealStage(id: string, stage: DealStage): Promise<{
 }> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
-    
+
     // Fetch current deal to get owner
     const currentDealSnap = await getDoc(docRef);
     if (!currentDealSnap.exists()) throw new Error("Deal not found");
@@ -400,24 +401,24 @@ export async function updateDealStage(id: string, stage: DealStage): Promise<{
 
     // Notify if stage is Won or Lost
     if (stage !== currentDeal.stage && (stage === "Won" || stage === "Lost")) {
-        const type = stage === "Won" ? "deal_won" : "deal_lost";
-        const title = `Deal ${stage}`;
-        const message = `Deal "${currentDeal.title}" has been marked as ${stage}.`;
-        
-        await createNotification(
-          currentDeal.ownerId, 
-          type, 
-          title, 
-          message, 
-          "deal", 
-          id
-        );
+      const type = stage === "Won" ? "deal_won" : "deal_lost";
+      const title = `Deal ${stage}`;
+      const message = `Deal "${currentDeal.title}" has been marked as ${stage}.`;
+
+      await createNotification(
+        currentDeal.ownerId,
+        type,
+        title,
+        message,
+        "deal",
+        id
+      );
     }
 
     // Invalidate cache
     await redis.del("deals:list:all");
     if (currentDeal.ownerId) {
-        await redis.del(`dashboard:stats:${currentDeal.ownerId}`);
+      await redis.del(`dashboard:stats:${currentDeal.ownerId}`);
     }
 
     return {

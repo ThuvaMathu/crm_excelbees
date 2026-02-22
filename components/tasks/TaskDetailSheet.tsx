@@ -41,6 +41,15 @@ import type { Task, TaskStatus, TaskPriority } from "@/types/crm";
 import type { User } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
+const safeToDate = (date: any): Date => {
+    if (!date) return new Date();
+    if (typeof date.toDate === 'function') return date.toDate();
+    if (date instanceof Date) return date;
+    if (typeof date === 'object' && typeof date.seconds === 'number') return new Date(date.seconds * 1000);
+    if (typeof date === 'string') return new Date(date);
+    return new Date();
+};
+
 interface TaskDetailSheetProps {
     task: Task | null;
     open: boolean;
@@ -452,7 +461,7 @@ export function TaskDetailSheet({
 
                             {/* Created Date */}
                             <SheetDescription className="text-[#718096] mt-2">
-                                Created {format(task.createdAt.toDate(), "MMM d, yyyy 'at' h:mm a")}
+                                Created {format(safeToDate(task.createdAt), "MMM d, yyyy 'at' h:mm a")}
                             </SheetDescription>
                         </div>
                     </div>
@@ -561,7 +570,7 @@ export function TaskDetailSheet({
                         <DetailItem
                             icon={CalendarIcon}
                             label="Due Date"
-                            value={task.dueDate ? format(task.dueDate.toDate(), "MMM d, yyyy") : "No due date"}
+                            value={task.dueDate ? format(safeToDate(task.dueDate), "MMM d, yyyy") : "No due date"}
                         />
 
                         {/* Assignee */}
@@ -591,7 +600,7 @@ export function TaskDetailSheet({
                 <div className="px-6 py-4 border-t flex justify-between items-center" style={{ borderColor: THEME.border }}>
                     <div className="flex items-center gap-2 text-xs text-[#718096]">
                         <Clock className="h-3.5 w-3.5" />
-                        <span>Last modified {format(task.updatedAt.toDate(), "MMM d, yyyy 'at' h:mm a")}</span>
+                        <span>Last modified {format(safeToDate(task.updatedAt), "MMM d, yyyy 'at' h:mm a")}</span>
                     </div>
 
                     <Button

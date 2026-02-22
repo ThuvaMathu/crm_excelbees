@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { MarketingLayout } from "@/components/marketing/shared/MarketingLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Plus, Settings, MoreVertical, Loader2 } from "lucide-react";
+import { Calendar, Plus, Settings, MoreVertical, Loader2, Archive, RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Calendar as CalendarType } from "@/types/calendar";
@@ -20,11 +20,14 @@ export default function CalendarDashboardPage() {
     const router = useRouter();
     const { user } = useAuth();
     const [calendars, setCalendars] = useState<CalendarType[]>([]);
+    const [archivedCalendars, setArchivedCalendars] = useState<CalendarType[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
         if (!user) return;
         loadCalendars();
+        loadArchivedCalendars();
     }, [user]);
 
     const loadCalendars = async () => {
@@ -39,6 +42,38 @@ export default function CalendarDashboardPage() {
             toast.error("Failed to load calendars");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadArchivedCalendars = async () => {
+        try {
+            const response = await fetch(`/api/calendar?userId=${user?.uid}&includeArchived=true`);
+            if (!response.ok) return;
+
+            const data = await response.json();
+            // The API with includeArchived=true returns ALL calendars, so filter to only archived ones
+            setArchivedCalendars((data.calendars || []).filter((c: CalendarType) => c.isArchived));
+        } catch (error) {
+            console.error("Error loading archived calendars:", error);
+        }
+    };
+
+    const handleUnarchive = async (calendarId: string) => {
+        try {
+            const response = await fetch(`/api/calendar/${calendarId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: user?.uid, isArchived: false }),
+            });
+
+            if (!response.ok) throw new Error("Failed to unarchive");
+
+            toast.success("Calendar restored");
+            loadCalendars();
+            loadArchivedCalendars();
+        } catch (error) {
+            console.error("Error unarchiving calendar:", error);
+            toast.error("Failed to restore calendar");
         }
     };
 
@@ -175,6 +210,93 @@ export default function CalendarDashboardPage() {
                                     </CardContent>
                                 </Card>
                             ))}
+                        </div>
+                    )}
+
+                    {/* Archived Calendars Section */}
+                    {archivedCalendars.length > 0 && (
+                        <div className="mt-6">
+                            <button
+                                onClick={() => setShowArchived(!showArchived)}
+                                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-3"
+                            >
+                                {showArchived ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                )}
+                                <Archive className="h-4 w-4" />
+                                <span>Archived ({archivedCalendars.length})</span>
+                            </button>
+
+                            {showArchived && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {archivedCalendars.map((calendar) => (
+                                        <Card key={calendar.id} className="opacity-70 hover:opacity-100 transition-opacity">
+                                            <CardHeader>
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <div
+                                                            className="w-3 h-3 rounded-full"
+                                                            style={{ backgroundColor: calendar.color }}
+                                                        />
+                                                        <CardTitle className="text-lg">{calendar.name}</CardTitle>
+                                                        <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">Archived</span>
+                                                    </div>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="sm">
+                                                                <MoreVertical className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem
+                                                                onClick={() => router.push(`/marketing/calendar/${calendar.id}`)}
+                                                            >
+                                                                Open
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleUnarchive(calendar.id)}
+                                                            >
+                                                                <RotateCcw className="h-4 w-4 mr-2" />
+                                                                Restore
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                className="text-red-600"
+                                                                onClick={() => handleDeleteCalendar(calendar.id)}
+                                                            >
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="space-y-2 text-sm">
+                                                    <p className="text-muted-foreground">{calendar.description}</p>
+                                                    <div className="flex gap-2 pt-2">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleUnarchive(calendar.id)}
+                                                        >
+                                                            <RotateCcw className="h-4 w-4 mr-2" />
+                                                            Restore
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => router.push(`/marketing/calendar/${calendar.id}`)}
+                                                        >
+                                                            Open
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

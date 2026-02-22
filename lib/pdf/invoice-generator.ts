@@ -9,10 +9,10 @@ function hexToRgb(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? [
-        parseInt(result[1], 16),
-        parseInt(result[2], 16),
-        parseInt(result[3], 16),
-      ]
+      parseInt(result[1], 16),
+      parseInt(result[2], 16),
+      parseInt(result[3], 16),
+    ]
     : [59, 130, 246]; // Default blue
 }
 
@@ -24,14 +24,14 @@ async function loadImageAsBase64(url: string): Promise<string | null> {
       mode: 'cors',
       cache: 'no-cache',
     });
-    
+
     if (!response.ok) {
       console.warn(`Failed to load image: ${response.status} ${response.statusText}`);
       return null;
     }
-    
+
     const blob = await response.blob();
-    
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result as string);
@@ -60,13 +60,13 @@ export async function generateInvoicePDF(
   }
 ): Promise<jsPDF> {
   const doc = new jsPDF();
-  
+
   // Get theme color from hex
   const themeColor = settings?.colorTheme ? hexToRgb(settings.colorTheme) : hexToRgb("#3B82F6");
-  
+
   // Company Logo/Header
   const pageWidth = doc.internal.pageSize.getWidth();
-  
+
   // Add logo if available
   let logoHeight = 0;
   if (settings?.logoUrl) {
@@ -82,42 +82,50 @@ export async function generateInvoicePDF(
       console.error("Failed to add logo to PDF:", error);
     }
   }
-  
+
   // Get template type
   const template = settings?.template || "standard";
-  
+
   // Company Info (Top Left) - adjust position if logo is present
   const companyInfoY = logoHeight > 0 ? 10 + logoHeight : 20;
-  
+
   // Apply template-specific styling
   if (template === "professional") {
-    // Professional: Add subtle background to header
-    doc.setFillColor(250, 250, 250);
+    // Professional: Add subtle tinted background to header using theme color
+    const lightTint: [number, number, number] = [
+      Math.min(255, themeColor[0] + Math.round((255 - themeColor[0]) * 0.9)),
+      Math.min(255, themeColor[1] + Math.round((255 - themeColor[1]) * 0.9)),
+      Math.min(255, themeColor[2] + Math.round((255 - themeColor[2]) * 0.9)),
+    ];
+    doc.setFillColor(...lightTint);
     doc.rect(0, 0, pageWidth, 50, "F");
+    // Add a thin accent line at top
+    doc.setFillColor(...themeColor);
+    doc.rect(0, 0, pageWidth, 2, "F");
   } else if (template === "creative") {
     // Creative: Add colored accent bar
     doc.setFillColor(...themeColor);
     doc.rect(0, 0, pageWidth, 5, "F");
+  } else {
+    // Standard: Add a thin accent line at top
+    doc.setFillColor(...themeColor);
+    doc.rect(0, 0, pageWidth, 3, "F");
   }
-  
+
   doc.setFontSize(20);
   doc.setFont("helvetica", "bold");
-  
-  // Template-specific company name styling
-  if (template === "creative") {
-    doc.setTextColor(...themeColor);
-    doc.text(settings?.companyName || companyInfo?.name || "Your Company", 20, companyInfoY);
-    doc.setTextColor(0, 0, 0);
-  } else {
-    doc.text(settings?.companyName || companyInfo?.name || "Your Company", 20, companyInfoY);
-  }
-  
+
+  // Apply theme color to company name for all templates
+  doc.setTextColor(...themeColor);
+  doc.text(settings?.companyName || companyInfo?.name || "Your Company", 20, companyInfoY);
+  doc.setTextColor(0, 0, 0);
+
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  
+
   const infoStartY = companyInfoY + 8;
   let currentY = infoStartY;
-  
+
   // Use settings for from info
   if (settings?.fromName) {
     doc.text(settings.fromName, 20, currentY);
@@ -130,7 +138,7 @@ export async function generateInvoicePDF(
     doc.text(`Email: ${companyInfo.email}`, 20, currentY);
     currentY += 6;
   }
-  
+
   // Fallback to companyInfo if no settings
   if (!settings && companyInfo?.address) {
     doc.text(companyInfo.address, 20, currentY);
@@ -144,24 +152,16 @@ export async function generateInvoicePDF(
   // Invoice Title (Top Right)
   doc.setFontSize(24);
   doc.setFont("helvetica", "bold");
-  
-  // Template-specific invoice title styling
-  if (template === "creative") {
-    doc.setTextColor(...themeColor);
-    doc.text("INVOICE", pageWidth - 20, 20, { align: "right" });
-    doc.setTextColor(0, 0, 0);
-  } else if (template === "professional") {
-    doc.setTextColor(50, 50, 50);
-    doc.text("INVOICE", pageWidth - 20, 20, { align: "right" });
-    doc.setTextColor(0, 0, 0);
-  } else {
-    doc.text("INVOICE", pageWidth - 20, 20, { align: "right" });
-  }
-  
+
+  // Apply theme color to INVOICE title for all templates
+  doc.setTextColor(...themeColor);
+  doc.text("INVOICE", pageWidth - 20, 20, { align: "right" });
+  doc.setTextColor(0, 0, 0);
+
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text(`#${invoice.invoiceNumber}`, pageWidth - 20, 28, { align: "right" });
-  
+
   // Status Badge - ONLY show if invoice is PAID
   if (invoice.status === "Paid") {
     const statusColor: [number, number, number] = [34, 197, 94]; // Green for paid
@@ -176,8 +176,10 @@ export async function generateInvoicePDF(
   // Bill To Section
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(...themeColor);
   doc.text("Bill To:", 20, 55);
-  
+  doc.setTextColor(0, 0, 0);
+
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   let yPos = 62;
@@ -202,25 +204,27 @@ export async function generateInvoicePDF(
   doc.setFontSize(10);
   const detailsX = pageWidth - 70;
   let detailsY = 55;
-  
+
   doc.setFont("helvetica", "bold");
   doc.text("Invoice Date:", detailsX, detailsY);
   doc.setFont("helvetica", "normal");
-  doc.text(format(invoice.issueDate.toDate(), "MMM dd, yyyy"), detailsX + 35, detailsY);
+  const issueDateObj = typeof (invoice.issueDate as any)?.toDate === "function" ? (invoice.issueDate as any).toDate() : new Date(invoice.issueDate as any);
+  doc.text(format(issueDateObj, "MMM dd, yyyy"), detailsX + 35, detailsY);
   detailsY += 6;
-  
+
   doc.setFont("helvetica", "bold");
   doc.text("Due Date:", detailsX, detailsY);
   doc.setFont("helvetica", "normal");
-  doc.text(format(invoice.dueDate.toDate(), "MMM dd, yyyy"), detailsX + 35, detailsY);
+  const dueDateObj = typeof (invoice.dueDate as any)?.toDate === "function" ? (invoice.dueDate as any).toDate() : new Date(invoice.dueDate as any);
+  doc.text(format(dueDateObj, "MMM dd, yyyy"), detailsX + 35, detailsY);
   detailsY += 6;
-  
+
   doc.setFont("helvetica", "bold");
   doc.text("Payment Terms:", detailsX, detailsY);
   doc.setFont("helvetica", "normal");
   doc.text(invoice.paymentTerms, detailsX + 35, detailsY);
   detailsY += 6;
-  
+
   if (invoice.dealName) {
     doc.setFont("helvetica", "bold");
     doc.text("Deal:", detailsX, detailsY);
@@ -231,7 +235,7 @@ export async function generateInvoicePDF(
 
   // Line Items Table
   const tableStartY = Math.max(yPos + 10, detailsY + 10);
-  
+
   autoTable(doc, {
     startY: tableStartY,
     head: [["Description", "Qty", "Price", "Tax", "Total"]],
@@ -271,30 +275,32 @@ export async function generateInvoicePDF(
   let totalsY = finalY;
 
   doc.setFontSize(10);
-  
+
   // Subtotal
   doc.setFont("helvetica", "normal");
   doc.text("Subtotal:", totalsX, totalsY);
   doc.text(`${invoice.currency} ${invoice.subtotal.toFixed(2)}`, totalsX + 50, totalsY, { align: "right" });
   totalsY += 6;
-  
+
   // Tax
   doc.text(`Tax (${invoice.taxRate}%):`, totalsX, totalsY);
   doc.text(`${invoice.currency} ${invoice.taxAmount.toFixed(2)}`, totalsX + 50, totalsY, { align: "right" });
   totalsY += 6;
-  
+
   // Discount
   if (invoice.discount > 0) {
     doc.text("Discount:", totalsX, totalsY);
     doc.text(`-${invoice.currency} ${invoice.discount.toFixed(2)}`, totalsX + 50, totalsY, { align: "right" });
     totalsY += 6;
   }
-  
+
   // Total
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
+  doc.setTextColor(...themeColor);
   doc.text("Total:", totalsX, totalsY);
   doc.text(`${invoice.currency} ${invoice.total.toFixed(2)}`, totalsX + 50, totalsY, { align: "right" });
+  doc.setTextColor(0, 0, 0);
 
   // Notes
   if (invoice.notes) {
@@ -346,7 +352,7 @@ export async function getInvoicePDFBlob(invoice: Invoice, userId?: string, compa
     const result = await getUserInvoiceSettings(userId);
     settings = result.settings;
   }
-  
+
   const doc = await generateInvoicePDF(invoice, settings, companyInfo);
   return doc.output("blob");
 }

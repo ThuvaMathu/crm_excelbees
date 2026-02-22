@@ -38,7 +38,7 @@ export default function MarketingDashboardPage() {
         {
             title: "Keyword Research",
             description: "Discover high-potential keywords and track your rankings.",
-            href: "/marketing/keywords",
+            href: "/marketing/keyword",
             icon: Key,
             status: "active" as const,
             stats: "150 Keywords"

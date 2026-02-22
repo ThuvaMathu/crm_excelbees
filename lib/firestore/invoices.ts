@@ -37,7 +37,7 @@ export async function createInvoice(data: InvoiceInput, userId: string): Promise
 }> {
   try {
     console.log("📝 Creating invoice:", data.invoiceNumber);
-    
+
     const invoiceData = {
       ...data,
       invoiceNumber: data.invoiceNumber || await generateNextInvoiceNumber(userId),
@@ -52,9 +52,9 @@ export async function createInvoice(data: InvoiceInput, userId: string): Promise
     // Invalidate cache
     await redis.del("invoices:list:all");
     if (userId) {
-        await redis.del(`dashboard:stats:${userId}`);
+      await redis.del(`dashboard:stats:${userId}`);
     }
-    
+
     return {
       success: true,
       id: docRef.id,
@@ -103,27 +103,27 @@ export async function getInvoices(filters?: {
     const q = constraints.length > 0
       ? query(collection(db, COLLECTION_NAME), ...constraints)
       : collection(db, COLLECTION_NAME);
-      
+
     // Try Cache for unfiltered requests
     const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.search === "");
     const cacheKey = "invoices:list:all";
 
     if (isUnfiltered) {
-        const cached = await redis.get<Invoice[]>(cacheKey);
-        if (cached) {
-            console.log("⚡ HIT: Invoices list from Redis");
-            // Rehydrate Timestamps
-            const hydrated = cached.map((inv: any) => ({
-                ...inv,
-                createdAt: inv.createdAt ? new Timestamp(inv.createdAt.seconds || 0, inv.createdAt.nanoseconds || 0) : null,
-                updatedAt: inv.updatedAt ? new Timestamp(inv.updatedAt.seconds || 0, inv.updatedAt.nanoseconds || 0) : null,
-                dueDate: inv.dueDate ? new Timestamp(inv.dueDate.seconds || 0, inv.dueDate.nanoseconds || 0) : null,
-                paidDate: inv.paidDate ? new Timestamp(inv.paidDate.seconds || 0, inv.paidDate.nanoseconds || 0) : null,
-            }));
-            return { invoices: hydrated, error: null };
-        }
+      const cached = await redis.get<Invoice[]>(cacheKey);
+      if (cached) {
+        console.log("⚡ HIT: Invoices list from Redis");
+        // Rehydrate Timestamps
+        const hydrated = cached.map((inv: any) => ({
+          ...inv,
+          createdAt: inv.createdAt ? new Timestamp(inv.createdAt.seconds || 0, inv.createdAt.nanoseconds || 0) : null,
+          updatedAt: inv.updatedAt ? new Timestamp(inv.updatedAt.seconds || 0, inv.updatedAt.nanoseconds || 0) : null,
+          dueDate: inv.dueDate ? new Timestamp(inv.dueDate.seconds || 0, inv.dueDate.nanoseconds || 0) : null,
+          paidDate: inv.paidDate ? new Timestamp(inv.paidDate.seconds || 0, inv.paidDate.nanoseconds || 0) : null,
+        }));
+        return { invoices: hydrated, error: null };
+      }
     }
-      
+
     const querySnapshot = await getDocs(q);
     console.log("📊 Invoices fetched:", querySnapshot.size);
 
@@ -133,7 +133,7 @@ export async function getInvoices(filters?: {
     });
 
     if (invoices.length > 0 && isUnfiltered) {
-        await redis.set(cacheKey, invoices, { ex: 300 });
+      await redis.set(cacheKey, invoices, { ex: 300 });
     }
 
     // Sort by createdAt on client side
@@ -149,9 +149,11 @@ export async function getInvoices(filters?: {
       const searchLower = filters.search.toLowerCase();
       filteredInvoices = invoices.filter(
         (invoice) =>
-          invoice.invoiceNumber.toLowerCase().includes(searchLower) ||
+          invoice.invoiceNumber?.toLowerCase().includes(searchLower) ||
           invoice.companyName?.toLowerCase().includes(searchLower) ||
-          invoice.contactName?.toLowerCase().includes(searchLower)
+          invoice.contactName?.toLowerCase().includes(searchLower) ||
+          invoice.clientEmail?.toLowerCase().includes(searchLower) ||
+          invoice.status?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -240,7 +242,7 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus, pai
   try {
     console.log("📝 Updating invoice status:", id, "to", status);
     const docRef = doc(db, COLLECTION_NAME, id);
-    
+
     // Fetch current invoice to get owner and check previous status
     const currentInvoiceSnap = await getDoc(docRef);
     if (!currentInvoiceSnap.exists()) throw new Error("Invoice not found");
@@ -260,14 +262,14 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus, pai
 
     // Notify owner if invoice is paid
     if (status === "Paid" && currentInvoice.status !== "Paid") {
-        await createNotification(
-          currentInvoice.ownerId, 
-          "invoice_paid", 
-          "Invoice Paid", 
-          `Invoice ${currentInvoice.invoiceNumber} has been marked as paid.`, 
-          "invoice", 
-          id
-        );
+      await createNotification(
+        currentInvoice.ownerId,
+        "invoice_paid",
+        "Invoice Paid",
+        `Invoice ${currentInvoice.invoiceNumber} has been marked as paid.`,
+        "invoice",
+        id
+      );
     }
 
     console.log("✅ Invoice status updated");
@@ -275,7 +277,7 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus, pai
     // Invalidate cache
     await redis.del("invoices:list:all");
     if (currentInvoice.ownerId) {
-        await redis.del(`dashboard:stats:${currentInvoice.ownerId}`);
+      await redis.del(`dashboard:stats:${currentInvoice.ownerId}`);
     }
 
     return {

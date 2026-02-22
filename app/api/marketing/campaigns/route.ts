@@ -18,29 +18,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
     }
 
-    let query = adminDb
+    // Simple query without composite index requirement
+    const snapshot = await adminDb
       .collection(`marketing/email-campaigns/users/${userId}/campaigns`)
       .orderBy("createdAt", "desc")
-      .limit(limit);
+      .limit(limit)
+      .get();
 
-    // Apply filters
-    if (status) {
-      query = query.where("status", "==", status) as any;
-    }
-    if (type) {
-      query = query.where("type", "==", type) as any;
-    }
-
-    const snapshot = await query.get();
-    const campaigns: Campaign[] = [];
+    let campaigns: Campaign[] = [];
 
     snapshot.forEach((doc) => {
       campaigns.push({ id: doc.id, ...doc.data() } as Campaign);
     });
 
+    // Apply filters in-memory to avoid Firestore composite index requirements
+    if (status) {
+      campaigns = campaigns.filter((c) => c.status === status);
+    }
+    if (type) {
+      campaigns = campaigns.filter((c) => c.type === type);
+    }
+
     return NextResponse.json({ campaigns, total: campaigns.length });
   } catch (error: any) {
     console.error("Error fetching campaigns:", error);
+    // Return empty array instead of 500 for missing collections/indexes
+    if (error.code === 5 || error.code === 9 || error.message?.includes("index")) {
+      return NextResponse.json({ campaigns: [], total: 0 });
+    }
     return NextResponse.json(
       { error: "Failed to fetch campaigns", message: error.message },
       { status: 500 }

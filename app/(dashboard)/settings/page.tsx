@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,9 +57,12 @@ export default function SettingsPage() {
         try {
             console.log(`[Settings] Updating profile for user ${user.uid}`);
             // Update Firebase Auth profile
-            await updateProfile(user, {
-                displayName: profileName,
-            });
+            const { auth } = await import("@/lib/firebase");
+            if (auth.currentUser) {
+                await updateProfile(auth.currentUser, {
+                    displayName: profileName,
+                });
+            }
 
             // Optionally update user preferences in Firestore
             await fetch("/api/user/preferences", {
@@ -105,18 +108,21 @@ export default function SettingsPage() {
                 weeklySummary,
             };
 
-            await fetch("/api/user/preferences", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId: user.uid,
-                    preferences: { notifications: preferences }
-                })
-            }).catch(() => {
-                console.log("[Settings] User preferences API not available, using localStorage");
-                // Fallback to localStorage
-                localStorage.setItem(`notifications_${user.uid}`, JSON.stringify(preferences));
-            });
+            // Always save to localStorage immediately to ensure persistence
+            localStorage.setItem(`notifications_${user.uid}`, JSON.stringify(preferences));
+
+            try {
+                await fetch("/api/user/preferences", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        userId: user.uid,
+                        preferences: { notifications: preferences }
+                    })
+                });
+            } catch (e) {
+                console.log("[Settings] User preferences API not available, but saved to localStorage");
+            }
 
             toast.success("Notification preferences saved");
             setNotificationsDialogOpen(false);
@@ -139,19 +145,21 @@ export default function SettingsPage() {
         try {
             console.log(`[Settings] Saving currency preference for user ${user.uid}: ${selectedCurrency}`);
 
-            // Save to user preferences in Firestore
-            await fetch("/api/user/preferences", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId: user.uid,
-                    preferences: { currency: selectedCurrency }
-                })
-            }).catch(() => {
-                console.log("[Settings] User preferences API not available, using localStorage");
-                // Fallback to localStorage
-                localStorage.setItem(`currency_${user.uid}`, selectedCurrency);
-            });
+            // Always save to localStorage immediately to ensure persistence
+            localStorage.setItem(`currency_${user.uid}`, selectedCurrency);
+
+            try {
+                await fetch("/api/user/preferences", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        userId: user.uid,
+                        preferences: { currency: selectedCurrency }
+                    })
+                });
+            } catch (e) {
+                console.log("[Settings] User preferences API not available, but saved to localStorage");
+            }
 
             toast.success(`Currency changed to ${selectedCurrency}`);
             setCurrencyDialogOpen(false);
@@ -163,10 +171,10 @@ export default function SettingsPage() {
         }
     };
 
-    // Load saved preferences on mount
-    useState(() => {
+    // Load saved preferences on mount and when user auth state changes
+    useEffect(() => {
         if (user) {
-            // Load from localStorage as fallback
+            // Load from localStorage
             const savedCurrency = localStorage.getItem(`currency_${user.uid}`);
             if (savedCurrency) setSelectedCurrency(savedCurrency);
 
@@ -182,7 +190,7 @@ export default function SettingsPage() {
                 }
             }
         }
-    });
+    }, [user]);
 
     return (
         <div className="space-y-6">

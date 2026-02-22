@@ -75,19 +75,23 @@ export function MarketingLayout({
                         // Skip 'marketing' as we handled it with Home or it's redundant
                         if (segment === "marketing") return null;
 
+                        // Skip ID segments (long strings that aren't in the labels map)
+                        if (!SEGMENT_LABELS[segment] && segment.length > 10) {
+                            return null;
+                        }
+
+                        // Skip intermediate route segments that don't have their own pages
+                        const skipSegments = ["plan", "seo", "preview", "edit"];
+                        if (skipSegments.includes(segment)) return null;
+
                         const isLast = index === segments.length - 1;
                         const href = `/${segments.slice(0, index + 1).join("/")}`;
 
                         // Format label
                         let label = SEGMENT_LABELS[segment] || segment;
 
-                        // Handle IDs (simple heuristic: if it looks like an ID or wasn't mapped)
-                        if (!SEGMENT_LABELS[segment] && segment.length > 10) {
-                            label = "Details"; // Fallback for IDs
-                        }
-
                         // Capitalize first letter if not in map
-                        if (!SEGMENT_LABELS[segment] && segment.length <= 10) {
+                        if (!SEGMENT_LABELS[segment]) {
                             label = segment.charAt(0).toUpperCase() + segment.slice(1);
                         }
 
