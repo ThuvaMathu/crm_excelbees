@@ -432,6 +432,7 @@ export interface Project {
   companyName?: string;
   dealId?: string;
   teamMembers: string[]; // User IDs
+  files?: any[]; // Uploaded files associated with the project
   ownerId: string;
   ownerName?: string;
   progress: number; // 0-100
