@@ -37,6 +37,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { updateTaskStatus, updateTask, deleteTask } from "@/lib/firestore/tasks";
+import { getUsers, type UserProfile } from "@/lib/firestore/users";
 import type { Task, TaskStatus, TaskPriority } from "@/types/crm";
 import type { User } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -153,6 +154,8 @@ export function TaskDetailSheet({
     // Optimistic state for immediate UI updates - use defaults if task is null
     const [localStatus, setLocalStatus] = useState<TaskStatus>(task?.status || "To Do");
     const [localPriority, setLocalPriority] = useState<TaskPriority>(task?.priority || "Low");
+    const [users, setUsers] = useState<UserProfile[]>([]);
+    const [changingAssignee, setChangingAssignee] = useState(false);
 
     // Sync local state when task prop changes
     useEffect(() => {
@@ -161,6 +164,15 @@ export function TaskDetailSheet({
             setLocalPriority(task.priority);
         }
     }, [task]);
+
+    // Fetch users list when sheet opens
+    useEffect(() => {
+        if (open) {
+            getUsers().then(({ users: fetchedUsers }) => {
+                if (fetchedUsers) setUsers(fetchedUsers);
+            });
+        }
+    }, [open]);
 
     // Handle null task case early in JSX
     if (!task) return null;
@@ -215,6 +227,32 @@ export function TaskDetailSheet({
             setLocalPriority(task.priority);
             toast.error("Failed to update priority");
         }
+    };
+
+    const handleAssigneeChange = async (newAssigneeId: string) => {
+        if (!canEdit) {
+            toast.error("You don't have permission to modify this task");
+            return;
+        }
+
+        setChangingAssignee(true);
+        const selectedUser = users.find(u => u.uid === newAssigneeId);
+        const assigneeName = selectedUser ? selectedUser.displayName || selectedUser.email : "Unassigned";
+
+        const updateData: any = {
+            assigneeId: newAssigneeId || null,
+            assigneeName: newAssigneeId ? assigneeName : null,
+        };
+
+        const { success } = await updateTask(task.id, updateData);
+
+        if (success) {
+            toast.success(`Assignee updated to ${assigneeName}`);
+            onUpdate();
+        } else {
+            toast.error("Failed to update assignee");
+        }
+        setChangingAssignee(false);
     };
 
     const handleDelete = async () => {
@@ -574,11 +612,35 @@ export function TaskDetailSheet({
                         />
 
                         {/* Assignee */}
-                        <DetailItem
-                            icon={UserIcon}
-                            label="Assignee"
-                            value={task.assigneeName || "Unassigned"}
-                        />
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs text-[#718096] uppercase tracking-wide font-medium">
+                                <UserIcon className="h-3.5 w-3.5" />
+                                Assignee
+                            </div>
+                            {canEdit ? (
+                                <Select
+                                    value={task.assigneeId || "unassigned"}
+                                    onValueChange={(val) => handleAssigneeChange(val === "unassigned" ? "" : val)}
+                                    disabled={changingAssignee}
+                                >
+                                    <SelectTrigger
+                                        className="h-8 text-sm bg-[#252f3f] border-[#2d3748] text-[#e2e8f0] hover:border-[#f6ad55] focus:border-[#f6ad55] transition-colors"
+                                    >
+                                        <SelectValue placeholder="Select assignee" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#252f3f] border-[#2d3748] text-white">
+                                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                                        {users.map((u) => (
+                                            <SelectItem key={u.uid} value={u.uid}>
+                                                {u.displayName || u.email}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            ) : (
+                                <p className="text-sm text-[#e2e8f0]">{task.assigneeName || "Unassigned"}</p>
+                            )}
+                        </div>
 
                         {/* Project */}
                         <DetailItem

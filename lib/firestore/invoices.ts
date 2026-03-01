@@ -262,14 +262,24 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus, pai
 
     // Notify owner if invoice is paid
     if (status === "Paid" && currentInvoice.status !== "Paid") {
-      await createNotification(
-        currentInvoice.ownerId,
-        "invoice_paid",
-        "Invoice Paid",
-        `Invoice ${currentInvoice.invoiceNumber} has been marked as paid.`,
-        "invoice",
-        id
-      );
+      if (currentInvoice.ownerId) {
+        console.log("🔔 Creating invoice paid notification for owner:", currentInvoice.ownerId);
+        try {
+          const notifResult = await createNotification(
+            currentInvoice.ownerId,
+            "invoice_paid",
+            "Invoice Paid",
+            `Invoice ${currentInvoice.invoiceNumber} has been marked as paid.`,
+            "invoice",
+            id
+          );
+          console.log("🔔 Invoice notification result:", notifResult);
+        } catch (notifError) {
+          console.error("❌ Failed to create invoice notification:", notifError);
+        }
+      } else {
+        console.warn("⚠️ Invoice has no ownerId, skipping notification");
+      }
     }
 
     console.log("✅ Invoice status updated");
