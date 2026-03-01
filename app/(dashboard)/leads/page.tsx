@@ -55,6 +55,9 @@ export default function LeadsPage() {
     const [totalLeads, setTotalLeads] = useState(0);
     const pageSize = 10;
 
+    // Role-based access - only admin/manager can see financial data
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
+
     const fetchLeads = async () => {
         setLoading(true);
         const filters: any = {};
@@ -215,7 +218,7 @@ export default function LeadsPage() {
                                             </span>
                                         </TableCell>
                                         <TableCell>
-                                            {lead.value ? `$${lead.value.toLocaleString()}` : "-"}
+                                            {lead.value ? (canViewFinancials ? `$${lead.value.toLocaleString()}` : "$•••") : "-"}
                                         </TableCell>
                                         <TableCell>
                                             <span className="text-sm text-muted-foreground">

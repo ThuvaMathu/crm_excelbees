@@ -15,6 +15,7 @@ import {
     FileText,
     TrendingUp,
     ArrowRight,
+    Lock,
 } from "lucide-react";
 import Link from "next/link";
 import { getCachedDashboardStats } from "@/app/actions/dashboard";
@@ -81,6 +82,9 @@ export default function DashboardPage() {
         }
     }, [user]);
 
+    // Role-based access - only admin/manager can see financial data
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
+
     const quickStats = [
         {
             title: "Total Leads",
@@ -108,10 +112,10 @@ export default function DashboardPage() {
         },
         {
             title: "Revenue",
-            value: `$${stats.totalRevenue.toLocaleString()}`,
-            icon: DollarSign,
+            value: canViewFinancials ? `$${stats.totalRevenue.toLocaleString()}` : "$•••",
+            icon: canViewFinancials ? DollarSign : Lock,
             href: "/invoices",
-            color: "text-green-600 dark:text-green-400",
+            color: canViewFinancials ? "text-green-600 dark:text-green-400" : "text-muted-foreground",
             bgColor: "bg-green-100 dark:bg-green-900/20",
         },
         {
@@ -299,16 +303,18 @@ export default function DashboardPage() {
                                     <ArrowRight className="h-4 w-4 ml-auto" />
                                 </Button>
                             </Link>
-                            <Link href="/invoices">
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-start gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary"
-                                >
-                                    <FileText className="h-5 w-5 text-primary" />
-                                    <span>Create Invoice</span>
-                                    <ArrowRight className="h-4 w-4 ml-auto" />
-                                </Button>
-                            </Link>
+                            {canViewFinancials && (
+                                <Link href="/invoices">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full justify-start gap-2 h-auto py-4 hover:bg-primary/5 hover:border-primary"
+                                    >
+                                        <FileText className="h-5 w-5 text-primary" />
+                                        <span>Create Invoice</span>
+                                        <ArrowRight className="h-4 w-4 ml-auto" />
+                                    </Button>
+                                </Link>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

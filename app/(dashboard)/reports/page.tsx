@@ -130,18 +130,32 @@ export default function ReportsPage() {
                         <Calendar className="mr-2 h-4 w-4" />
                         {format(new Date(), "MMM yyyy")}
                     </Button>
-                    <Button onClick={handleExport} disabled={isLoading}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Export
-                    </Button>
+                    {canViewFinancialData && (
+                        <Button onClick={handleExport} disabled={isLoading}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Export
+                        </Button>
+                    )}
                 </div>
             </div>
 
-            {/* AI Section */}
-            <div className="space-y-6">
-                <ReportQueryInput onQuery={handleQuery} isLoading={aiLoading} />
-                <AIExecutiveSummary summary={summary} insights={insights} isLoading={aiLoading} />
-            </div>
+            {/* AI Section - Only for Admin/Manager */}
+            {canViewFinancialData ? (
+                <div className="space-y-6">
+                    <ReportQueryInput onQuery={handleQuery} isLoading={aiLoading} />
+                    <AIExecutiveSummary summary={summary} insights={insights} isLoading={aiLoading} />
+                </div>
+            ) : (
+                <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                        <Lock className="h-10 w-10 text-muted-foreground mb-3" />
+                        <h3 className="text-lg font-semibold mb-1">AI Insights Restricted</h3>
+                        <p className="text-sm text-muted-foreground text-center">
+                            AI-powered summaries and financial insights are only available to administrators and managers.
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList>

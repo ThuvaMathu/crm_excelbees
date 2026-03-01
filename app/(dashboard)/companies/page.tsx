@@ -42,6 +42,9 @@ export default function CompaniesPage() {
     const [totalCompanies, setTotalCompanies] = useState(0);
     const pageSize = 10;
 
+    // Role-based access - only admin/manager can see financial data
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
+
     const fetchCompanies = async () => {
         try {
             setLoading(true);
@@ -160,7 +163,7 @@ export default function CompaniesPage() {
                                         <TableCell>{company.size || "-"}</TableCell>
                                         <TableCell>
                                             {company.annualRevenue
-                                                ? `$${company.annualRevenue.toLocaleString()}`
+                                                ? (canViewFinancials ? `$${company.annualRevenue.toLocaleString()}` : "$•••")
                                                 : "-"}
                                         </TableCell>
                                         <TableCell>

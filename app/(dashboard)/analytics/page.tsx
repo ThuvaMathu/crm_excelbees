@@ -6,16 +6,23 @@ import { RevenueChart } from "@/components/charts/RevenueChart";
 import { PipelineChart } from "@/components/charts/PipelineChart";
 import { ActivityChart } from "@/components/charts/ActivityChart";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { Card, CardContent } from "@/components/ui/card";
 import { getDeals } from "@/lib/firestore/deals";
 import { getActivities } from "@/lib/firestore/activities";
 import type { Deal } from "@/types/crm";
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { Lock } from "lucide-react";
 
 export default function AnalyticsPage() {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [deals, setDeals] = useState<Deal[]>([]);
     const [activities, setActivities] = useState<any[]>([]);
+
+    // Role-based access - only admin/manager can see financial data
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
 
     useEffect(() => {
         fetchData();
@@ -103,10 +110,25 @@ export default function AnalyticsPage() {
                 description="Visualize your CRM data and track performance"
             />
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <RevenueChart data={revenueData} />
-                <PipelineChart data={pipelineData} />
-            </div>
+            {canViewFinancials ? (
+                <div className="grid gap-6 md:grid-cols-2">
+                    <RevenueChart data={revenueData} />
+                    <PipelineChart data={pipelineData} />
+                </div>
+            ) : (
+                <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                        <Lock className="h-12 w-12 text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">Financial Analytics Restricted</h3>
+                        <p className="text-sm text-muted-foreground text-center max-w-md">
+                            Revenue charts and pipeline value analytics are only available to administrators and managers.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                            Your role: <span className="font-medium">{user?.role || "team"}</span>
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid gap-6 md:grid-cols-2">
                 <ActivityChart data={activityData} />
@@ -122,3 +144,4 @@ export default function AnalyticsPage() {
         </div>
     );
 }
+

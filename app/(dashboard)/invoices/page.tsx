@@ -7,12 +7,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getInvoices, getInvoiceStats } from "@/lib/firestore/invoices";
 import type { Invoice } from "@/types/crm";
-import { Plus, FileText, DollarSign, AlertCircle, FileCheck, Settings } from "lucide-react";
+import { Plus, FileText, DollarSign, AlertCircle, FileCheck, Settings, Lock } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { InvoiceSettingsModal } from "@/components/invoices/InvoiceSettingsModal";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function InvoicesPage() {
+    const { user } = useAuth();
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [stats, setStats] = useState({
         totalRevenue: 0,
@@ -22,6 +24,9 @@ export default function InvoicesPage() {
     });
     const [loading, setLoading] = useState(true);
     const [settingsOpen, setSettingsOpen] = useState(false);
+
+    // Role-based access - only admin/manager can see financial data
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
 
     useEffect(() => {
         const fetchData = async () => {
@@ -78,18 +83,20 @@ export default function InvoicesPage() {
                     ]}
                     description="Manage your invoices and track payments"
                     action={
-                        <div className="flex gap-2">
-                            <Button variant="outline" onClick={() => setSettingsOpen(true)} className="gap-2">
-                                <Settings className="h-4 w-4" />
-                                Settings
-                            </Button>
-                            <Button className="bg-primary hover:bg-primary/90 gap-2" asChild>
-                                <Link href="/invoices/create">
-                                    <Plus className="h-4 w-4" />
-                                    New Invoice
-                                </Link>
-                            </Button>
-                        </div>
+                        canViewFinancials ? (
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => setSettingsOpen(true)} className="gap-2">
+                                    <Settings className="h-4 w-4" />
+                                    Settings
+                                </Button>
+                                <Button className="bg-primary hover:bg-primary/90 gap-2" asChild>
+                                    <Link href="/invoices/create">
+                                        <Plus className="h-4 w-4" />
+                                        New Invoice
+                                    </Link>
+                                </Button>
+                            </div>
+                        ) : undefined
                     }
                 />
 
@@ -99,11 +106,17 @@ export default function InvoicesPage() {
                         <CardContent className="p-6">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                                    <DollarSign className="h-6 w-6 text-green-600" />
+                                    {canViewFinancials ? (
+                                        <DollarSign className="h-6 w-6 text-green-600" />
+                                    ) : (
+                                        <Lock className="h-6 w-6 text-muted-foreground" />
+                                    )}
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Total Revenue</p>
-                                    <p className="text-2xl font-bold">${stats.totalRevenue.toLocaleString()}</p>
+                                    <p className="text-2xl font-bold">
+                                        {canViewFinancials ? `$${stats.totalRevenue.toLocaleString()}` : "$•••"}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
@@ -113,11 +126,17 @@ export default function InvoicesPage() {
                         <CardContent className="p-6">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                                    <FileCheck className="h-6 w-6 text-blue-600" />
+                                    {canViewFinancials ? (
+                                        <FileCheck className="h-6 w-6 text-blue-600" />
+                                    ) : (
+                                        <Lock className="h-6 w-6 text-muted-foreground" />
+                                    )}
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Outstanding</p>
-                                    <p className="text-2xl font-bold">${stats.outstanding.toLocaleString()}</p>
+                                    <p className="text-2xl font-bold">
+                                        {canViewFinancials ? `$${stats.outstanding.toLocaleString()}` : "$•••"}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
@@ -161,10 +180,14 @@ export default function InvoicesPage() {
                             <p className="text-sm text-muted-foreground mb-4">
                                 Create your first invoice to get started
                             </p>
-                            <Button className="gap-2">
-                                <Plus className="h-4 w-4" />
-                                Create Invoice
-                            </Button>
+                            {canViewFinancials && (
+                                <Button className="gap-2" asChild>
+                                    <Link href="/invoices/create">
+                                        <Plus className="h-4 w-4" />
+                                        Create Invoice
+                                    </Link>
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 ) : (
@@ -221,7 +244,7 @@ export default function InvoicesPage() {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm font-semibold">
-                                                        ${invoice.total.toLocaleString()}
+                                                        {canViewFinancials ? `$${invoice.total.toLocaleString()}` : "$•••"}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -243,3 +266,4 @@ export default function InvoicesPage() {
         </>
     );
 }
+

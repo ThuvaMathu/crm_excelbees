@@ -324,6 +324,7 @@ export default function DealsPage() {
                             </Select>
                         </div>
 
+                    {canEditDeals && (
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-muted-foreground">Value:</span>
                             <Select value={valueFilter} onValueChange={(v) => setValueFilter(v as ValueRange)}>
@@ -339,6 +340,7 @@ export default function DealsPage() {
                                 </SelectContent>
                             </Select>
                         </div>
+                    )}
                     </div>
                 )}
             </div>
@@ -367,7 +369,7 @@ export default function DealsPage() {
                                         </span>
                                     </div>
                                     <div className="text-xs font-medium text-muted-foreground">
-                                        ${totalValue.toLocaleString()}
+                                        {canEditDeals ? `$${totalValue.toLocaleString()}` : "$•••"}
                                     </div>
 
                                     <div className="space-y-2 min-h-[200px] max-h-[45vh] overflow-y-auto scrollbar-hide">
@@ -386,12 +388,14 @@ export default function DealsPage() {
                                                                 {deal.title}
                                                             </h4>
                                                             {!dealEditable && (
-                                                                <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" title="You don't have permission to edit this deal" />
+                                                                <span title="You don't have permission to edit this deal">
+                                                                    <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                                                </span>
                                                             )}
                                                         </div>
                                                         <div className="flex items-center justify-between text-xs">
                                                             <span className="font-semibold text-primary">
-                                                                ${deal.value.toLocaleString()}
+                                                                {canEditDeals ? `$${deal.value.toLocaleString()}` : "$•••"}
                                                             </span>
                                                             <span className="text-muted-foreground">
                                                                 {deal.probability}%

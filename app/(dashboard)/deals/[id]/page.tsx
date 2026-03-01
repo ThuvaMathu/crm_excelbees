@@ -64,6 +64,7 @@ export default function DealDetailPage({
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || deal?.ownerId === user?.uid;
     const canDelete = user?.role === "admin" || user?.role === "manager";
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
 
     useEffect(() => {
         fetchDealData();
@@ -369,7 +370,7 @@ export default function DealDetailPage({
                                         <span>Value</span>
                                     </div>
                                     <p className="text-2xl font-bold">
-                                        ${deal.value.toLocaleString()}
+                                        {canViewFinancials ? `$${deal.value.toLocaleString()}` : "$•••"}
                                     </p>
                                 </div>
                                 <div className="space-y-1">

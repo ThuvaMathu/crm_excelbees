@@ -162,6 +162,7 @@ export default function InvoiceDetailPage() {
                 onMarkPaid={handleMarkPaid}
                 sending={false}
                 canModify={canModifyInvoice}
+                canViewFinancials={canModifyInvoice}
             />
 
             {invoice && (
