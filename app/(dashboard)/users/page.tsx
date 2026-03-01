@@ -24,9 +24,9 @@ import {
     getUsers,
     approveUser,
     updateUserRole,
-    deleteUser,
     UserProfile
 } from "@/lib/firestore/users";
+import { deleteUserAction } from "@/app/actions/admin-users";
 import { useAuth } from "@/hooks/useAuth";
 import { UserRole } from "@/types/crm";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
@@ -89,7 +89,7 @@ export default function UsersPage() {
             return;
         }
 
-        const { success, error } = await deleteUser(userId);
+        const { success, error } = await deleteUserAction(userId);
         if (success) {
             toast.success("User deleted successfully");
             setUsers(prevUsers => prevUsers.filter(u => u.uid !== userId));
