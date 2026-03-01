@@ -244,7 +244,7 @@ export function TaskDetailSheet({
             assigneeName: newAssigneeId ? assigneeName : null,
         };
 
-        const { success } = await updateTask(task.id, updateData);
+        const { success } = await updateTask(task.id, updateData, user?.uid);
 
         if (success) {
             toast.success(`Assignee updated to ${assigneeName}`);

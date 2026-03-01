@@ -223,7 +223,7 @@ export async function getTask(id: string): Promise<{
 }
 
 // Update a task
-export async function updateTask(id: string, data: Partial<TaskInput>): Promise<{
+export async function updateTask(id: string, data: Partial<TaskInput>, currentUserId?: string): Promise<{
   success: boolean;
   error: string | null;
 }> {
@@ -249,8 +249,8 @@ export async function updateTask(id: string, data: Partial<TaskInput>): Promise<
     const sanitizedData = sanitizeData(updateData);
     await updateDoc(docRef, sanitizedData);
 
-    // Notify assignee if changed
-    if (data.assigneeId && data.assigneeId !== currentTask.assigneeId) {
+    // Notify assignee if changed AND not self-assigning
+    if (data.assigneeId && data.assigneeId !== currentTask.assigneeId && data.assigneeId !== currentUserId) {
       await createNotification(
         data.assigneeId,
         "task_assigned",
