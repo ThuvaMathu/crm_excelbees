@@ -43,6 +43,7 @@ export interface Campaign {
 
   // Scheduling
   scheduledAt?: Timestamp;
+  scheduledFor?: Timestamp;
   sendImmediately?: boolean;
   optimizeSendTime?: boolean; // AI-based send time optimization
 

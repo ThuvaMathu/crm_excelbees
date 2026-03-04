@@ -126,13 +126,24 @@ export default function UsersPage() {
         return false;
     });
 
+    const logAudit = async (action: AuditAction, targetUserId: string) => {
+        if (!currentUser) return;
+        await createAuditLog({
+            action,
+            performedBy: currentUser.uid,
+            performedByName: currentUser.displayName || currentUser.email || "",
+            targetUserId,
+            targetUserName: users.find(u => u.uid === targetUserId)?.displayName || targetUserId,
+            details: {},
+        });
+    };
+
     const openEditDialog = (user: UserProfile) => {
         setEditingUser(user);
         setEditDialogOpen(true);
     };
 
-    // Filter users based on role
-    const filteredUsers = users;
+
 
     const roleColors: Record<string, string> = {
         admin: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",

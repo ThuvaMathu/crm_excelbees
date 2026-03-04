@@ -20,7 +20,7 @@ export async function POST(
     const { campaignId } = await params;
     const body = await request.json();
     const { userId, scheduledFor } = body as SendRequest;
-    const { campaignId } = await params;
+
 
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
