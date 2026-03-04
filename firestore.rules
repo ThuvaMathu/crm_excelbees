@@ -39,34 +39,39 @@ service cloud.firestore {
     // ============================================================================
     
     match /users/{userId} {
-      // Read: Users can read their own profile. Admins/Managers can read all.
+      // Read: Users can read their own profile. Managers/Admins can read all.
       allow read: if isOwner(userId) || isManager();
       
-      // Create: ONLY ADMINS can create users (no public registration)
-      // Exception: Allow self-creation during migration/first login if doc doesn't exist
+      // Create: ONLY ADMINS can create users (no public registration).
+      // Exception: Allow self-creation on FIRST login if document doesn't exist,
+      // but STRICTLY limit the role to 'team' to prevent privilege escalation.
       allow create: if isAdmin() || (
-        isOwner(userId) && 
-        !exists(/databases/$(database)/documents/users/$(userId))
+        isOwner(userId) &&
+        !exists(/databases/$(database)/documents/users/$(userId)) &&
+        request.resource.data.role == 'team' // Clients can never self-assign admin/manager
       );
       
-      // Update: 
-      // - Users can update their own non-critical fields (displayName, photoURL, settings, etc.)
-      // - Users CANNOT change: role, isApproved, isActive, createdBy
-      // - Users CAN change: isFirstLogin (when changing password)
-      // - Admins can update any field
-      allow update: if 
-        (isOwner(userId) && (
-          // Users can update non-sensitive fields
-          !request.resource.data.diff(resource.data)
+      // Update rules:
+      // - PROTECTED FIELDS: role, isApproved, isActive, permissions, createdBy
+      //   can ONLY be changed by admins/managers.
+      // - SELF-SERVICE FIELDS: displayName, photoURL, settings, phone, etc.
+      //   can be updated by the owner, as long as they don't touch protected fields.
+      // - isFirstLogin + passwordChangedAt: owner can ONLY flip isFirstLogin to false.
+      allow update: if isManager() || // Admins/Managers can update any field
+        (isOwner(userId) && !(
+          // Blocked fields — owners can NEVER modify these
+          request.resource.data.diff(resource.data)
             .affectedKeys()
-            .hasAny(['role', 'isApproved', 'isActive', 'createdBy']) ||
-          // Users can update isFirstLogin when changing password
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isFirstLogin', 'passwordChangedAt', 'updatedAt', 'lastLoginAt']) &&
-           request.resource.data.isFirstLogin == false)
+            .hasAny(['role', 'isApproved', 'isActive', 'permissions', 'createdBy'])
         )) ||
-        isManager(); // Admins/Managers can update any user
+        // Special case: owner can mark isFirstLogin = false when changing password
+        (isOwner(userId) &&
+          request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasOnly(['isFirstLogin', 'passwordChangedAt', 'updatedAt', 'lastLoginAt']) &&
+          request.resource.data.isFirstLogin == false);
       
-      // Delete: Only admins can delete users
+      // Delete: Only admins can delete user documents
       allow delete: if isAdmin();
     }
 

@@ -24,8 +24,11 @@ export interface UserDocument {
 
 // UserProfile imported from types/crm
 
-// Create user profile in Firestore
-// Create or Update user profile in Firestore
+/**
+ * Creates a full user profile in Firestore upon ADMIN-CREATED user provisioning.
+ * This should ONLY be called from the backend (Admin-managed user creation).
+ * It must NEVER be called during login.
+ */
 export async function createUserProfile(
   uid: string,
   data: {
@@ -47,49 +50,39 @@ export async function createUserProfile(
     
     if (existingUser.exists()) {
       // ----------------------------------------------------------------
-      // EXISTING USER: Only update non-destructive fields
+      // EXISTING USER: Only update safe, non-destructive fields.
+      // We NEVER touch: role, isActive, isApproved, permissions.
       // ----------------------------------------------------------------
       const userData = existingUser.data();
-      console.log(`✅ User exists (Role: ${userData.role}, Active: ${userData.isActive})`);
+      console.log(`✅ User exists (Role: ${userData.role}). Updating safe fields only.`);
 
-      // 1. Always update last login
-      const updates: any = {
-          lastLoginAt: serverTimestamp(),
+      const updates: Record<string, unknown> = {
+        lastLoginAt: serverTimestamp(),
       };
 
-      // 2. Sync profile fields if they are better/newer (optional, but good for Google Auth)
-      // Only update displayName if it's currently "Unknown" or missing
+      // Sync profile display fields only if currently missing
       if (!userData.displayName && data.displayName) {
-          updates.displayName = data.displayName;
+        updates.displayName = data.displayName;
       }
       if (!userData.photoURL && data.photoURL) {
-          updates.photoURL = data.photoURL;
+        updates.photoURL = data.photoURL;
       }
-
-      // 3. BACKFILL SAFETY: Only set admin fields if they represent a corruption state (missing)
-      // NEVER overwrite existing values, even if they are false/team
-      if (userData.role === undefined || userData.role === null) {
-          console.warn("⚠️ Data integrity fix: Backfilling missing ROLE to 'team'");
-          updates.role = "team";
-      }
-
-
-      // 4. Ensure createdAt exists
+      // Ensure createdAt exists (silent backfill, does not touch role)
       if (!userData.createdAt) {
-          updates.createdAt = serverTimestamp();
+        updates.createdAt = serverTimestamp();
       }
 
+      // SAFETY: never include role, isActive, isApproved, or permissions in updates.
       await setDoc(userRef, updates, { merge: true });
-      console.log("✅ User profile synced (updates only)");
+      console.log("✅ User profile synced (safe fields only)");
       return { success: true, error: null };
     }
 
     // ----------------------------------------------------------------
-    // NEW USER: Full creation
+    // NEW USER: Full creation. Only called by Admin-managed flows.
     // ----------------------------------------------------------------
     console.log("🆕 Creating NEW user profile...");
     
-    // Explicitly define the new user object to ensure strict schema enforcement
     const newUserProfile: Omit<UserProfile, "uid"> = {
       email: data.email,
       displayName: data.displayName || data.email.split('@')[0],
@@ -99,21 +92,19 @@ export async function createUserProfile(
       phone: data.phone || "",
       employeeId: data.employeeId || "",
       
-      // Critical Security Fields - Set Default
+      // Critical Security Fields — role MUST be explicitly passed in
       role: data.role || "team", 
-      isFirstLogin: true, // Force password change on first login
-      isActive: true, // Active by default
+      isFirstLogin: true,
+      isActive: true,
       status: "active",
       
-      // Verification Timestamps
       createdAt: serverTimestamp() as Timestamp,
-      createdBy: "self_registration", // Will be admin UID for admin-created users
+      createdBy: "admin_created",
       lastLoginAt: serverTimestamp() as Timestamp,
       passwordChangedAt: undefined,
       updatedAt: serverTimestamp() as Timestamp,
       
-      // Auth Provider
-      provider: "password", // Default to password, will be updated for Google
+      provider: "password",
       
       documents: [],
       settings: {
@@ -124,7 +115,7 @@ export async function createUserProfile(
     };
 
     await setDoc(userRef, newUserProfile);
-    console.log("✅ New user profile created explicitly:", uid);
+    console.log("✅ New user profile created:", uid);
     
     return { success: true, error: null };
   } catch (error: any) {
@@ -132,6 +123,7 @@ export async function createUserProfile(
     return { success: false, error: error.message };
   }
 }
+
 
 // Get user profile
 export async function getUserProfile(uid: string) {

@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         setHydrated(true);
                     }, 5000);
 
-                    unsubscribeDoc.current = onSnapshot(userRef, { includeMetadataChanges: true }, (docSnap) => {
+                    unsubscribeDoc.current = onSnapshot(userRef, { includeMetadataChanges: true }, async (docSnap) => {
 
                         const source = docSnap.metadata.fromCache ? "local cache" : "server";
                         console.log(`🔥 Firestore Update (${source}):`, docSnap.exists() ? "Exists" : "Missing");
@@ -46,10 +46,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         if (docSnap.exists()) {
                             const userData = docSnap.data();
 
+                            // --- ROLE RESOLUTION (Priority Order) ---
+                            // 1st: Custom Claims (server-side, cannot be spoofed by client)
+                            // 2nd: Firestore document role field (fallback)
+                            let resolvedRole = userData.role || "team";
+                            try {
+                                // Force-refresh to get the latest claims after role updates
+                                const tokenResult = await firebaseUser.getIdTokenResult(false);
+                                if (tokenResult.claims.role) {
+                                    resolvedRole = tokenResult.claims.role as string;
+                                    console.log(`🔑 Role resolved from Custom Claims: ${resolvedRole}`);
+                                } else {
+                                    console.log(`📄 Role resolved from Firestore: ${resolvedRole}`);
+                                }
+                            } catch {
+                                console.warn("⚠️ Could not read token claims, falling back to Firestore role.");
+                            }
+
                             const extendedUser: CustomUser = {
                                 ...firebaseUser,
-                                role: userData.role || "team",
-                                permissions: userData.permissions as UserPermissions | undefined, // NEW: Include permissions
+                                role: resolvedRole as CustomUser["role"],
+                                permissions: userData.permissions as UserPermissions | undefined,
                                 isFirstLogin: userData.isFirstLogin === true,
                                 createdBy: userData.createdBy,
                                 passwordChangedAt: userData.passwordChangedAt?.toDate(),
@@ -74,13 +91,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             }
 
                         } else {
-                            // Doc missing -> Unapproved
+                            // Doc missing -> Unapproved / not yet provisioned
                             console.warn("⚠️ User document missing - defaulting to unapproved");
                             const extendedUser: CustomUser = {
                                 ...firebaseUser,
                                 role: "team",
-                                isActive: true, // Active by default
-                                isFirstLogin: true, // Force password change for missing profile
+                                isActive: false, // Enforce inactive for un-provisioned users
+                                isFirstLogin: true,
                             };
                             setUser(extendedUser);
 

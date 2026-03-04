@@ -26,9 +26,7 @@ import {
 } from "@/components/ui/form";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { signInWithEmail } from "@/lib/auth/auth-service";
-import { createUserProfile } from "@/lib/firestore/users";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
-import { auth } from "@/lib/firebase";
 import { analytics } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { Mail, Lock, Eye, EyeOff, ChevronLeft } from "lucide-react";
@@ -99,21 +97,8 @@ export default function LoginPage() {
             }
 
             console.log("✅ Email login successful, user:", user.uid);
-            console.log("📝 Creating user profile in Firestore...");
-
-            // Ensure user profile exists in Firestore
-            try {
-                await createUserProfile(user.uid, {
-                    email: user.email!,
-                    displayName: user.displayName || user.email!.split("@")[0],
-                    photoURL: user.photoURL || undefined,
-                });
-                console.log("✅ User profile created/updated");
-            } catch (profileError: any) {
-                console.error("⚠️ Failed to create user profile:", profileError);
-                // Continue anyway - profile creation is not critical for login
-            }
-
+            // NOTE: Profile provisioning is handled exclusively by the AuthProvider
+            // listening to onSnapshot. We NEVER write to Firestore on login.
             analytics.loginSuccess(user.uid, user.email!, "email");
             toast.success("Welcome back!");
 

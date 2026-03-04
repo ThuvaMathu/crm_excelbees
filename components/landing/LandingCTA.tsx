@@ -2,53 +2,48 @@
 
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 export function LandingCTA() {
+    const scrollToContact = () => {
+        document.getElementById('enterprise-contact')?.scrollIntoView({
+            behavior: 'smooth'
+        });
+    };
+
     return (
-        <section className="py-24 bg-white dark:bg-slate-950 overflow-hidden relative">
+        <section className="py-20 bg-enterprise-midnight relative overflow-hidden">
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-b from-enterprise-slate to-enterprise-midnight" />
+            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+
+            {/* Subtle pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(245,158,11,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(245,158,11,0.02)_1px,transparent_1px)] bg-[size:60px_60px]" />
+
             <div className="container mx-auto px-4 md:px-6 relative z-10">
-                <div className="bg-gradient-to-br from-secondary via-slate-900 to-slate-950 rounded-3xl p-12 md:p-24 text-center shadow-2xl overflow-hidden relative">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8 }}
+                    className="text-center max-w-3xl mx-auto"
+                >
+                    <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4">
+                        Ready to take control of your CRM data?
+                    </h2>
+                    <p className="text-slate-400 mb-8 leading-relaxed">
+                        Join enterprises worldwide who trust us with their most critical customer data.
+                    </p>
 
-                    {/* Background Glow */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-3xl bg-primary/20 blur-[120px] pointer-events-none rounded-full" />
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                        className="relative z-10 max-w-3xl mx-auto"
+                    <Button
+                        size="lg"
+                        onClick={scrollToContact}
+                        className="group h-14 px-10 bg-gradient-to-r from-primary to-amber-600 hover:from-amber-600 hover:to-primary text-white font-semibold shadow-lg shadow-primary/20 transition-all duration-300 hover:shadow-primary/30 hover:scale-105"
                     >
-                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-6">
-                            Ready to transform your business?
-                        </h2>
-                        <p className="text-xl text-slate-300 mb-10 leading-relaxed">
-                            Join thousands of companies using ExcelBees to streamline their sales, support, and marketing teams.
-                        </p>
-
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Button
-                                size="lg"
-                                className="w-full sm:w-auto text-lg h-14 px-8 bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20"
-                                asChild
-                            >
-                                <Link href="/login">
-                                    Get a Free Demo
-                                    <ArrowRight className="ml-2 h-5 w-5" />
-                                </Link>
-                            </Button>
-                            <Button
-                                size="lg"
-                                variant="ghost"
-                                className="w-full sm:w-auto text-lg h-14 px-8 text-white hover:bg-white/10"
-                            >
-                                Contact Sales
-                            </Button>
-                        </div>
-                    </motion.div>
-                </div>
+                        Start Your Enterprise Journey
+                        <ChevronDown className="ml-2 h-5 w-5 transition-transform group-hover:translate-y-1" />
+                    </Button>
+                </motion.div>
             </div>
         </section>
     );
