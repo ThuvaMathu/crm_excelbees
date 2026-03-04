@@ -1,3 +1,0 @@
-﻿app/(dashboard)/marketing/email-campaigns/[campaignId]/page.tsx(330,98): error TS2339: Property 'scheduledFor' does not exist on type 'Campaign'.
-app/(dashboard)/marketing/email-campaigns/[campaignId]/page.tsx(330,150): error TS2339: Property 'scheduledFor' does not exist on type 'Campaign'.
-app/(dashboard)/marketing/email-campaigns/[campaignId]/page.tsx(330,208): error TS2339: Property 'scheduledFor' does not exist on type 'Campaign'.
