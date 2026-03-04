@@ -32,7 +32,7 @@ export async function createNotification(
 }> {
   try {
     console.log("🔔 Creating notification for user:", userId);
-    
+
     const notificationData = {
       userId,
       type,
@@ -46,7 +46,7 @@ export async function createNotification(
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), notificationData);
     console.log("✅ Notification created with ID:", docRef.id);
-    
+
     return {
       success: true,
       id: docRef.id,
@@ -69,24 +69,56 @@ export async function getNotifications(userId: string, unreadOnly: boolean = fal
 }> {
   try {
     console.log("📋 Fetching notifications for user:", userId);
-    
-    const constraints = [
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc"),
-      limit(50),
-    ];
 
-    if (unreadOnly) {
-      constraints.splice(1, 0, where("read", "==", false));
+    let notifications: Notification[] = [];
+
+    try {
+      // Try with orderBy (requires composite index)
+      const constraints = [
+        where("userId", "==", userId),
+        orderBy("createdAt", "desc"),
+        limit(50),
+      ];
+
+      if (unreadOnly) {
+        constraints.splice(1, 0, where("read", "==", false));
+      }
+
+      const q = query(collection(db, COLLECTION_NAME), ...constraints);
+      const querySnapshot = await getDocs(q);
+
+      querySnapshot.forEach((doc) => {
+        notifications.push({ id: doc.id, ...doc.data() } as Notification);
+      });
+    } catch (indexError: any) {
+      // Fallback: query without orderBy (no composite index needed), sort client-side
+      console.warn("⚠️ Notification query with orderBy failed (missing index?), falling back to client-side sort:", indexError.message);
+
+      const constraints: any[] = [
+        where("userId", "==", userId),
+      ];
+
+      if (unreadOnly) {
+        constraints.push(where("read", "==", false));
+      }
+
+      const q = query(collection(db, COLLECTION_NAME), ...constraints);
+      const querySnapshot = await getDocs(q);
+
+      querySnapshot.forEach((doc) => {
+        notifications.push({ id: doc.id, ...doc.data() } as Notification);
+      });
+
+      // Sort client-side (newest first)
+      notifications.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
+
+      // Limit to 50
+      notifications = notifications.slice(0, 50);
     }
-
-    const q = query(collection(db, COLLECTION_NAME), ...constraints);
-    const querySnapshot = await getDocs(q);
-
-    const notifications: Notification[] = [];
-    querySnapshot.forEach((doc) => {
-      notifications.push({ id: doc.id, ...doc.data() } as Notification);
-    });
 
     console.log("✅ Found", notifications.length, "notifications");
     return {
@@ -115,17 +147,32 @@ export async function getUnreadCount(userId: string): Promise<{
     );
 
     const querySnapshot = await getDocs(q);
-    
+
     return {
       count: querySnapshot.size,
       error: null,
     };
   } catch (error: any) {
     console.error("❌ Failed to get unread count:", error.message);
-    return {
-      count: 0,
-      error: error.message,
-    };
+
+    // Fallback: get all user notifications and count unread client-side
+    try {
+      const fallbackQ = query(
+        collection(db, COLLECTION_NAME),
+        where("userId", "==", userId)
+      );
+      const fallbackSnapshot = await getDocs(fallbackQ);
+      let count = 0;
+      fallbackSnapshot.forEach((doc) => {
+        if (doc.data().read === false) count++;
+      });
+      return { count, error: null };
+    } catch (fallbackError: any) {
+      return {
+        count: 0,
+        error: fallbackError.message,
+      };
+    }
   }
 }
 
@@ -162,7 +209,7 @@ export async function markAllAsRead(userId: string): Promise<{
 }> {
   try {
     console.log("✓ Marking all notifications as read for user:", userId);
-    
+
     const q = query(
       collection(db, COLLECTION_NAME),
       where("userId", "==", userId),
@@ -170,7 +217,7 @@ export async function markAllAsRead(userId: string): Promise<{
     );
 
     const querySnapshot = await getDocs(q);
-    
+
     const updatePromises = querySnapshot.docs.map((document) =>
       updateDoc(doc(db, COLLECTION_NAME, document.id), { read: true })
     );

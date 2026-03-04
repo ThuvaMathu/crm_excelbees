@@ -57,6 +57,7 @@ export default function CompanyDetailPage({
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || company?.ownerId === user?.uid;
     const canDelete = user?.role === "admin" || user?.role === "manager";
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
 
     useEffect(() => {
         fetchCompanyData();
@@ -297,7 +298,7 @@ export default function CompanyDetailPage({
                                             <span>Annual Revenue</span>
                                         </div>
                                         <p className="text-sm font-medium">
-                                            ${company.annualRevenue.toLocaleString()}
+                                            {canViewFinancials ? `$${company.annualRevenue.toLocaleString()}` : "$•••"}
                                         </p>
                                     </div>
                                 )}
@@ -450,7 +451,7 @@ export default function CompanyDetailPage({
                                                         <div className="flex-1">
                                                             <p className="text-sm font-medium">{deal.title}</p>
                                                             <p className="text-xs text-muted-foreground">
-                                                                ${deal.value?.toLocaleString()} • {deal.stage}
+                                                                {canViewFinancials ? `$${deal.value?.toLocaleString()}` : "$•••"} • {deal.stage}
                                                             </p>
                                                         </div>
                                                     </div>

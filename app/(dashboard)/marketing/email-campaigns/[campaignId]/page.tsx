@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { Campaign, CampaignStats } from "@/types/email-campaigns";
-import { formatCampaignDate, getCampaignStatusColor, formatCampaignStatus } from "@/lib/email-campaigns/utils";
+import { formatCampaignDate, getCampaignStatusColor, formatCampaignStatus, estimateSendTime } from "@/lib/email-campaigns/utils";
 import {
     ArrowLeft,
     Mail,
@@ -319,7 +319,7 @@ export default function CampaignDetailPage() {
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                     <div>
                                         <p className="text-sm text-muted-foreground">Created</p>
-                                        <p className="text-sm">{formatCampaignDate(campaign.createdAt.toDate())}</p>
+                                        <p className="text-sm">{formatCampaignDate((campaign.createdAt as any)?._seconds ? new Date((campaign.createdAt as any)._seconds * 1000) : new Date(campaign.createdAt as any))}</p>
                                     </div>
                                 </div>
                                 {campaign.scheduledAt && (
@@ -327,7 +327,7 @@ export default function CampaignDetailPage() {
                                         <Clock className="h-4 w-4 text-amber-600" />
                                         <div>
                                             <p className="text-sm text-muted-foreground">Scheduled For</p>
-                                            <p className="text-sm">{formatCampaignDate(campaign.scheduledAt.toDate())}</p>
+                                            <p className="text-sm">{formatCampaignDate((campaign.scheduledFor as any)?._seconds ? new Date((campaign.scheduledFor as any)._seconds * 1000) : new Date(campaign.scheduledFor as any))}</p>
                                         </div>
                                     </div>
                                 )}
@@ -336,7 +336,7 @@ export default function CampaignDetailPage() {
                                         <Send className="h-4 w-4 text-green-600" />
                                         <div>
                                             <p className="text-sm text-muted-foreground">Sent</p>
-                                            <p className="text-sm">{formatCampaignDate(campaign.sentAt.toDate())}</p>
+                                            <p className="text-sm">{formatCampaignDate((campaign.sentAt as any)?._seconds ? new Date((campaign.sentAt as any)._seconds * 1000) : new Date(campaign.sentAt as any))}</p>
                                         </div>
                                     </div>
                                 )}
@@ -344,7 +344,7 @@ export default function CampaignDetailPage() {
                                     <Edit className="h-4 w-4 text-muted-foreground" />
                                     <div>
                                         <p className="text-sm text-muted-foreground">Last Updated</p>
-                                        <p className="text-sm">{formatCampaignDate(campaign.updatedAt.toDate())}</p>
+                                        <p className="text-sm">{formatCampaignDate((campaign.updatedAt as any)?._seconds ? new Date((campaign.updatedAt as any)._seconds * 1000) : new Date(campaign.updatedAt as any))}</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -394,7 +394,7 @@ export default function CampaignDetailPage() {
                                     <div className="p-4 border rounded-lg">
                                         <p className="text-sm text-muted-foreground">Est. Send Time</p>
                                         <p className="text-lg font-bold">
-                                            {campaign.throttling.emailsPerHour} emails/hour
+                                            {estimateSendTime(campaign.recipientCount, campaign.throttling.emailsPerHour)}
                                         </p>
                                     </div>
                                 </div>

@@ -68,6 +68,7 @@ export default function LeadDetailPage({
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || lead?.ownerId === user?.uid;
     const canDelete = user?.role === "admin" || user?.role === "manager";
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
 
     useEffect(() => {
         fetchLeadData();
@@ -579,7 +580,7 @@ export default function LeadDetailPage({
                                             <span>Estimated Value</span>
                                         </div>
                                         <p className="text-sm font-medium">
-                                            ${lead.value.toLocaleString()}
+                                            {canViewFinancials ? `$${lead.value.toLocaleString()}` : "$•••"}
                                         </p>
                                     </div>
                                 )}

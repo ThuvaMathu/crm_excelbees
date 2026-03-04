@@ -52,7 +52,7 @@ export async function PUT(
       return NextResponse.json(
         { error: "User ID and updates required" },
         { status: 400 }
-    );
+      );
     }
 
     const campaignRef = adminDb

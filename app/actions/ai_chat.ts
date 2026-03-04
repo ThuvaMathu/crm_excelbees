@@ -2,19 +2,49 @@
 
 import { getAIAdapter } from "@/lib/ai/service";
 import { ChatMessage, ChatMode } from "@/types/ai";
+import { adminDb } from "@/lib/firebase-admin";
 
-// Mock function to simulate fetching CRM context
-// In a real scenario, this would import 'getLeads', 'getDeals' etc.
-async function getCRMContext() {
-    // Simulating a fetching data from the database
-    // This is "Pilot Mode" context
-    return `
-    CURRENT USER CONTEXT:
-    - Role: Sales Manager
-    - Active Leads: 5 (2 Qualified, 3 New)
-    - Recent Deals: "Acme Corp" ($50k, Negotiation), "TechStart" ($12k, Proposal)
-    - Tasks Today: Call John Doe at 2pm.
+async function getCRMContext(userId?: string) {
+    try {
+        // Fetch real leads data
+        const leadsSnapshot = await adminDb.collection("leads").get();
+        const leads = leadsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const leadsByStatus: Record<string, number> = {};
+        leads.forEach((lead: any) => {
+            const status = lead.status || "Unknown";
+            leadsByStatus[status] = (leadsByStatus[status] || 0) + 1;
+        });
+
+        const statusBreakdown = Object.entries(leadsByStatus)
+            .map(([status, count]) => `${count} ${status}`)
+            .join(", ");
+
+        // Fetch real deals data
+        const dealsSnapshot = await adminDb.collection("deals").get();
+        const deals = dealsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const recentDeals = deals.slice(0, 5).map((deal: any) =>
+            `"${deal.name || deal.title || 'Untitled'}" ($${(deal.value || 0).toLocaleString()}, ${deal.stage || 'Unknown'})`
+        ).join(", ");
+
+        // Fetch tasks
+        const tasksSnapshot = await adminDb.collection("tasks").get();
+        const tasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const pendingTasks = tasks.filter((t: any) => t.status !== "completed" && t.status !== "done").length;
+
+        return `
+    CURRENT CRM DATA (LIVE):
+    - Total Leads: ${leads.length} (${statusBreakdown || "none"})
+    - Total Deals: ${deals.length}${recentDeals ? ` | Recent: ${recentDeals}` : ""}
+    - Pending Tasks: ${pendingTasks}
     `;
+    } catch (error) {
+        console.error("Error fetching CRM context:", error);
+        return `
+    CURRENT CRM DATA: Unable to fetch live data. Please try again.
+    `;
+    }
 }
 
 export async function chatWithCopilot(
@@ -29,8 +59,8 @@ export async function chatWithCopilot(
         let contextData = "";
 
         if (mode === 'crm') {
-             contextData = await getCRMContext();
-             systemPrompt = `
+            contextData = await getCRMContext();
+            systemPrompt = `
 You are the Excel Bees CRM Copilot, an advanced AI assistant for sales professionals.
 Your goal is to help the user manage their leads, deals, and tasks using the provided CRM data.
 

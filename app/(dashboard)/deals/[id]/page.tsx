@@ -64,6 +64,7 @@ export default function DealDetailPage({
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || deal?.ownerId === user?.uid;
     const canDelete = user?.role === "admin" || user?.role === "manager";
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
 
     useEffect(() => {
         fetchDealData();
@@ -321,8 +322,18 @@ export default function DealDetailPage({
                         <div className="flex flex-col md:flex-row justify-between relative z-10 gap-4 md:gap-0">
                             {STAGES.map((stage, index) => {
                                 const isActive = stage === deal.stage;
-                                const isCompleted = index < currentStageIndex;
                                 const isLost = deal.stage === "Lost";
+                                const isWon = deal.stage === "Won";
+
+                                // Won and Lost are mutually exclusive endpoints, not sequential
+                                // Only the first 4 stages (Pipeline → Conversation) are sequential
+                                const isCompleted = 
+                                    // If deal is Won: mark Pipeline→Conversation as completed, Won is active, Lost is not completed
+                                    (isWon && index < 4) ||
+                                    // If deal is Lost: mark Pipeline→Conversation as completed, Lost is active, Won is NOT completed
+                                    (isLost && index < 4) ||
+                                    // For other stages: mark previous stages as completed (but never Won/Lost)
+                                    (!isWon && !isLost && index < currentStageIndex && index < 4);
 
                                 // Better visualization logic
                                 const statusColor =
@@ -369,7 +380,7 @@ export default function DealDetailPage({
                                         <span>Value</span>
                                     </div>
                                     <p className="text-2xl font-bold">
-                                        ${deal.value.toLocaleString()}
+                                        {canViewFinancials ? `$${deal.value.toLocaleString()}` : "$•••"}
                                     </p>
                                 </div>
                                 <div className="space-y-1">

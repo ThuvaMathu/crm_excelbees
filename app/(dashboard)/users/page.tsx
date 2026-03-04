@@ -24,7 +24,8 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import {
     getUsers,
     approveUser,
-    UserProfile,
+    updateUserRole,
+    UserProfile
 } from "@/lib/firestore/users";
 import { deleteUserAction } from "@/app/actions/admin-users";
 import { useAuth } from "@/hooks/useAuth";
@@ -106,31 +107,24 @@ export default function UsersPage() {
             return;
         }
 
-        try {
-            const { success, error } = await deleteUserAction(userId);
-            if (success) {
-                toast.success("User deleted successfully");
-                await logAudit("user_deleted", userId);
-                setUsers(prevUsers => prevUsers.filter(u => u.uid !== userId));
-            } else {
-                toast.error("Failed to delete user: " + error);
-            }
-        } catch (err: any) {
-            toast.error("An error occurred: " + err.message);
+        const { success, error } = await deleteUserAction(userId);
+        if (success) {
+            toast.success("User deleted successfully");
+            setUsers(prevUsers => prevUsers.filter(u => u.uid !== userId));
+        } else {
+            toast.error("Failed to delete user: " + error);
         }
     };
 
-    const logAudit = async (action: AuditAction, targetUserId: string) => {
-        if (!currentUser) return;
-        await createAuditLog({
-            action,
-            performedBy: currentUser.uid,
-            performedByName: currentUser.displayName || currentUser.email || "",
-            targetUserId,
-            targetUserName: users.find(u => u.uid === targetUserId)?.displayName || targetUserId,
-            details: {},
-        });
-    };
+    // Filter users based on RBAC
+    const filteredUsers = users.filter(u => {
+        if (currentUser?.role === 'admin') return true;
+        if (currentUser?.role === 'manager') {
+            // Managers see only Team members
+            return u.role === 'team';
+        }
+        return false;
+    });
 
     const openEditDialog = (user: UserProfile) => {
         setEditingUser(user);

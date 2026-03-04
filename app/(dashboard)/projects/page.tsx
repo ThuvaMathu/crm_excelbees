@@ -11,12 +11,17 @@ import { Plus, Briefcase, Archive } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { CreateProjectDialog } from "@/components/projects/CreateProjectDialog";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ProjectsPage() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
+    const { user } = useAuth();
+
+    // Role-based access - only admin/manager can see financial data
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
 
     // Helper to safely convert Firestore Timestamp or Date to JS Date
     const safeToDate = (date: any): Date | null => {
@@ -186,7 +191,7 @@ export default function ProjectsPage() {
                                     {/* Budget */}
                                     {project.budget && (
                                         <div className="text-xs text-muted-foreground">
-                                            <span className="font-medium">Budget:</span> ${project.budget.toLocaleString()}
+                                            <span className="font-medium">Budget:</span> {canViewFinancials ? `$${project.budget.toLocaleString()}` : "$•••"}
                                         </div>
                                     )}
 

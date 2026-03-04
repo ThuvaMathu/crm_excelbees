@@ -268,11 +268,20 @@ export default function EmailCampaignsPage() {
                                                             {campaign.recipientCount} recipients
                                                         </span>
                                                         <span>
-                                                            Created {formatCampaignDate(campaign.createdAt.toDate(), false)}
+                                                            Created {formatCampaignDate(
+                                                                (campaign.createdAt as any)?._seconds
+                                                                    ? new Date((campaign.createdAt as any)._seconds * 1000)
+                                                                    : new Date(campaign.createdAt as any),
+                                                                false
+                                                            )}
                                                         </span>
                                                         {campaign.sentAt && (
                                                             <span>
-                                                                Sent {formatCampaignDate(campaign.sentAt.toDate())}
+                                                                Sent {formatCampaignDate(
+                                                                    (campaign.sentAt as any)?._seconds
+                                                                        ? new Date((campaign.sentAt as any)._seconds * 1000)
+                                                                        : new Date(campaign.sentAt as any)
+                                                                )}
                                                             </span>
                                                         )}
                                                     </div>

@@ -52,9 +52,10 @@ const STAGE_COLORS: Record<DealStage, string> = {
 interface DealCardProps {
     deal: Deal;
     isDragging?: boolean;
+    canViewFinancials?: boolean;
 }
 
-function DealCard({ deal, isDragging }: DealCardProps) {
+function DealCard({ deal, isDragging, canViewFinancials = true }: DealCardProps) {
     const router = useRouter();
     const {
         attributes,
@@ -105,7 +106,7 @@ function DealCard({ deal, isDragging }: DealCardProps) {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 text-sm font-bold text-primary">
                             <DollarSign className="h-4 w-4" />
-                            {deal.value.toLocaleString()}
+                            {canViewFinancials ? deal.value.toLocaleString() : "•••"}
                         </div>
                         <Badge variant="outline" className="text-xs">
                             {deal.probability}%
@@ -127,9 +128,10 @@ interface KanbanColumnProps {
     stage: DealStage;
     deals: Deal[];
     totalValue: number;
+    canViewFinancials?: boolean;
 }
 
-function KanbanColumn({ stage, deals, totalValue }: KanbanColumnProps) {
+function KanbanColumn({ stage, deals, totalValue, canViewFinancials = true }: KanbanColumnProps) {
     const { setNodeRef, isOver } = useDroppable({
         id: stage,
         data: { type: "column", stage },
@@ -149,7 +151,7 @@ function KanbanColumn({ stage, deals, totalValue }: KanbanColumnProps) {
                     </Badge>
                 </div>
                 <div className="text-xs font-medium mt-1">
-                    ${totalValue.toLocaleString()}
+                    {canViewFinancials ? `$${totalValue.toLocaleString()}` : "$•••"}
                 </div>
             </div>
 
@@ -165,7 +167,7 @@ function KanbanColumn({ stage, deals, totalValue }: KanbanColumnProps) {
                             </div>
                         ) : (
                             deals.map((deal) => (
-                                <DealCard key={deal.id} deal={deal} />
+                                <DealCard key={deal.id} deal={deal} canViewFinancials={canViewFinancials} />
                             ))
                         )}
                     </div>
@@ -313,7 +315,7 @@ export default function DealsKanbanPage() {
                     <div className="flex items-center justify-between">
                         <CardTitle>Pipeline Overview</CardTitle>
                         <div className="text-sm text-muted-foreground">
-                            Total Value: <span className="font-bold text-foreground">${totalValue.toLocaleString()}</span>
+                            Total Value: <span className="font-bold text-foreground">{canEdit ? `$${totalValue.toLocaleString()}` : "$•••"}</span>
                         </div>
                     </div>
                 </CardHeader>
@@ -335,6 +337,7 @@ export default function DealsKanbanPage() {
                                 stage={stage}
                                 deals={deals}
                                 totalValue={stageValue}
+                                canViewFinancials={canEdit}
                             />
                         );
                     })}

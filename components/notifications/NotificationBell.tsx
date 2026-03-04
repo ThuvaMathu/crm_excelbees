@@ -104,7 +104,12 @@ export function NotificationBell() {
 
         const basePath = routes[notification.entityType];
         if (basePath) {
-            router.push(`${basePath}/${notification.entityId}`);
+            // Tasks don't have a detail page, so navigate to the list
+            if (notification.entityType === "task") {
+                router.push(basePath);
+            } else {
+                router.push(`${basePath}/${notification.entityId}`);
+            }
         }
     };
 

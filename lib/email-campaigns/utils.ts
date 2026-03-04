@@ -285,8 +285,26 @@ export function cleanObject(obj: any): any {
 /**
  * Format date for display
  */
-export function formatCampaignDate(date: Date | Timestamp, includeTime: boolean = true): string {
-  const d = date instanceof Timestamp ? date.toDate() : date;
+export function formatCampaignDate(date: any, includeTime: boolean = true): string {
+  let d: Date;
+
+  if (date instanceof Timestamp) {
+    d = date.toDate();
+  } else if (date instanceof Date) {
+    d = date;
+  } else if (date && typeof date === 'object' && '_seconds' in date) {
+    // Serialized Firestore timestamp from JSON API response
+    d = new Date(date._seconds * 1000);
+  } else if (date && typeof date === 'object' && 'seconds' in date) {
+    // Alternative serialized format
+    d = new Date(date.seconds * 1000);
+  } else {
+    // String or number
+    d = new Date(date);
+  }
+
+  if (isNaN(d.getTime())) return "N/A";
+
   const dateStr = d.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",

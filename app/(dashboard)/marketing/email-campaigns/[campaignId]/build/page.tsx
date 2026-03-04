@@ -258,14 +258,23 @@ export default function CampaignBuildPage() {
                                             {/* Email Content */}
                                             <div className="space-y-2">
                                                 <p className="text-sm font-medium">Email Content:</p>
-                                                <div
-                                                    className={`prose dark:prose-invert max-w-none text-sm p-4 bg-white dark:bg-slate-900 rounded-lg border max-h-96 overflow-y-auto ${
-                                                        devicePreview === "mobile" ? "max-w-sm mx-auto" : ""
-                                                    }`}
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: replaceMergeTags(generatedContent.html, previewContact),
-                                                    }}
-                                                />
+                                                {devicePreview === "mobile" ? (
+                                                    <div className="flex justify-center">
+                                                        <div
+                                                            className="w-[360px] prose prose-sm dark:prose-invert max-w-none text-xs p-3 bg-white dark:bg-slate-900 rounded-lg border overflow-y-auto break-words max-h-[550px] [&_img]:max-w-full [&_table]:w-full [&_table]:table-fixed [&_a]:break-all [&_*]:max-w-full"
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: replaceMergeTags(generatedContent.html, previewContact),
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div
+                                                        className="prose dark:prose-invert max-w-none text-sm p-4 bg-white dark:bg-slate-900 rounded-lg border max-h-96 overflow-y-auto break-words"
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: replaceMergeTags(generatedContent.html, previewContact),
+                                                        }}
+                                                    />
+                                                )}
                                             </div>
 
                                             {/* Actions */}

@@ -398,7 +398,13 @@ export default function NewCampaignPage() {
                                 <Button variant="outline" onClick={() => setStep("type")}>
                                     Back
                                 </Button>
-                                <Button onClick={() => handleCreateCampaign(false)} disabled={loading}>
+                                <Button onClick={() => {
+                                    if (!formData.name || !formData.fromName || !formData.fromEmail || !formData.subject) {
+                                        toast.error("Please fill in all required fields");
+                                        return;
+                                    }
+                                    setStep("audience");
+                                }} disabled={loading}>
                                     {loading ? "Creating..." : "Continue to Audience Selection"}
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>

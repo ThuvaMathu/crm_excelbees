@@ -17,9 +17,10 @@ interface InvoiceDetailProps {
     onMarkPaid: () => void;
     sending?: boolean;
     canModify?: boolean;
+    canViewFinancials?: boolean;
 }
 
-export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid, sending, canModify = true }: InvoiceDetailProps) {
+export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid, sending, canModify = true, canViewFinancials = true }: InvoiceDetailProps) {
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
             Draft: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
@@ -128,9 +129,9 @@ export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid,
                                             <tr key={i}>
                                                 <td className="py-3">{item.description}</td>
                                                 <td className="text-right py-3">{item.quantity}</td>
-                                                <td className="text-right py-3">{invoice.currency} {item.price.toFixed(2)}</td>
+                                                <td className="text-right py-3">{canViewFinancials ? `${invoice.currency} ${item.price.toFixed(2)}` : "•••"}</td>
                                                 <td className="text-right py-3 font-medium">
-                                                    {invoice.currency} {(item.quantity * item.price).toFixed(2)}
+                                                    {canViewFinancials ? `${invoice.currency} ${(item.quantity * item.price).toFixed(2)}` : "•••"}
                                                 </td>
                                             </tr>
                                         ))}
@@ -144,21 +145,21 @@ export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid,
                             <div className="flex flex-col items-end gap-2 text-sm">
                                 <div className="flex justify-between w-48">
                                     <span className="text-muted-foreground">Subtotal:</span>
-                                    <span>{invoice.currency} {invoice.subtotal.toFixed(2)}</span>
+                                    <span>{canViewFinancials ? `${invoice.currency} ${invoice.subtotal.toFixed(2)}` : "•••"}</span>
                                 </div>
                                 <div className="flex justify-between w-48">
                                     <span className="text-muted-foreground">Tax ({invoice.taxRate}%):</span>
-                                    <span>{invoice.currency} {invoice.taxAmount.toFixed(2)}</span>
+                                    <span>{canViewFinancials ? `${invoice.currency} ${invoice.taxAmount.toFixed(2)}` : "•••"}</span>
                                 </div>
                                 {invoice.discount > 0 && (
                                     <div className="flex justify-between w-48 text-green-600">
                                         <span>Discount:</span>
-                                        <span>-{invoice.currency} {invoice.discount.toFixed(2)}</span>
+                                        <span>{canViewFinancials ? `-${invoice.currency} ${invoice.discount.toFixed(2)}` : "•••"}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between w-48 text-lg font-bold border-t pt-2 mt-2">
                                     <span>Total:</span>
-                                    <span>{invoice.currency} {invoice.total.toFixed(2)}</span>
+                                    <span>{canViewFinancials ? `${invoice.currency} ${invoice.total.toFixed(2)}` : "•••"}</span>
                                 </div>
                             </div>
                         </CardContent>

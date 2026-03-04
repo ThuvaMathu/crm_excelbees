@@ -91,6 +91,7 @@ export default function ProjectDetailPage() {
     // Role-based access control - only admins, managers, and project owners can edit
     const canEdit = user?.role === "admin" || user?.role === "manager" || project?.ownerId === user?.uid;
     const canEditProject = canEdit;
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
 
     const getTaskPriorityColor = (priority: string) => {
         switch (priority) {
@@ -216,10 +217,12 @@ export default function ProjectDetailPage() {
                         <CheckSquare className="h-4 w-4" />
                         Tasks
                     </TabsTrigger>
-                    <TabsTrigger value="financials" className="gap-2">
-                        <DollarSign className="h-4 w-4" />
-                        Financials
-                    </TabsTrigger>
+                    {canViewFinancials && (
+                        <TabsTrigger value="financials" className="gap-2">
+                            <DollarSign className="h-4 w-4" />
+                            Financials
+                        </TabsTrigger>
+                    )}
                     <TabsTrigger value="team" className="gap-2">
                         <Users className="h-4 w-4" />
                         Team

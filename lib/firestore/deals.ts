@@ -359,14 +359,24 @@ export async function updateDeal(id: string, data: Partial<DealInput>): Promise<
       const title = `Deal ${data.stage}`;
       const message = `Deal "${currentDeal.title}" has been marked as ${data.stage}.`;
 
-      await createNotification(
-        currentDeal.ownerId,
-        type,
-        title,
-        message,
-        "deal",
-        id
-      );
+      if (currentDeal.ownerId) {
+        console.log("🔔 Creating deal notification for owner:", currentDeal.ownerId, "type:", type);
+        try {
+          const notifResult = await createNotification(
+            currentDeal.ownerId,
+            type,
+            title,
+            message,
+            "deal",
+            id
+          );
+          console.log("🔔 Deal notification result:", notifResult);
+        } catch (notifError) {
+          console.error("❌ Failed to create deal notification:", notifError);
+        }
+      } else {
+        console.warn("⚠️ Deal has no ownerId, skipping notification");
+      }
     }
 
     return {
@@ -405,14 +415,24 @@ export async function updateDealStage(id: string, stage: DealStage): Promise<{
       const title = `Deal ${stage}`;
       const message = `Deal "${currentDeal.title}" has been marked as ${stage}.`;
 
-      await createNotification(
-        currentDeal.ownerId,
-        type,
-        title,
-        message,
-        "deal",
-        id
-      );
+      if (currentDeal.ownerId) {
+        console.log("🔔 Creating deal stage notification for owner:", currentDeal.ownerId, "type:", type);
+        try {
+          const notifResult = await createNotification(
+            currentDeal.ownerId,
+            type,
+            title,
+            message,
+            "deal",
+            id
+          );
+          console.log("🔔 Deal stage notification result:", notifResult);
+        } catch (notifError) {
+          console.error("❌ Failed to create deal stage notification:", notifError);
+        }
+      } else {
+        console.warn("⚠️ Deal has no ownerId, skipping notification");
+      }
     }
 
     // Invalidate cache

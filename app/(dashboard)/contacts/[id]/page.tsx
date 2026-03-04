@@ -51,6 +51,7 @@ export default function ContactDetailPage({
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || contact?.ownerId === user?.uid;
     const canDelete = user?.role === "admin" || user?.role === "manager";
+    const canViewFinancials = user?.role === "admin" || user?.role === "manager";
 
     useEffect(() => {
         fetchContactData();
@@ -394,7 +395,7 @@ export default function ContactDetailPage({
                                                         <div className="flex-1">
                                                             <p className="text-sm font-medium">{deal.title}</p>
                                                             <p className="text-xs text-muted-foreground">
-                                                                ${deal.value?.toLocaleString()} • {deal.stage}
+                                                                {canViewFinancials ? `$${deal.value?.toLocaleString()}` : "$•••"} • {deal.stage}
                                                             </p>
                                                         </div>
                                                     </div>
