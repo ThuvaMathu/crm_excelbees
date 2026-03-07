@@ -17,11 +17,8 @@ import type {
   SitemapData,
   SelectedPage,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { discoverSitemapsSchema } from '@/schema/keyword-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -123,28 +120,12 @@ export async function POST(request: NextRequest) {
         const urlsToAnalyze = sitemapUrls.slice(0, 200);
         const categorizationPrompt = getSitemapCategorizationPrompt(urlsToAnalyze);
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a website analyst. Categorize website pages. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: categorizationPrompt,
-            },
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
-        });
-
-        const result = completion.choices[0].message.content;
-        if (!result) {
-          throw new Error('No categorization result');
-        }
-
-        const parsed = JSON.parse(result);
+        const parsed = await generateJSON<any>(
+          'flash',
+          'You are a website analyst. Categorize website pages. Return valid JSON only.',
+          categorizationPrompt,
+          discoverSitemapsSchema
+        );
         const categorizedPages: SelectedPage[] = (parsed.categorizedPages || []).map(
           (page: any) => {
             let fullUrl = page.url;
@@ -154,7 +135,7 @@ export async function POST(request: NextRequest) {
             } catch (e) {
               // Keep original if invalid
             }
-            
+
             return {
               pageId: generateId(),
               url: fullUrl,

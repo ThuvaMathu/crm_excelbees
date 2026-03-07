@@ -14,11 +14,8 @@ import type {
   DiscoverCompetitorsResponse,
   DiscoveredCompetitor
 } from '@/types/competitor-analysis';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { fallbackCompetitorArraySchema, validationCompetitorIndicesSchema } from '@/schema/competitor-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,36 +70,23 @@ export async function POST(request: NextRequest) {
           location
         );
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a market research expert. Find real competitor companies based on industry and location. Return valid JSON only.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.5,
-          response_format: { type: 'json_object' }
-        });
+        const result = await generateJSON<{ competitors: Array<{ name: string; website: string }> }>(
+          'pro',
+          'You are a market research expert. Find real competitor companies based on industry and location. Return valid JSON only.',
+          prompt,
+          fallbackCompetitorArraySchema
+        );
 
-        const resultText = completion.choices[0].message.content;
-        if (resultText) {
-          const result = JSON.parse(resultText);
-          const webCompetitors = result.competitors || [];
+        const webCompetitors = result.competitors || [];
 
-          allCompetitors.push(...webCompetitors.map((c: any) => ({
-            name: c.name,
-            website: cleanCompetitorUrl(c.website),
-            source: 'web_search' as const,
-            selected: true,
-          })));
+        allCompetitors.push(...webCompetitors.map((c) => ({
+          name: c.name,
+          website: cleanCompetitorUrl(c.website),
+          source: 'web_search' as const,
+          selected: true,
+        })));
 
-          console.log(`✅ [API] Discover Competitors: Found ${webCompetitors.length} via Web Search`);
-        }
+        console.log(`✅ [API] Discover Competitors: Found ${webCompetitors.length} via Web Search`);
       } catch (error) {
         console.error('❌ [API] Web search failed:', error);
       }
@@ -148,10 +132,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Limit to requested number (from preferences or default 5)
-    const requestedCount = preferences.analysisDepth === 'quick' ? 3 
-      : preferences.analysisDepth === 'deep' ? 10 
-      : 5;
-    
+    const requestedCount = preferences.analysisDepth === 'quick' ? 3
+      : preferences.analysisDepth === 'deep' ? 10
+        : 5;
+
     finalCompetitors = finalCompetitors.slice(0, requestedCount);
 
     // Update analysis document
@@ -171,9 +155,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error discovering competitors:', error);
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to discover competitors',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -216,17 +200,17 @@ function cleanCompetitorUrl(url: string): string {
   try {
     const urlWithProtocol = url.startsWith('http') ? url : `https://${url}`;
     const urlObj = new URL(urlWithProtocol);
-    
+
     // Clear query parameters/tracking codes
     urlObj.search = '';
     urlObj.hash = '';
-    
+
     // Remove trailing slash for consistency
     let cleanUrl = urlObj.toString();
     if (cleanUrl.endsWith('/')) {
-        cleanUrl = cleanUrl.slice(0, -1);
+      cleanUrl = cleanUrl.slice(0, -1);
     }
-    
+
     return cleanUrl;
   } catch (e) {
     return url;
@@ -250,28 +234,13 @@ async function validateCompetitors(
       competitors.map(c => ({ name: c.name, website: c.website }))
     );
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a business analyst. Validate which companies are actual competitors. Return valid JSON only.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.2,
-      response_format: { type: 'json_object' }
-    });
+    const result = await generateJSON<{ validCompetitorIndices: number[] }>(
+      'pro',
+      'You are a business analyst. Validate which companies are actual competitors. Return valid JSON only.',
+      prompt,
+      validationCompetitorIndicesSchema
+    );
 
-    const resultText = completion.choices[0].message.content;
-    if (!resultText) {
-      return competitors; // Return all if validation fails
-    }
-
-    const result = JSON.parse(resultText);
     const validIndices = result.validCompetitorIndices || [];
 
     return competitors.filter((_, index) => validIndices.includes(index));

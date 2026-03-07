@@ -8,16 +8,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCompetitorContentAnalysisPrompt } from '@/lib/competitor-analysis/prompts';
 import { adminDb as db } from '@/lib/firebase-admin';
-import type { 
+import type {
   AnalyzeContentRequest,
   AnalyzeContentResponse,
-  CompetitorAnalysis 
+  CompetitorAnalysis
 } from '@/types/competitor-analysis';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { competitorAnalysisSchema } from '@/schema/competitor-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +37,7 @@ export async function POST(request: NextRequest) {
     const batchSize = 3; // Smaller batch for AI calls to avoid rate limits
     for (let i = 0; i < scrapedData.length; i += batchSize) {
       const batch = scrapedData.slice(i, i + batchSize);
-      
+
       const batchResults = await Promise.all(
         batch.map(async (competitor) => {
           // Skip failed scrapes
@@ -57,29 +54,13 @@ export async function POST(request: NextRequest) {
               competitor.scrapedContent
             );
 
-            // Use GPT-4o for detailed analysis
-            const completion = await openai.chat.completions.create({
-              model: 'gpt-4o',
-              messages: [
-                {
-                  role: 'system',
-                  content: 'You are a competitive intelligence analyst. Extract detailed structured information from competitor websites. Always return valid JSON only.'
-                },
-                {
-                  role: 'user',
-                  content: prompt
-                }
-              ],
-              temperature: 0.3,
-              response_format: { type: 'json_object' }
-            });
-
-            const analysisText = completion.choices[0].message.content;
-            if (!analysisText) {
-              throw new Error('No response from AI');
-            }
-
-            const analysis: CompetitorAnalysis = JSON.parse(analysisText);
+            // Use Gemini Pro for detailed analysis with strict JSON schema
+            const analysis = await generateJSON<CompetitorAnalysis>(
+              'pro',
+              'You are a competitive intelligence analyst. Extract detailed structured information from competitor websites. Always return valid JSON only.',
+              prompt,
+              competitorAnalysisSchema
+            );
 
             // Update competitor_data document with analysis
             const competitorDataQuery = await db
@@ -151,7 +132,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error analyzing competitor content:', error);
-    
+
     // Update analysis status to failed
     try {
       const body: AnalyzeContentRequest = await request.json();
@@ -165,7 +146,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to analyze competitor content',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

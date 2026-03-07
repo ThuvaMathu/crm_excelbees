@@ -14,11 +14,8 @@ import type {
   ExtractKeywordsResponse,
   PageKeywords,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { extractedKeywordsSchema } from '@/schema/keyword-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,28 +50,13 @@ export async function POST(request: NextRequest) {
 
         const extractionPrompt = getKeywordExtractionPrompt(batchData, businessContext);
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an SEO keyword expert. Extract valuable keywords from web pages. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: extractionPrompt,
-            },
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
-        });
+        const parsed = await generateJSON<any>(
+          'flash',
+          'You are an SEO keyword expert. Extract valuable keywords from web pages. Return valid JSON only.',
+          extractionPrompt,
+          extractedKeywordsSchema
+        );
 
-        const result = completion.choices[0].message.content;
-        if (!result) {
-          throw new Error('No extraction result');
-        }
-
-        const parsed = JSON.parse(result);
         const batchKeywords = parsed.keywords || parsed.pages || [];
 
         for (const pageKeywordData of batchKeywords) {

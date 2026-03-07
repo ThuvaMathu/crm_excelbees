@@ -16,11 +16,8 @@ import type {
   BusinessContext,
   KeywordResearchDocument,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { businessProfileSchema } from '@/schema/competitor-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,7 +38,7 @@ export async function POST(request: NextRequest) {
     const cachedContext = await getCachedBusinessContext(userId, websiteUrl);
     if (cachedContext) {
       console.log(`✅ [Keyword API] Using cached business context`);
-      
+
       // Create research document with cached context
       const researchData: Omit<KeywordResearchDocument, 'id'> = {
         userId,
@@ -104,30 +101,15 @@ export async function POST(request: NextRequest) {
     console.log('🔄 [Keyword API] Extracting business profile with OpenAI...');
     const prompt = getBusinessContextPrompt(scrapeResult.content);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are a business analyst expert. Extract structured business information from website content. Always return valid JSON only.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
-
-    const analysisText = completion.choices[0].message.content;
-    if (!analysisText) {
-      throw new Error('No response from AI');
-    }
+    const extractedProfile = await generateJSON<Omit<BusinessContext, 'analyzedAt'>>(
+      'pro',
+      'You are a business analyst expert. Extract structured business information from website content. Always return valid JSON only.',
+      prompt,
+      businessProfileSchema
+    );
 
     const businessContext: BusinessContext = {
-      ...JSON.parse(analysisText),
+      ...extractedProfile,
       analyzedAt: new Date(),
     };
 

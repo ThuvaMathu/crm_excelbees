@@ -6,18 +6,18 @@
 This document tracks the implementation of AI features defined in `PLANAI.md`. The goal is to build a "Production-Ready" AI layer that enhances user productivity through automation, prediction, and natural language interaction.
 
 ## Status Log
+- **2026-03-XX**: Gemini API Migration. Replaced all OpenAI calls with Gemini 2.5 Pro and Gemini 2.5 Flash, added strict JSON schemas for structural integrity.
 - **2026-01-02**: Initialized progress tracking. Started Phase 9 (AI Foundation).
 
 ## Implementation Checklist
 
-### Phase 9: AI Foundation (Current Focus)
+### Phase 9: AI Foundation (Completed)
 - [x] **Infrastructure Setup**
     - [x] Install `@google/generative-ai` SDK
-    - [x] Install `openai` SDK
-    - [x] Create `lib/ai/gemini.ts` (Gemini Client)
-    - [x] Create `lib/ai/openai.ts` (OpenAI Client)
+    - [x] Centralize Gemini Provider (`services/ai/gemini-provider.ts`)
+    - [x] Replace OpenAI with Gemini completely across app
     - [x] Create `lib/ai/service.ts` (Unified AI Client Factory)
-    - [x] Configure Environment Variables (`NEXT_PUBLIC_GEMINI_API_KEY`, `OPENAI_API_KEY`)
+    - [x] Configure Environment Variables (`NEXT_PUBLIC_GEMINI_API_KEY`)
 
 - [x] **Context Management**
     - [x] Create `lib/ai/context.ts` (Context Builder)

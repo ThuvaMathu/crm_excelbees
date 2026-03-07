@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { generateJSON } from "@/services/ai/gemini-provider";
+import { emailGenerationSchema } from "@/schema/competitor-analysis";
 
 // POST /api/marketing/ai/generate-email - Generate email content with AI
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { mode, quickPrompt, goal, targetAudience, tone, length, includeElements, customInstructions } = body;
-
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: "OpenAI API key not configured" },
-        { status: 500 }
-      );
-    }
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
 
     let prompt = "";
 
@@ -79,23 +69,12 @@ Return JSON format:
 }`;
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert email marketing copywriter. Generate compelling, conversion-focused email content. Always return valid JSON.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      response_format: { type: "json_object" },
-    });
-
-    const content = JSON.parse(completion.choices[0].message.content || "{}");
+    const content = await generateJSON(
+      "flash",
+      "You are an expert email marketing copywriter. Generate compelling, conversion-focused email content.",
+      prompt,
+      emailGenerationSchema
+    );
 
     return NextResponse.json(content);
   } catch (error: any) {

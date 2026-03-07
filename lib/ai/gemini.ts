@@ -1,54 +1,35 @@
-import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
+import { GoogleGenerativeAI, Schema } from "@google/generative-ai";
 import { AICompletionRequest, AICompletionResponse, AIService } from "./types";
 
-const API_KEY = process.env.GEMINI_API_KEY || "";
+const API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 export const geminiClient = API_KEY ? new GoogleGenerativeAI(API_KEY) : null;
 
-/**
- * Simple genAI function for agentic keyword research
- */
-export async function genAI(options: {
+export const genAI = async (params: {
   model: string;
-  config?: {
-    responseMimeType?: string;
-    temperature?: number;
-  };
-  contents: Array<{
-    role: string;
-    parts: Array<{ text: string }>;
-  }>;
-}) {
-  if (!geminiClient) {
-    throw new Error("GEMINI_API_KEY not configured");
-  }
-
-  const model = geminiClient.getGenerativeModel({
-    model: options.model,
-    generationConfig: options.config,
+  config?: any;
+  contents: any[];
+}) => {
+  if (!geminiClient) throw new Error("Gemini API key missing");
+  const modelInstance = geminiClient.getGenerativeModel({
+    model: params.model,
+    generationConfig: params.config,
   });
-
-  const result = await model.generateContent({
-    contents: options.contents,
-  });
-
-  return result;
-}
+  return modelInstance.generateContent({ contents: params.contents as any });
+};
 
 export class GeminiService implements AIService {
   private client: GoogleGenerativeAI;
-  private model: GenerativeModel;
 
   constructor(apiKey: string) {
     if (!apiKey) {
       throw new Error("Gemini API Key is missing");
     }
     this.client = new GoogleGenerativeAI(apiKey);
-    this.model = this.client.getGenerativeModel({ model: "gemini-pro" });
   }
 
   async generateText(request: AICompletionRequest): Promise<AICompletionResponse> {
     try {
-      const modelName = request.model || "gemini-2.0-flash"; // Default to Flash if not specified
+      const modelName = request.model || "gemini-2.5-flash"; // Default to Flash for text
       const model = this.client.getGenerativeModel({ model: modelName });
 
       const result = await model.generateContent({
@@ -65,11 +46,10 @@ export class GeminiService implements AIService {
 
       return {
         text,
-        // Gemini doesn't always return token usage in the simple response
         usage: {
-          promptTokens: 0,
-          completionTokens: 0,
-          totalTokens: 0,
+          promptTokens: response.usageMetadata?.promptTokenCount || 0,
+          completionTokens: response.usageMetadata?.candidatesTokenCount || 0,
+          totalTokens: response.usageMetadata?.totalTokenCount || 0,
         },
       };
     } catch (error) {
@@ -78,35 +58,34 @@ export class GeminiService implements AIService {
     }
   }
 
-  async generateJSON<T>(request: AICompletionRequest): Promise<T> {
+  async generateJSON<T>(request: AICompletionRequest & { responseSchema?: Schema }): Promise<T> {
     try {
-        const jsonPrompt = `${request.prompt}\n\nIMPORTANT: Respond ONLY with valid JSON. Do not include markdown code blocks.`;
-        
-        const modelName = request.model || "gemini-2.0-flash";
-        const model = this.client.getGenerativeModel({ model: modelName });
+      const modelName = request.model || "gemini-2.5-flash";
+      const model = this.client.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: request.temperature ?? 0.1, // Low temp for structured data
+          maxOutputTokens: request.maxTokens,
+          responseMimeType: "application/json",
+          responseSchema: request.responseSchema, // We can now pass strict schemas
+        },
+      });
 
-        const result = await model.generateContent({
-            contents: [{ role: "user", parts: [{ text: jsonPrompt }] }],
-            generationConfig: {
-                temperature: 0.1, // Low temp for structured data
-                maxOutputTokens: request.maxTokens,
-                responseMimeType: "application/json", // Gemini 1.5 supports native JSON enforcement
-            },
-        });
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: request.prompt }] }],
+      });
 
-        const response = await result.response;
-        const text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
-        
-        return JSON.parse(text) as T;
+      const response = await result.response;
+      const text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+
+      return JSON.parse(text) as T;
     } catch (error) {
-        console.error("Gemini JSON Error:", error);
-        throw error;
+      console.error("Gemini JSON Error:", error);
+      throw error;
     }
   }
 
   async streamText(request: AICompletionRequest): Promise<ReadableStream<Uint8Array>> {
-     // Basic streaming implementation wrapper
-     // In a real Next.js App Router context, you might return the iterator directly or use AI SDK
-     throw new Error("Streaming not implemented for Gemini yet");
+    throw new Error("Streaming not implemented for Gemini yet");
   }
 }

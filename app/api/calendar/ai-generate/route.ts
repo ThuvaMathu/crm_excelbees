@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
-import OpenAI from "openai";
 import { AIGenerateRequest, Plan } from "@/types/calendar";
 import { getPlanGenerationPrompt } from "@/lib/calendar/ai-prompts";
 import { generatePlanId } from "@/lib/calendar/utils";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from "@/services/ai/gemini-provider";
+import { calendarPlanSchema } from "@/schema/calendar";
 
 // POST /api/calendar/ai-generate - Generate plans using AI
 export async function POST(request: NextRequest) {
@@ -40,43 +37,20 @@ export async function POST(request: NextRequest) {
     // Generate AI prompt
     const prompt = getPlanGenerationPrompt(body);
 
-    console.log(`🤖 Calling OpenAI GPT-4o...`);
-
-    // Call OpenAI
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert AI planning assistant. Generate realistic, actionable calendar plans in JSON format.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
-    });
-
-    let generatedContent = completion.choices[0].message.content || "";
-
-    // Remove markdown code blocks if present
-    generatedContent = generatedContent
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/, "")
-      .replace(/```\s*$/, "");
-
-    console.log(`✅ AI response received, parsing JSON...`);
-
-    // Parse JSON response
-    let aiPlans: any[];
+    let aiPlans: any[] = [];
     try {
-      aiPlans = JSON.parse(generatedContent);
-    } catch (parseError) {
-      console.error("❌ Failed to parse AI response:", parseError);
+      const generatedContent = await generateJSON<any>(
+        "flash",
+        "You are an expert AI planning assistant. Generate realistic, actionable calendar plans in JSON format.",
+        prompt,
+        calendarPlanSchema
+      );
+      aiPlans = generatedContent.plans || [];
+      console.log(`✅ AI response received, parsed JSON...`);
+    } catch (apiError) {
+      console.error("❌ Gemini API Error:", apiError);
       return NextResponse.json(
-        { error: "Failed to parse AI response", details: generatedContent },
+        { error: "Failed to generate AI response", details: apiError instanceof Error ? apiError.message : "Unknown error" },
         { status: 500 }
       );
     }

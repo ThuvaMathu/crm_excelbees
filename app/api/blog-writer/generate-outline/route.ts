@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
-import OpenAI from "openai";
 import {
   GenerateOutlineRequest,
   BlogOutline,
   BlogPost,
 } from "@/types/blog-writer";
 import { getOutlineGenerationPrompt } from "@/lib/blog-writer/utils";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from "@/services/ai/gemini-provider";
+import { blogOutlineSchema } from "@/schema/blog-writer";
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,41 +34,19 @@ export async function POST(request: NextRequest) {
       configuration
     );
 
-    // Call OpenAI GPT-4o
-    console.log("🤖 Calling OpenAI GPT-4o...");
-    let completion;
-    try {
-      completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert SEO content strategist. Always respond with valid JSON only following the requested structure.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        response_format: { type: "json_object" },
-      });
-    } catch (openaiError) {
-      console.error("❌ OpenAI API Error:", openaiError);
-      throw new Error(`OpenAI API failed: ${openaiError instanceof Error ? openaiError.message : "Unknown error"}`);
-    }
-
-    const outlineText = completion.choices[0].message.content;
-    if (!outlineText) {
-      throw new Error("OpenAI returned an empty response.");
-    }
-
+    // Call Gemini Pro
+    console.log("🤖 Calling Gemini Pro...");
     let outline: BlogOutline;
     try {
-      outline = JSON.parse(outlineText);
-    } catch (parseError) {
-      console.error("❌ Failed to parse OpenAI response as JSON:", outlineText);
-      throw new Error("OpenAI returned invalid JSON.");
+      outline = await generateJSON<BlogOutline>(
+        "pro",
+        "You are an expert SEO content strategist. Always respond with valid JSON only following the requested structure.",
+        prompt,
+        blogOutlineSchema
+      );
+    } catch (apiError) {
+      console.error("❌ Gemini API Error:", apiError);
+      throw new Error(`Gemini API failed: ${apiError instanceof Error ? apiError.message : "Unknown error"}`);
     }
 
     console.log("✅ Outline generated successfully:", outline.workingTitle);

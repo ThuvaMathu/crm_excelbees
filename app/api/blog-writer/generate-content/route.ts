@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
-import OpenAI from "openai";
 import { GenerateContentRequest, BlogPost } from "@/types/blog-writer";
+import { generateText } from "@/services/ai/gemini-provider";
 import {
   getContentGenerationPrompt,
   analyzeKeywordUsage,
@@ -10,10 +10,6 @@ import {
   analyzeContentStructure,
   countWords,
 } from "@/lib/blog-writer/utils";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,31 +55,20 @@ export async function POST(request: NextRequest) {
     else if (targetWords <= 3800) maxTokens = 6000;
     else maxTokens = 8500;
 
-    console.log(`🤖 Calling OpenAI GPT-4o with maxTokens: ${maxTokens}...`);
+    console.log(`🤖 Calling Gemini Pro with maxTokens: ${maxTokens}...`);
 
-    let completion;
+    let content = "";
     try {
-      completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert blog writer. Write high-quality, SEO-optimized content in HTML format following the provided outline and specifications.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: maxTokens,
-      });
-    } catch (openaiError) {
-      console.error("❌ OpenAI API Error:", openaiError);
-      throw new Error(`OpenAI API failed: ${openaiError instanceof Error ? openaiError.message : "Unknown error"}`);
+      content = await generateText(
+        "pro",
+        "You are an expert blog writer. Write high-quality, SEO-optimized content in HTML format following the provided outline and specifications.",
+        prompt,
+        maxTokens
+      );
+    } catch (apiError) {
+      console.error("❌ Gemini API Error:", apiError);
+      throw new Error(`Gemini API failed: ${apiError instanceof Error ? apiError.message : "Unknown error"}`);
     }
-
-    let content = completion.choices[0].message.content || "";
 
     // Remove markdown code blocks if present
     content = content

@@ -14,11 +14,8 @@ import type {
   IdentifyCompetitorsResponse,
   KeywordCompetitor,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { autoDiscoverCompetitorsSchema, validateCompetitorsSchema } from '@/schema/competitor-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +37,7 @@ export async function POST(request: NextRequest) {
     if (method === 'previous' || method === 'hybrid') {
       if (data?.previousAnalysisId) {
         console.log('🔄 [Keyword API] Loading competitors from previous analysis...');
-        
+
         const analysisDoc = await db
           .collection('marketing/competitor/analyses')
           .doc(data.previousAnalysisId)
@@ -101,61 +98,41 @@ export async function POST(request: NextRequest) {
       const count = data?.autoDiscoverCount || 5;
 
       try {
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a business research expert. Find direct competitors for businesses. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: `Search for ${count} direct competitors of this business:
+        const prompt = `Search for ${count} direct competitors of this business:
 
 Industry: ${businessContext.industry}
 Services: ${businessContext.mainServices.join(', ')}
 Target Audience: ${businessContext.targetAudience}
 Business Type: ${businessContext.businessType}
 
-Find companies offering similar services to the same audience. Return their website URLs.
+Find companies offering similar services to the same audience. Return their website URLs.`;
 
-Return as JSON array:
-[
-  {
-    "name": "string",
-    "website": "string (full URL with https://)",
-    "relevanceReason": "string (why they are a competitor)"
-  }
-]`,
-            },
-          ],
-          temperature: 0.5,
-          response_format: { type: 'json_object' },
-        });
+        const parsed = await generateJSON<any>(
+          'pro',
+          'You are a business research expert. Find direct competitors for businesses. Return valid JSON only.',
+          prompt,
+          autoDiscoverCompetitorsSchema
+        );
 
-        const result = completion.choices[0].message.content;
-        if (result) {
-          const parsed = JSON.parse(result);
-          const discovered = parsed.competitors || parsed.results || [];
+        const discovered = parsed.competitors || parsed.results || [];
 
-          for (const comp of discovered) {
-            if (comp.website && isValidUrl(comp.website)) {
-              // Check for duplicates
-              const exists = competitors.find(c => c.url === comp.website);
-              if (!exists) {
-                competitors.push({
-                  competitorId: generateId(),
-                  name: comp.name || extractDomain(comp.website),
-                  url: comp.website,
-                  source: 'auto_discovered',
-                  status: 'pending',
-                });
-              }
+        for (const comp of discovered) {
+          if (comp.website && isValidUrl(comp.website)) {
+            // Check for duplicates
+            const exists = competitors.find(c => c.url === comp.website);
+            if (!exists) {
+              competitors.push({
+                competitorId: generateId(),
+                name: comp.name || extractDomain(comp.website),
+                url: comp.website,
+                source: 'auto_discovered',
+                status: 'pending',
+              });
             }
           }
-
-          console.log(`✅ [Keyword API] Auto-discovered ${discovered.length} competitors`);
         }
+
+        console.log(`✅ [Keyword API] Auto-discovered ${discovered.length} competitors`);
       } catch (error) {
         console.error('Error auto-discovering competitors:', error);
         // Continue with manual/previous competitors if auto-discovery fails
@@ -172,37 +149,24 @@ Return as JSON array:
           businessContext
         );
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a business analyst. Validate if companies are actual competitors. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: validationPrompt,
-            },
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
+        const parsed = await generateJSON<any>(
+          'pro',
+          'You are a business analyst. Validate if companies are actual competitors. Return valid JSON only.',
+          validationPrompt,
+          validateCompetitorsSchema
+        );
+
+        const validatedList = parsed.competitors || parsed.validated || [];
+
+        // Filter out invalid competitors
+        competitors = competitors.filter(comp => {
+          const validation = validatedList.find((v: any) =>
+            v.website === comp.url || v.name === comp.name
+          );
+          return validation?.isValid !== false;
         });
 
-        const result = completion.choices[0].message.content;
-        if (result) {
-          const parsed = JSON.parse(result);
-          const validatedList = parsed.competitors || parsed.validated || [];
-
-          // Filter out invalid competitors
-          competitors = competitors.filter(comp => {
-            const validation = validatedList.find((v: any) => 
-              v.website === comp.url || v.name === comp.name
-            );
-            return validation?.isValid !== false;
-          });
-
-          console.log(`✅ [Keyword API] Validated ${competitors.length} competitors`);
-        }
+        console.log(`✅ [Keyword API] Validated ${competitors.length} competitors`);
       } catch (error) {
         console.error('Error validating competitors:', error);
         // Continue with unvalidated list
@@ -211,12 +175,12 @@ Return as JSON array:
 
     // Store competitors in Firestore
     const batch = db.batch();
-    
+
     for (const competitor of competitors) {
       const competitorRef = db
         .collection(`marketing/keyword/researches/${researchId}/competitors`)
         .doc(competitor.competitorId);
-      
+
       batch.set(competitorRef, {
         ...competitor,
         addedAt: new Date(),
@@ -240,7 +204,6 @@ Return as JSON array:
       totalCompetitors: competitors.length,
     };
 
-    return NextResponse.json(response);
   } catch (error) {
     console.error('Error identifying competitors:', error);
 

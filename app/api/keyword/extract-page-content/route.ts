@@ -17,11 +17,8 @@ import type {
   PageContent,
   PageMetadata,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { pageMetadataSchema } from '@/schema/keyword-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,13 +43,13 @@ export async function POST(request: NextRequest) {
       const batchPromises = batch.map(async (page: any) => {
         try {
           let targetUrl = page.url;
-          
+
           // Resolve relative URL if needed
           if (targetUrl.startsWith('/') && page.competitorUrl) {
             try {
-               targetUrl = new URL(targetUrl, page.competitorUrl).toString();
+              targetUrl = new URL(targetUrl, page.competitorUrl).toString();
             } catch (e) {
-               console.warn(`⚠️ [Keyword API] Failed to resolve relative URL ${targetUrl}`);
+              console.warn(`⚠️ [Keyword API] Failed to resolve relative URL ${targetUrl}`);
             }
           }
 
@@ -81,28 +78,12 @@ export async function POST(request: NextRequest) {
           // Extract metadata with GPT-4o
           const metadataPrompt = getPageMetadataPrompt(targetUrl, content);
 
-          const completion = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a content analyst. Extract metadata from web pages. Return valid JSON only.',
-              },
-              {
-                role: 'user',
-                content: metadataPrompt,
-              },
-            ],
-            temperature: 0.3,
-            response_format: { type: 'json_object' },
-          });
-
-          const metadataResult = completion.choices[0].message.content;
-          if (!metadataResult) {
-            throw new Error('No metadata result');
-          }
-
-          const metadata: PageMetadata = JSON.parse(metadataResult);
+          const metadata = await generateJSON<PageMetadata>(
+            'flash',
+            'You are a content analyst. Extract metadata from web pages. Return valid JSON only.',
+            metadataPrompt,
+            pageMetadataSchema
+          );
 
           const pageContent: PageContent = {
             pageId: page.pageId,

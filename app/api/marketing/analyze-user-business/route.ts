@@ -9,17 +9,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { scrapeWebsite } from '@/services/jinaAI';
 import { getBusinessAnalysisPrompt } from '@/lib/competitor-analysis/prompts';
 import { adminDb as db } from '@/lib/firebase-admin';
-import type { 
-  AnalyzeBusinessRequest, 
+import type {
+  AnalyzeBusinessRequest,
   AnalyzeBusinessResponse,
   BusinessProfile,
-  CompetitorAnalysisDocument 
+  CompetitorAnalysisDocument
 } from '@/types/competitor-analysis';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { businessProfileSchema } from '@/schema/competitor-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,35 +42,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     console.log(`✅ [API] Analyze Business: Scrape successful (${scrapeResult.content.length} chars)`);
 
-    // Step 2: Analyze website content with OpenAI GPT-4o
-    console.log('🔄 [API] Analyze Business: Extracting profile with OpenAI...');
-    const prompt = getBusinessAnalysisPrompt(scrapeResult.content);
+    const promptText = getBusinessAnalysisPrompt(scrapeResult.content);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a business analyst expert. Extract structured business information from website content. Always return valid JSON only.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' }
-    });
+    const businessProfile = await generateJSON<BusinessProfile>(
+      'pro',
+      'You are a business analyst expert. Extract structured business information from website content. Always return valid JSON only.',
+      promptText,
+      businessProfileSchema
+    );
 
-    const analysisText = completion.choices[0].message.content;
-    if (!analysisText) {
-      throw new Error('No response from AI');
-    }
-
-    const businessProfile: BusinessProfile = JSON.parse(analysisText);
     console.log(`✅ [API] Analyze Business: Profile extracted for ${businessProfile.industry}`);
 
     // Step 3: Create competitor analysis document in Firestore
@@ -108,9 +88,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error analyzing business:', error);
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to analyze business',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

@@ -13,11 +13,8 @@ import type {
   EnrichKeywordsResponse,
   EnrichedKeyword,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { enrichKeywordsSchema } from '@/schema/keyword-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,16 +43,7 @@ export async function POST(request: NextRequest) {
 
         const keywordList = batch.map(kw => kw.primaryKeyword).join('\n');
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an SEO metrics expert. Provide search metrics for keywords. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: `Provide SEO metrics for these keywords:
+        const prompt = `Provide SEO metrics for these keywords:
 
 ${keywordList}
 
@@ -66,30 +54,15 @@ For each keyword, provide:
 4. CPC (cost per click, if available)
 5. Top 3 ranking domains
 
-Return as JSON array:
-[
-  {
-    "keyword": "string",
-    "searchVolume": number,
-    "searchVolumeCategory": "low" | "medium" | "high",
-    "difficulty": "low" | "medium" | "high",
-    "trend": "rising" | "stable" | "declining",
-    "cpc": "string (optional)",
-    "topRankingDomains": ["string"]
-  }
-]
+If exact data unavailable, provide educated estimates based on keyword specificity.`;
 
-If exact data unavailable, provide educated estimates based on keyword specificity.`,
-            },
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
-        });
+        const parsed = await generateJSON<any>(
+          'pro',
+          'You are an SEO metrics expert. Provide search metrics for keywords. Return valid JSON only.',
+          prompt,
+          enrichKeywordsSchema
+        );
 
-        const result = completion.choices[0].message.content;
-        if (!result) continue;
-
-        const parsed = JSON.parse(result);
         const metricsData = parsed.keywords || parsed.metrics || [];
 
         for (const metric of metricsData) {

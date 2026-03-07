@@ -19,12 +19,12 @@ GOOGLE_PLACES_API_KEY=your_google_places_api_key_here
 JINA_AI_BASE_URL=https://r.jina.ai
 
 # ============================================
-# EXISTING VARIABLES (Already configured)
+# EXISITING VARIABLES 
 # ============================================
 
-# OpenAI API (Already exists in your .env.local)
+# Gemini API 
 # Used for AI analysis and insights generation
-OPENAI_API_KEY=your_openai_api_key_here
+NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ## Google Places API Setup Instructions
@@ -152,14 +152,13 @@ Monitor usage in Cloud Console:
 2. Create budget alert at $10/month
 3. Get email notifications before overspending
 
-### OpenAI API
+### Gemini API
 
-Monitor usage at [platform.openai.com/usage](https://platform.openai.com/usage)
+Monitor usage at [Google AI Studio](https://aistudio.google.com/)
 
 **Estimated costs per analysis:**
-- Quick Scan (3 competitors): ~$1.00
-- Standard (5 competitors): ~$2.00
-- Deep Dive (10 competitors): ~$4.00
+- Gemini 2.5 Flash is effectively free for development
+- Gemini 2.5 Pro offers generous free tiers, and is very cost effective compared to GPT-4o
 
 ## Optional: Jina AI Paid Tier
 
@@ -187,7 +186,7 @@ JINA_AI_API_KEY=your_jina_api_key_here
 ## Summary
 
 **Minimum Required:**
-- ✅ OpenAI API key (already configured)
+- ✅ Gemini API key (already configured)
 
 **Recommended:**
 - ✅ Google Places API key (for local competitor discovery)
@@ -195,4 +194,4 @@ JINA_AI_API_KEY=your_jina_api_key_here
 **Optional:**
 - ⭕ Jina AI API key (only if you need higher limits)
 
-The system will work without Google Places API, but competitor discovery will rely solely on OpenAI Web Search, which may be less accurate for local businesses.
+The system will work without Google Places API, but competitor discovery will rely solely on Gemini Search, which may be less accurate for local businesses.

@@ -14,11 +14,8 @@ import type {
   FinalizeSelectionResponse,
   SelectedKeyword,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { finalizeSelectionSchema } from '@/schema/keyword-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,34 +31,19 @@ export async function POST(request: NextRequest) {
     // Use GPT-4o for intelligent selection
     const selectionPrompt = getKeywordSelectionPrompt(enrichedKeywords, requestedCount, businessContext);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an SEO strategy expert. Select the best keywords for a business. Return valid JSON only.',
-        },
-        {
-          role: 'user',
-          content: selectionPrompt,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
+    const parsed = await generateJSON<any>(
+      'pro',
+      'You are an SEO strategy expert. Select the best keywords for a business. Return valid JSON only.',
+      selectionPrompt,
+      finalizeSelectionSchema
+    );
 
-    const result = completion.choices[0].message.content;
-    if (!result) {
-      throw new Error('No selection result');
-    }
-
-    const parsed = JSON.parse(result);
     const selectedList = parsed.keywords || parsed.selectedKeywords || [];
 
     const selectedKeywords: SelectedKeyword[] = selectedList.slice(0, requestedCount).map((kw: any, index: number) => {
       // Robust matching using normalization
       const keywordText = kw.primaryKeyword || kw.keyword;
-      
+
       if (!keywordText) {
         console.warn('⚠️ [Keyword API] Missing keyword text in selection result', kw);
         return null;
@@ -69,7 +51,7 @@ export async function POST(request: NextRequest) {
 
       const kwNormalized = normalizeKeyword(keywordText);
       const originalKeyword = enrichedKeywords.find(ek => normalizeKeyword(ek.primaryKeyword) === kwNormalized);
-      
+
       if (!originalKeyword) {
         console.warn(`⚠️ [Keyword API] Could not match selected keyword "${keywordText}" to original list. Using fallback.`);
         // Fallback: Create new keyword entry if match fails
@@ -122,9 +104,9 @@ export async function POST(request: NextRequest) {
 
     // Check for "Key Sentences" (Questions/Long-tail) count
     const sentenceTarget = Math.floor(requestedCount / 2);
-    const existingSentences = selectedKeywords.filter(k => 
-      (k.primaryKeyword.split(' ').length >= 4) || 
-      k.primaryKeyword.includes('?') || 
+    const existingSentences = selectedKeywords.filter(k =>
+      (k.primaryKeyword.split(' ').length >= 4) ||
+      k.primaryKeyword.includes('?') ||
       k.searchIntent === 'informational'
     ).length;
 
@@ -133,16 +115,7 @@ export async function POST(request: NextRequest) {
       console.log(`⚠️ [Keyword API] Missing ${remainingNeeded} key sentences. Generating...`);
 
       try {
-        const sentenceCompletion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an SEO expert specializing in long-tail keywords and user questions. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: `Generate ${remainingNeeded} additional "Key Sentences" (Questions or Long-tail keywords with 4+ words) relevant to this business.
+        const sentencePrompt = `Generate ${remainingNeeded} additional "Key Sentences" (Questions or Long-tail keywords with 4+ words) relevant to this business.
               
               BUSINESS:
               - Industry: ${businessContext.industry}
@@ -154,67 +127,75 @@ export async function POST(request: NextRequest) {
               REQUIREMENTS:
               1. Must be questions (Who, What, Where, How) or long statements (>4 words).
               2. Must be relevant to the business.
-              3. Must imply "informational" search intent.
-              
-              Return as JSON array:
-              [
-                {
-                  "primaryKeyword": "string",
-                  "searchVolume": number (estimate),
-                  "difficulty": "low" | "medium" | "high",
-                  "selectionReason": "string"
-                }
-              ]`
+              3. Must imply "informational" search intent.`;
+
+        const sentenceSchema = {
+          type: "object" as any,
+          properties: {
+            keywords: {
+              type: "array" as any,
+              items: {
+                type: "object" as any,
+                properties: {
+                  primaryKeyword: { type: "string" as any },
+                  searchVolume: { type: "number" as any },
+                  difficulty: { type: "string" as any, enum: ["low", "medium", "high"] },
+                  selectionReason: { type: "string" as any },
+                },
+                required: ["primaryKeyword", "searchVolume", "difficulty", "selectionReason"]
+              }
             }
-          ],
-          temperature: 0.7,
-          response_format: { type: 'json_object' },
-        });
+          },
+          required: ["keywords"]
+        };
 
-        const sentenceResult = sentenceCompletion.choices[0].message.content;
-        if (sentenceResult) {
-          const parsedSentences = JSON.parse(sentenceResult);
-          const newSentences = parsedSentences.sentences || parsedSentences.keywords || [];
-          
-          if (Array.isArray(newSentences)) {
-             newSentences.forEach((s: any, idx) => {
-               if (selectedKeywords.length >= requestedCount + remainingNeeded) return;
-               
-               const vol = s.searchVolume || 50;
-               const newKeyword: SelectedKeyword = {
-                 keywordId: `gen-sent-${Date.now()}-${idx}`,
-                 primaryKeyword: s.primaryKeyword,
-                 searchVolume: vol,
-                 searchVolumeCategory: vol > 1000 ? 'medium' : 'low',
-                 difficulty: s.difficulty || 'low',
-                 trend: 'stable',
-                 topRankingDomains: [],
-                 whichCompetitorsRank: [],
-                 variations: [],
-                 keywordFamily: 'questions',
-                 totalOccurrences: 0,
-                 usedByCompetitors: 0,
-                 avgProminence: 5,
-                 sources: [],
-                 searchIntent: 'informational',
-                 relevanceScore: 8,
-                 rank: selectedKeywords.length + 1,
-                 strategicValue: 'long-term-goal',
-                 selectionReason: s.selectionReason || 'AI Generated Key Sentence',
-                 targetContentType: 'blog-post',
-                 targetWordCount: 800,
-                 status: 'not_started',
-               };
+        const parsedSentences = await generateJSON<any>(
+          "pro",
+          "You are an SEO expert specializing in long-tail keywords and user questions. Return valid JSON only.",
+          sentencePrompt,
+          sentenceSchema
+        );
 
-               selectedKeywords.push(newKeyword);
+        const newSentences = parsedSentences.sentences || parsedSentences.keywords || [];
 
-               // Save to Firestore
-               db.collection(`marketing/keyword/researches/${researchId}/selected_keywords`)
-                 .doc(newKeyword.keywordId)
-                 .set(newKeyword)
-                 .catch(e => console.error('Failed to save generated keyword', e));
-             });
-          }
+        if (Array.isArray(newSentences)) {
+          newSentences.forEach((s: any, idx) => {
+            if (selectedKeywords.length >= requestedCount + remainingNeeded) return;
+
+            const vol = s.searchVolume || 50;
+            const newKeyword: SelectedKeyword = {
+              keywordId: `gen-sent-${Date.now()}-${idx}`,
+              primaryKeyword: s.primaryKeyword,
+              searchVolume: vol,
+              searchVolumeCategory: vol > 1000 ? 'medium' : 'low',
+              difficulty: s.difficulty || 'low',
+              trend: 'stable',
+              topRankingDomains: [],
+              whichCompetitorsRank: [],
+              variations: [],
+              keywordFamily: 'questions',
+              totalOccurrences: 0,
+              usedByCompetitors: 0,
+              avgProminence: 5,
+              sources: [],
+              searchIntent: 'informational',
+              relevanceScore: 8,
+              rank: selectedKeywords.length + 1,
+              strategicValue: 'long-term-goal',
+              selectionReason: s.selectionReason || 'AI Generated Key Sentence',
+              targetContentType: 'blog-post',
+              targetWordCount: 800,
+              status: 'not_started',
+            };
+
+            selectedKeywords.push(newKeyword);
+
+            // Save to Firestore
+            db.collection(`marketing/keyword/researches/${researchId}/selected_keywords`)
+              .doc(newKeyword.keywordId)
+              .set(newKeyword)
+              .catch(e => console.error('Failed to save generated keyword', e));
+          });
         }
       } catch (err) {
         console.error('Error generating extra sentences:', err);

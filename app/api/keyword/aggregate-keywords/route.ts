@@ -14,11 +14,8 @@ import type {
   AggregateKeywordsResponse,
   ConsolidatedKeyword,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { generateJSON } from '@/services/ai/gemini-provider';
+import { aggregateKeywordsSchema } from '@/schema/keyword-analysis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -94,28 +91,13 @@ export async function POST(request: NextRequest) {
     // Send to GPT-4o for intelligent deduplication
     const consolidationPrompt = getKeywordConsolidationPrompt(topKeywords);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an SEO keyword expert. Consolidate and deduplicate keywords intelligently. Return valid JSON only.',
-        },
-        {
-          role: 'user',
-          content: consolidationPrompt,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-    });
+    const parsed = await generateJSON<any>(
+      'flash',
+      'You are an SEO keyword expert. Consolidate and deduplicate keywords intelligently. Return valid JSON only.',
+      consolidationPrompt,
+      aggregateKeywordsSchema
+    );
 
-    const result = completion.choices[0].message.content;
-    if (!result) {
-      throw new Error('No consolidation result');
-    }
-
-    const parsed = JSON.parse(result);
     const consolidatedList = parsed.keywords || parsed.consolidatedKeywords || [];
 
     const consolidatedKeywords: ConsolidatedKeyword[] = consolidatedList.map((kw: any) => {
