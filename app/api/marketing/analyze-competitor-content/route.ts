@@ -1,23 +1,21 @@
 /**
  * API Route: Analyze Competitor Content (Step 5)
  * POST /api/marketing/analyze-competitor-content
- * 
- * Analyzes competitor website content using OpenAI GPT-4o
+ *
+ * Analyzes competitor website content using Gemini
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCompetitorContentAnalysisPrompt } from '@/lib/competitor-analysis/prompts';
 import { adminDb as db } from '@/lib/firebase-admin';
-import type { 
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import type {
   AnalyzeContentRequest,
   AnalyzeContentResponse,
-  CompetitorAnalysis 
+  CompetitorAnalysis
 } from '@/types/competitor-analysis';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +38,7 @@ export async function POST(request: NextRequest) {
     const batchSize = 3; // Smaller batch for AI calls to avoid rate limits
     for (let i = 0; i < scrapedData.length; i += batchSize) {
       const batch = scrapedData.slice(i, i + batchSize);
-      
+
       const batchResults = await Promise.all(
         batch.map(async (competitor) => {
           // Skip failed scrapes
@@ -57,29 +55,24 @@ export async function POST(request: NextRequest) {
               competitor.scrapedContent
             );
 
-            // Use GPT-4o for detailed analysis
-            const completion = await openai.chat.completions.create({
-              model: 'gpt-4o',
-              messages: [
-                {
-                  role: 'system',
-                  content: 'You are a competitive intelligence analyst. Extract detailed structured information from competitor websites. Always return valid JSON only.'
-                },
-                {
-                  role: 'user',
-                  content: prompt
-                }
-              ],
-              temperature: 0.3,
-              response_format: { type: 'json_object' }
+            // Use Gemini for detailed analysis
+            const model = genAI.getGenerativeModel({
+              model: 'gemini-2.0-flash',
+              generationConfig: { responseMimeType: 'application/json' },
             });
 
-            const analysisText = completion.choices[0].message.content;
+            const systemPrompt = 'You are a competitive intelligence analyst. Extract detailed structured information from competitor websites. Always return valid JSON only.';
+
+            const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+            const analysisText = result.response.text();
             if (!analysisText) {
               throw new Error('No response from AI');
             }
 
-            const analysis: CompetitorAnalysis = JSON.parse(analysisText);
+            // Clean up response (remove markdown code blocks if present)
+            const cleanedAnalysis = analysisText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+            const analysis: CompetitorAnalysis = JSON.parse(cleanedAnalysis);
 
             // Update competitor_data document with analysis
             const competitorDataQuery = await db
@@ -151,7 +144,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error analyzing competitor content:', error);
-    
+
     // Update analysis status to failed
     try {
       const body: AnalyzeContentRequest = await request.json();
@@ -165,7 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to analyze competitor content',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

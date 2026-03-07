@@ -21,6 +21,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Firebase Auth requires a minimum of 6 characters
+    if (password && password.length < 6) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters." },
+        { status: 400 }
+      );
+    }
+
     // Verify employee exists
     const employeeResult = await getEmployeeProfile(employeeId);
     if (employeeResult.error || !employeeResult.employee) {
@@ -45,7 +53,7 @@ export async function POST(request: NextRequest) {
       password ||
       Array.from({ length: 12 }, () =>
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%"[
-          Math.floor(Math.random() * 68)
+          Math.floor(Math.random() * 66)
         ]
       ).join("");
 

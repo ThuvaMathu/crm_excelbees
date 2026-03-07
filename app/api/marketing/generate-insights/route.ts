@@ -1,24 +1,22 @@
 /**
  * API Route: Generate Competitive Insights (Step 8)
  * POST /api/marketing/generate-insights
- * 
- * Generates comprehensive competitive intelligence report using OpenAI GPT-4o
+ *
+ * Generates comprehensive competitive intelligence report using Gemini
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCompetitiveInsightsPrompt } from '@/lib/competitor-analysis/prompts';
 import { adminDb as db } from '@/lib/firebase-admin';
-import type { 
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import type {
   GenerateInsightsRequest,
   GenerateInsightsResponse,
   CompetitorReport,
-  ReportSections 
+  ReportSections
 } from '@/types/competitor-analysis';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Step 1: Gather all data from Firestore
     const analysisDoc = await db.collection('marketing/competitor/analyses').doc(analysisId).get();
-    
+
     if (!analysisDoc.exists) {
       return NextResponse.json(
         { error: 'Analysis not found' },
@@ -47,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const analysisData = analysisDoc.data();
     const businessProfile = analysisData?.userBusinessProfile;
-    
+
     if (!businessProfile) {
       return NextResponse.json(
         { error: 'Business profile not found' },
@@ -83,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`Found ${competitorAnalyses.length} competitor analyses`);
 
-    // Step 3: Generate comprehensive insights with GPT-4o
+    // Step 3: Generate comprehensive insights with Gemini
     const userConcerns = analysisData?.preferences?.specificConcerns;
     const keyProducts = analysisData?.preferences?.keyProducts;
 
@@ -96,28 +94,23 @@ export async function POST(request: NextRequest) {
 
     console.log('Generating competitive intelligence report...');
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert competitive intelligence analyst with deep expertise in market analysis, strategic planning, and business intelligence. Provide actionable, data-driven insights. Always return valid JSON only.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.4,
-      response_format: { type: 'json_object' }
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const insightsText = completion.choices[0].message.content;
+    const systemPrompt = 'You are an expert competitive intelligence analyst with deep expertise in market analysis, strategic planning, and business intelligence. Provide actionable, data-driven insights. Always return valid JSON only.';
+
+    const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+    const insightsText = result.response.text();
     if (!insightsText) {
       throw new Error('No response from AI');
     }
 
-    const sections: ReportSections = JSON.parse(insightsText);
+    // Clean up response (remove markdown code blocks if present)
+    const cleanedInsights = insightsText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+    const sections: ReportSections = JSON.parse(cleanedInsights);
 
     // Step 4: Create report document
     const reportData = {
@@ -157,7 +150,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error generating insights:', error);
-    
+
     // Update analysis status to failed
     try {
       const body: GenerateInsightsRequest = await request.json();
@@ -171,7 +164,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to generate insights',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

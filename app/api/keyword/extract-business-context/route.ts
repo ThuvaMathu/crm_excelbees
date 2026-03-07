@@ -1,7 +1,7 @@
 /**
  * API Route: Extract Business Context (Step 1)
  * POST /api/keyword/extract-business-context
- * 
+ *
  * Scrapes user's website and extracts business profile using AI
  */
 
@@ -10,17 +10,15 @@ import { scrapeWebsite } from '@/services/jinaAI';
 import { getBusinessContextPrompt } from '@/lib/keyword/prompts';
 import { getCachedBusinessContext, cacheBusinessContext } from '@/lib/keyword/cache';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   ExtractBusinessContextRequest,
   ExtractBusinessContextResponse,
   BusinessContext,
   KeywordResearchDocument,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,7 +39,7 @@ export async function POST(request: NextRequest) {
     const cachedContext = await getCachedBusinessContext(userId, websiteUrl);
     if (cachedContext) {
       console.log(`✅ [Keyword API] Using cached business context`);
-      
+
       // Create research document with cached context
       const researchData: Omit<KeywordResearchDocument, 'id'> = {
         userId,
@@ -100,34 +98,29 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ [Keyword API] Scrape successful (${scrapeResult.content.length} chars)`);
 
-    // Step 3: Extract business context with OpenAI GPT-4o
-    console.log('🔄 [Keyword API] Extracting business profile with OpenAI...');
+    // Step 3: Extract business context with Gemini
+    console.log('🔄 [Keyword API] Extracting business profile with Gemini...');
     const prompt = getBusinessContextPrompt(scrapeResult.content);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content:
-            'You are a business analyst expert. Extract structured business information from website content. Always return valid JSON only.',
-        },
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const analysisText = completion.choices[0].message.content;
+    const systemPrompt = 'You are a business analyst expert. Extract structured business information from website content. Always return valid JSON only.';
+
+    const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+    const analysisText = result.response.text();
     if (!analysisText) {
       throw new Error('No response from AI');
     }
 
+    // Clean up response (remove markdown code blocks if present)
+    const cleanedAnalysis = analysisText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+
     const businessContext: BusinessContext = {
-      ...JSON.parse(analysisText),
+      ...JSON.parse(cleanedAnalysis),
       analyzedAt: new Date(),
     };
 

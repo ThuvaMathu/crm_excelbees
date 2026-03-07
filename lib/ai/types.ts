@@ -22,7 +22,7 @@ export interface AIService {
   streamText(request: AICompletionRequest): Promise<ReadableStream<Uint8Array>>;
 }
 
-export type AIProvider = 'gemini' | 'openai';
+export type AIProvider = 'gemini';
 
 export interface AIConfig {
     provider: AIProvider;

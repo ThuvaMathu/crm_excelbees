@@ -1,7 +1,7 @@
 /**
  * API Route: Aggregate Keywords (Step 6)
  * POST /api/keyword/aggregate-keywords
- * 
+ *
  * Aggregates and deduplicates keywords across all pages
  */
 
@@ -9,16 +9,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getKeywordConsolidationPrompt } from '@/lib/keyword/prompts';
 import { generateId } from '@/lib/keyword/utils';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   AggregateKeywordsRequest,
   AggregateKeywordsResponse,
   ConsolidatedKeyword,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -89,33 +87,28 @@ export async function POST(request: NextRequest) {
     aggregatedKeywords.sort((a, b) => b.totalOccurrences - a.totalOccurrences);
     const topKeywords = aggregatedKeywords.slice(0, 300);
 
-    console.log(`🔄 [Keyword API] Consolidating ${topKeywords.length} keywords with GPT-4o...`);
+    console.log(`🔄 [Keyword API] Consolidating ${topKeywords.length} keywords with Gemini...`);
 
-    // Send to GPT-4o for intelligent deduplication
+    // Send to Gemini for intelligent deduplication
     const consolidationPrompt = getKeywordConsolidationPrompt(topKeywords);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an SEO keyword expert. Consolidate and deduplicate keywords intelligently. Return valid JSON only.',
-        },
-        {
-          role: 'user',
-          content: consolidationPrompt,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const result = completion.choices[0].message.content;
-    if (!result) {
+    const systemPrompt = 'You are an SEO keyword expert. Consolidate and deduplicate keywords intelligently. Return valid JSON only.';
+
+    const result = await model.generateContent(`${systemPrompt}\n\n${consolidationPrompt}`);
+
+    const resultText = result.response.text();
+    if (!resultText) {
       throw new Error('No consolidation result');
     }
 
-    const parsed = JSON.parse(result);
+    // Clean up response (remove markdown code blocks if present)
+    const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+    const parsed = JSON.parse(cleanedResult);
     const consolidatedList = parsed.keywords || parsed.consolidatedKeywords || [];
 
     const consolidatedKeywords: ConsolidatedKeyword[] = consolidatedList.map((kw: any) => {

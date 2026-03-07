@@ -1,7 +1,7 @@
 /**
  * API Route: Analyze User's Business (Step 2)
  * POST /api/marketing/analyze-user-business
- * 
+ *
  * Scrapes user's website and extracts business profile using AI
  */
 
@@ -9,17 +9,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { scrapeWebsite } from '@/services/jinaAI';
 import { getBusinessAnalysisPrompt } from '@/lib/competitor-analysis/prompts';
 import { adminDb as db } from '@/lib/firebase-admin';
-import type { 
-  AnalyzeBusinessRequest, 
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import type {
+  AnalyzeBusinessRequest,
   AnalyzeBusinessResponse,
   BusinessProfile,
-  CompetitorAnalysisDocument 
+  CompetitorAnalysisDocument
 } from '@/types/competitor-analysis';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,35 +43,30 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     console.log(`✅ [API] Analyze Business: Scrape successful (${scrapeResult.content.length} chars)`);
 
-    // Step 2: Analyze website content with OpenAI GPT-4o
-    console.log('🔄 [API] Analyze Business: Extracting profile with OpenAI...');
+    // Step 2: Analyze website content with Gemini
+    console.log('🔄 [API] Analyze Business: Extracting profile with Gemini...');
     const prompt = getBusinessAnalysisPrompt(scrapeResult.content);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a business analyst expert. Extract structured business information from website content. Always return valid JSON only.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' }
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const analysisText = completion.choices[0].message.content;
+    const systemPrompt = 'You are a business analyst expert. Extract structured business information from website content. Always return valid JSON only.';
+
+    const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+    const analysisText = result.response.text();
     if (!analysisText) {
       throw new Error('No response from AI');
     }
 
-    const businessProfile: BusinessProfile = JSON.parse(analysisText);
+    // Clean up response (remove markdown code blocks if present)
+    const cleanedAnalysis = analysisText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+    const businessProfile: BusinessProfile = JSON.parse(cleanedAnalysis);
     console.log(`✅ [API] Analyze Business: Profile extracted for ${businessProfile.industry}`);
 
     // Step 3: Create competitor analysis document in Firestore
@@ -108,9 +101,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error analyzing business:', error);
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to analyze business',
         details: error instanceof Error ? error.message : 'Unknown error'
       },

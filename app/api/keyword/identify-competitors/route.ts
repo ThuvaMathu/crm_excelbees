@@ -1,7 +1,7 @@
 /**
  * API Route: Identify Competitors (Step 2)
  * POST /api/keyword/identify-competitors
- * 
+ *
  * Identifies competitors through various methods: previous analysis, manual entry, or auto-discovery
  */
 
@@ -9,16 +9,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCompetitorValidationPrompt } from '@/lib/keyword/prompts';
 import { isValidUrl, extractDomain, generateId } from '@/lib/keyword/utils';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   IdentifyCompetitorsRequest,
   IdentifyCompetitorsResponse,
   KeywordCompetitor,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +38,7 @@ export async function POST(request: NextRequest) {
     if (method === 'previous' || method === 'hybrid') {
       if (data?.previousAnalysisId) {
         console.log('🔄 [Keyword API] Loading competitors from previous analysis...');
-        
+
         const analysisDoc = await db
           .collection('marketing/competitor/analyses')
           .doc(data.previousAnalysisId)
@@ -95,47 +93,26 @@ export async function POST(request: NextRequest) {
 
     // BRANCH C: Auto-Discover
     if (method === 'auto' || method === 'hybrid') {
-      console.log('🔄 [Keyword API] Auto-discovering competitors with GPT-4o...');
+      console.log('🔄 [Keyword API] Auto-discovering competitors with Gemini...');
 
       const searchQuery = `${businessContext.industry} companies in ${businessContext.mainServices.join(', ')}`;
       const count = data?.autoDiscoverCount || 5;
 
       try {
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a business research expert. Find direct competitors for businesses. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: `Search for ${count} direct competitors of this business:
-
-Industry: ${businessContext.industry}
-Services: ${businessContext.mainServices.join(', ')}
-Target Audience: ${businessContext.targetAudience}
-Business Type: ${businessContext.businessType}
-
-Find companies offering similar services to the same audience. Return their website URLs.
-
-Return as JSON array:
-[
-  {
-    "name": "string",
-    "website": "string (full URL with https://)",
-    "relevanceReason": "string (why they are a competitor)"
-  }
-]`,
-            },
-          ],
-          temperature: 0.5,
-          response_format: { type: 'json_object' },
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-2.0-flash',
+          generationConfig: { responseMimeType: 'application/json' },
         });
 
-        const result = completion.choices[0].message.content;
-        if (result) {
-          const parsed = JSON.parse(result);
+        const systemPrompt = 'You are a business research expert. Find direct competitors for businesses. Return valid JSON only.';
+        const prompt = `Search for ${count} direct competitors of this business:\n\nIndustry: ${businessContext.industry}\nServices: ${businessContext.mainServices.join(', ')}\nTarget Audience: ${businessContext.targetAudience}\nBusiness Type: ${businessContext.businessType}\n\nFind companies offering similar services to the same audience. Return their website URLs.\n\nReturn as JSON array:\n[\n  {\n    "name": "string",\n    "website": "string (full URL with https://)",\n    "relevanceReason": "string (why they are a competitor)"\n  }\n]`;
+
+        const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+        const resultText = result.response.text();
+        if (resultText) {
+          const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+          const parsed = JSON.parse(cleanedResult);
           const discovered = parsed.competitors || parsed.results || [];
 
           for (const comp of discovered) {
@@ -164,7 +141,7 @@ Return as JSON array:
 
     // Validate competitors with AI if we have any
     if (competitors.length > 0) {
-      console.log('🔄 [Keyword API] Validating competitors with GPT-4o...');
+      console.log('🔄 [Keyword API] Validating competitors with Gemini...');
 
       try {
         const validationPrompt = getCompetitorValidationPrompt(
@@ -172,30 +149,24 @@ Return as JSON array:
           businessContext
         );
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a business analyst. Validate if companies are actual competitors. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: validationPrompt,
-            },
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-2.0-flash',
+          generationConfig: { responseMimeType: 'application/json' },
         });
 
-        const result = completion.choices[0].message.content;
-        if (result) {
-          const parsed = JSON.parse(result);
+        const systemPrompt = 'You are a business analyst. Validate if companies are actual competitors. Return valid JSON only.';
+
+        const result = await model.generateContent(`${systemPrompt}\n\n${validationPrompt}`);
+
+        const resultText = result.response.text();
+        if (resultText) {
+          const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+          const parsed = JSON.parse(cleanedResult);
           const validatedList = parsed.competitors || parsed.validated || [];
 
           // Filter out invalid competitors
           competitors = competitors.filter(comp => {
-            const validation = validatedList.find((v: any) => 
+            const validation = validatedList.find((v: any) =>
               v.website === comp.url || v.name === comp.name
             );
             return validation?.isValid !== false;
@@ -211,12 +182,12 @@ Return as JSON array:
 
     // Store competitors in Firestore
     const batch = db.batch();
-    
+
     for (const competitor of competitors) {
       const competitorRef = db
         .collection(`marketing/keyword/researches/${researchId}/competitors`)
         .doc(competitor.competitorId);
-      
+
       batch.set(competitorRef, {
         ...competitor,
         addedAt: new Date(),

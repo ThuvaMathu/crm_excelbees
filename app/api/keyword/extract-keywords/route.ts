@@ -1,7 +1,7 @@
 /**
  * API Route: Extract Keywords (Step 5)
  * POST /api/keyword/extract-keywords
- * 
+ *
  * Extracts keywords from scraped page content using AI
  */
 
@@ -9,16 +9,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getKeywordExtractionPrompt } from '@/lib/keyword/prompts';
 import { batchArray, normalizeKeyword, filterBrandedKeywords } from '@/lib/keyword/utils';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   ExtractKeywordsRequest,
   ExtractKeywordsResponse,
   PageKeywords,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,28 +51,23 @@ export async function POST(request: NextRequest) {
 
         const extractionPrompt = getKeywordExtractionPrompt(batchData, businessContext);
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an SEO keyword expert. Extract valuable keywords from web pages. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: extractionPrompt,
-            },
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-2.0-flash',
+          generationConfig: { responseMimeType: 'application/json' },
         });
 
-        const result = completion.choices[0].message.content;
-        if (!result) {
+        const systemPrompt = 'You are an SEO keyword expert. Extract valuable keywords from web pages. Return valid JSON only.';
+
+        const result = await model.generateContent(`${systemPrompt}\n\n${extractionPrompt}`);
+
+        const resultText = result.response.text();
+        if (!resultText) {
           throw new Error('No extraction result');
         }
 
-        const parsed = JSON.parse(result);
+        // Clean up response (remove markdown code blocks if present)
+        const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+        const parsed = JSON.parse(cleanedResult);
         const batchKeywords = parsed.keywords || parsed.pages || [];
 
         for (const pageKeywordData of batchKeywords) {

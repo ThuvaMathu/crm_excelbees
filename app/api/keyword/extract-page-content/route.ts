@@ -1,7 +1,7 @@
 /**
  * API Route: Extract Page Content (Step 4)
  * POST /api/keyword/extract-page-content
- * 
+ *
  * Scrapes content from selected pages and extracts metadata
  */
 
@@ -11,17 +11,15 @@ import { getPageMetadataPrompt } from '@/lib/keyword/prompts';
 import { batchArray } from '@/lib/keyword/utils';
 import { getCachedPageContent, cachePageContent } from '@/lib/keyword/cache';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   ExtractPageContentRequest,
   ExtractPageContentResponse,
   PageContent,
   PageMetadata,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,7 +44,7 @@ export async function POST(request: NextRequest) {
       const batchPromises = batch.map(async (page: any) => {
         try {
           let targetUrl = page.url;
-          
+
           // Resolve relative URL if needed
           if (targetUrl.startsWith('/') && page.competitorUrl) {
             try {
@@ -78,31 +76,26 @@ export async function POST(request: NextRequest) {
 
           console.log(`✅ [Keyword API] Scraped ${targetUrl} (${content.length} chars)`);
 
-          // Extract metadata with GPT-4o
+          // Extract metadata with Gemini
           const metadataPrompt = getPageMetadataPrompt(targetUrl, content);
 
-          const completion = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a content analyst. Extract metadata from web pages. Return valid JSON only.',
-              },
-              {
-                role: 'user',
-                content: metadataPrompt,
-              },
-            ],
-            temperature: 0.3,
-            response_format: { type: 'json_object' },
+          const model = genAI.getGenerativeModel({
+            model: 'gemini-2.0-flash',
+            generationConfig: { responseMimeType: 'application/json' },
           });
 
-          const metadataResult = completion.choices[0].message.content;
+          const systemPrompt = 'You are a content analyst. Extract metadata from web pages. Return valid JSON only.';
+
+          const result = await model.generateContent(`${systemPrompt}\n\n${metadataPrompt}`);
+
+          const metadataResult = result.response.text();
           if (!metadataResult) {
             throw new Error('No metadata result');
           }
 
-          const metadata: PageMetadata = JSON.parse(metadataResult);
+          // Clean up response (remove markdown code blocks if present)
+          const cleanedMetadata = metadataResult.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+          const metadata: PageMetadata = JSON.parse(cleanedMetadata);
 
           const pageContent: PageContent = {
             pageId: page.pageId,
@@ -125,9 +118,7 @@ export async function POST(request: NextRequest) {
 
           return pageContent;
         } catch (error) {
-          console.error(`Error scraping ${page.url}:`, error); // Keep page.url here for debug if targetUrl undefined? No targetUrl is defined.
-          // Let's use targetUrl if possible, but page.url is fine for error context of original input.
-          // Actually, let's keep page.url in catch block as fallback context.
+          console.error(`Error scraping ${page.url}:`, error);
           return null;
         }
       });

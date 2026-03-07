@@ -7,22 +7,17 @@
  */
 
 // Available Providers
-export type AIProvider = 'gemini' | 'openai';
+export type AIProvider = 'gemini';
 
 // Available Models
 // Justification:
 // - gemini-pro: Balanced performance/cost. Good default.
 // - gemini-2.0-flash-lite: Extremely low cost ($0.075/1M input), fast, decent reasoning. Best for bulk tasks.
-// - gpt-4o-mini: OpenAI's cost-efficient model. Competitor to Flash.
-// - gpt-4-turbo: High intelligence, high cost. Use sparingly for complex logic.
-// - deepseek-v3: (Hypothetical integration) Excellent reasoning per dollar.
-export type AIModel = 
-  | 'gemini-pro' 
-  | 'gemini-2.0-flash-lite' 
-  | 'gemini-2.0-flash' 
-  | 'gpt-5.1' 
-  | 'gpt-5-mini' 
-  | 'gpt-4o-mini'
+// - gemini-2.0-flash: Higher performance for complex tasks.
+export type AIModel =
+  | 'gemini-pro'
+  | 'gemini-2.0-flash-lite'
+  | 'gemini-2.0-flash'
 
 
 interface TaskConfig {

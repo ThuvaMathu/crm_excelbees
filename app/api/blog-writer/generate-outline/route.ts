@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
   GenerateOutlineRequest,
   BlogOutline,
@@ -8,9 +8,7 @@ import {
 } from "@/types/blog-writer";
 import { getOutlineGenerationPrompt } from "@/lib/blog-writer/utils";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,41 +35,36 @@ export async function POST(request: NextRequest) {
       configuration
     );
 
-    // Call OpenAI GPT-4o
-    console.log("🤖 Calling OpenAI GPT-4o...");
-    let completion;
+    // Call Gemini
+    console.log("🤖 Calling Gemini...");
+    let outlineText: string;
     try {
-      completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert SEO content strategist. Always respond with valid JSON only following the requested structure.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        response_format: { type: "json_object" },
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        generationConfig: { responseMimeType: "application/json" },
       });
-    } catch (openaiError) {
-      console.error("❌ OpenAI API Error:", openaiError);
-      throw new Error(`OpenAI API failed: ${openaiError instanceof Error ? openaiError.message : "Unknown error"}`);
+      const systemPrompt = "You are an expert SEO content strategist. Always respond with valid JSON only following the requested structure.";
+
+      const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+      outlineText = result.response.text() || "";
+    } catch (geminiError) {
+      console.error("❌ Gemini API Error:", geminiError);
+      throw new Error(`Gemini API failed: ${geminiError instanceof Error ? geminiError.message : "Unknown error"}`);
     }
 
-    const outlineText = completion.choices[0].message.content;
     if (!outlineText) {
-      throw new Error("OpenAI returned an empty response.");
+      throw new Error("Gemini returned an empty response.");
     }
 
     let outline: BlogOutline;
     try {
+      // Clean up the response in case of markdown code blocks
+      outlineText = outlineText.replace(/^```json\s*/i, "").replace(/^```\s*/, "").replace(/```\s*$/, "");
       outline = JSON.parse(outlineText);
     } catch (parseError) {
-      console.error("❌ Failed to parse OpenAI response as JSON:", outlineText);
-      throw new Error("OpenAI returned invalid JSON.");
+      console.error("❌ Failed to parse Gemini response as JSON:", outlineText);
+      throw new Error("Gemini returned invalid JSON.");
     }
 
     console.log("✅ Outline generated successfully:", outline.workingTitle);

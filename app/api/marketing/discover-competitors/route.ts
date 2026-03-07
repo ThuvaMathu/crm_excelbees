@@ -2,23 +2,21 @@
  * API Route: Discover Competitors (Step 3)
  * POST /api/marketing/discover-competitors
  *
- * Discovers competitors using Gemini AI with Google Search Grounding and/or OpenAI Web Search
+ * Discovers competitors using Gemini AI with Google Search Grounding
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { discoverCompetitors as discoverGeminiCompetitors, isGeminiDiscoveryConfigured } from '@/services/competitorDiscovery';
 import { getCompetitorValidationPrompt, getCompetitorDiscoveryPrompt } from '@/lib/competitor-analysis/prompts';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   DiscoverCompetitorsRequest,
   DiscoverCompetitorsResponse,
   DiscoveredCompetitor
 } from '@/types/competitor-analysis';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,13 +57,13 @@ export async function POST(request: NextRequest) {
         console.log(`✅ [API] Discover Competitors: Found ${geminiResult.competitors.length} via Gemini AI`);
       } catch (error) {
         console.error('❌ [API] Gemini AI failed:', error);
-        // Continue to web search fallback
+        // Continue to fallback
       }
     }
 
-    // METHOD B: OpenAI Web Search (fallback or supplement)
+    // METHOD B: Fallback using Gemini without search grounding
     if (allCompetitors.length < 5) {
-      console.log('🔄 [API] Discover Competitors: Searching OpenAI Web (fallback)...');
+      console.log('🔄 [API] Discover Competitors: Using Gemini fallback...');
       try {
         const prompt = getCompetitorDiscoveryPrompt(
           businessProfile.industry,
@@ -73,25 +71,19 @@ export async function POST(request: NextRequest) {
           location
         );
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a market research expert. Find real competitor companies based on industry and location. Return valid JSON only.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.5,
-          response_format: { type: 'json_object' }
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-2.0-flash',
+          generationConfig: { responseMimeType: 'application/json' },
         });
 
-        const resultText = completion.choices[0].message.content;
+        const systemPrompt = 'You are a market research expert. Find real competitor companies based on industry and location. Return valid JSON only.';
+
+        const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+        const resultText = result.response.text();
         if (resultText) {
-          const result = JSON.parse(resultText);
+          const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+          const result = JSON.parse(cleanedResult);
           const webCompetitors = result.competitors || [];
 
           allCompetitors.push(...webCompetitors.map((c: any) => ({
@@ -101,10 +93,10 @@ export async function POST(request: NextRequest) {
             selected: true,
           })));
 
-          console.log(`✅ [API] Discover Competitors: Found ${webCompetitors.length} via Web Search`);
+          console.log(`✅ [API] Discover Competitors: Found ${webCompetitors.length} via fallback`);
         }
       } catch (error) {
-        console.error('❌ [API] Web search failed:', error);
+        console.error('❌ [API] Fallback failed:', error);
       }
     }
 
@@ -148,10 +140,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Limit to requested number (from preferences or default 5)
-    const requestedCount = preferences.analysisDepth === 'quick' ? 3 
-      : preferences.analysisDepth === 'deep' ? 10 
+    const requestedCount = preferences.analysisDepth === 'quick' ? 3
+      : preferences.analysisDepth === 'deep' ? 10
       : 5;
-    
+
     finalCompetitors = finalCompetitors.slice(0, requestedCount);
 
     // Update analysis document
@@ -171,9 +163,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error discovering competitors:', error);
-    
+
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to discover competitors',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -216,17 +208,17 @@ function cleanCompetitorUrl(url: string): string {
   try {
     const urlWithProtocol = url.startsWith('http') ? url : `https://${url}`;
     const urlObj = new URL(urlWithProtocol);
-    
+
     // Clear query parameters/tracking codes
     urlObj.search = '';
     urlObj.hash = '';
-    
+
     // Remove trailing slash for consistency
     let cleanUrl = urlObj.toString();
     if (cleanUrl.endsWith('/')) {
         cleanUrl = cleanUrl.slice(0, -1);
     }
-    
+
     return cleanUrl;
   } catch (e) {
     return url;
@@ -250,29 +242,24 @@ async function validateCompetitors(
       competitors.map(c => ({ name: c.name, website: c.website }))
     );
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a business analyst. Validate which companies are actual competitors. Return valid JSON only.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.2,
-      response_format: { type: 'json_object' }
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const resultText = completion.choices[0].message.content;
+    const systemPrompt = 'You are a business analyst. Validate which companies are actual competitors. Return valid JSON only.';
+
+    const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+    const resultText = result.response.text();
     if (!resultText) {
       return competitors; // Return all if validation fails
     }
 
-    const result = JSON.parse(resultText);
-    const validIndices = result.validCompetitorIndices || [];
+    // Clean up response (remove markdown code blocks if present)
+    const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+    const resultParsed = JSON.parse(cleanedResult);
+    const validIndices = resultParsed.validCompetitorIndices || [];
 
     return competitors.filter((_, index) => validIndices.includes(index));
   } catch (error) {

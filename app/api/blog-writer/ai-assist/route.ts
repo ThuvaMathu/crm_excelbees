@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AIAssistRequest } from "@/types/blog-writer";
 import { getAIAssistPrompt } from "@/lib/blog-writer/utils";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +17,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
+
     // Get blog configuration
     const blogDoc = await db
       .collection(`marketing/blog-writer/users/${userId}/blogs`)
@@ -49,24 +47,13 @@ export async function POST(request: NextRequest) {
       mode || "generate" // Default to generate if missing
     );
 
-    // Call OpenAI
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert blog writing assistant.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 1500,
-    });
+    // Call Gemini
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const systemPrompt = "You are an expert blog writing assistant.";
 
-    let generatedContent = completion.choices[0].message.content || "";
+    const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+    let generatedContent = result.response.text() || "";
 
     // Remove markdown code blocks if present (e.g., ```html ... ```)
     generatedContent = generatedContent

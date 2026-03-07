@@ -1,23 +1,21 @@
 /**
  * API Route: Generate Insights (Step 9)
  * POST /api/keyword/generate-insights
- * 
+ *
  * Generates comprehensive strategy report from selected keywords
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getStrategyGenerationPrompt } from '@/lib/keyword/prompts';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   GenerateInsightsRequest,
   GenerateInsightsResponse,
   StrategyReport,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     console.log(`🚀 [Keyword API] Generate Insights: ${selectedKeywords.length} keywords`);
 
-    // Generate strategy with GPT-4o
+    // Generate strategy with Gemini
     const strategyPrompt = getStrategyGenerationPrompt({
       businessContext: allResearchData.businessContext,
       competitors: allResearchData.competitors,
@@ -39,28 +37,23 @@ export async function POST(request: NextRequest) {
       selectedKeywords,
     });
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an SEO strategy consultant. Create comprehensive, actionable keyword strategies. Return valid JSON only.',
-        },
-        {
-          role: 'user',
-          content: strategyPrompt,
-        },
-      ],
-      temperature: 0.5,
-      response_format: { type: 'json_object' },
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const result = completion.choices[0].message.content;
-    if (!result) {
+    const systemPrompt = 'You are an SEO strategy consultant. Create comprehensive, actionable keyword strategies. Return valid JSON only.';
+
+    const result = await model.generateContent(`${systemPrompt}\n\n${strategyPrompt}`);
+
+    const resultText = result.response.text();
+    if (!resultText) {
       throw new Error('No strategy result');
     }
 
-    const parsed = JSON.parse(result);
+    // Clean up response (remove markdown code blocks if present)
+    const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+    const parsed = JSON.parse(cleanedResult);
 
     // Organize keywords by strategic value
     const quickWins = selectedKeywords.filter(kw => kw.strategicValue === 'quick-win');

@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AIGenerateRequest, Plan } from "@/types/calendar";
 import { getPlanGenerationPrompt } from "@/lib/calendar/ai-prompts";
 import { generatePlanId } from "@/lib/calendar/utils";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // POST /api/calendar/ai-generate - Generate plans using AI
 export async function POST(request: NextRequest) {
@@ -40,26 +38,19 @@ export async function POST(request: NextRequest) {
     // Generate AI prompt
     const prompt = getPlanGenerationPrompt(body);
 
-    console.log(`🤖 Calling OpenAI GPT-4o...`);
+    console.log(`🤖 Calling Gemini...`);
 
-    // Call OpenAI
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert AI planning assistant. Generate realistic, actionable calendar plans in JSON format.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
+    // Call Gemini
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: { responseMimeType: "application/json" },
     });
 
-    let generatedContent = completion.choices[0].message.content || "";
+    const systemPrompt = "You are an expert AI planning assistant. Generate realistic, actionable calendar plans in JSON format.";
+
+    const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+    let generatedContent = result.response.text() || "";
 
     // Remove markdown code blocks if present
     generatedContent = generatedContent

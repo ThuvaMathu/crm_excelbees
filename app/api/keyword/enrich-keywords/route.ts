@@ -1,23 +1,21 @@
 /**
  * API Route: Enrich Keywords (Step 7)
  * POST /api/keyword/enrich-keywords
- * 
- * Enriches keywords with search metrics using GPT-4o Web Search
+ *
+ * Enriches keywords with search metrics using Gemini
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { batchArray, generateId } from '@/lib/keyword/utils';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   EnrichKeywordsRequest,
   EnrichKeywordsResponse,
   EnrichedKeyword,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,50 +44,22 @@ export async function POST(request: NextRequest) {
 
         const keywordList = batch.map(kw => kw.primaryKeyword).join('\n');
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an SEO metrics expert. Provide search metrics for keywords. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: `Provide SEO metrics for these keywords:
-
-${keywordList}
-
-For each keyword, provide:
-1. Monthly search volume (approximate)
-2. Keyword difficulty (low/medium/high)
-3. Search trend (rising/stable/declining)
-4. CPC (cost per click, if available)
-5. Top 3 ranking domains
-
-Return as JSON array:
-[
-  {
-    "keyword": "string",
-    "searchVolume": number,
-    "searchVolumeCategory": "low" | "medium" | "high",
-    "difficulty": "low" | "medium" | "high",
-    "trend": "rising" | "stable" | "declining",
-    "cpc": "string (optional)",
-    "topRankingDomains": ["string"]
-  }
-]
-
-If exact data unavailable, provide educated estimates based on keyword specificity.`,
-            },
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-2.0-flash',
+          generationConfig: { responseMimeType: 'application/json' },
         });
 
-        const result = completion.choices[0].message.content;
-        if (!result) continue;
+        const systemPrompt = 'You are an SEO metrics expert. Provide search metrics for keywords. Return valid JSON only.';
+        const prompt = `Provide SEO metrics for these keywords:\n\n${keywordList}\n\nFor each keyword, provide:\n1. Monthly search volume (approximate)\n2. Keyword difficulty (low/medium/high)\n3. Search trend (rising/stable/declining)\n4. CPC (cost per click, if available)\n5. Top 3 ranking domains\n\nReturn as JSON array:\n[\n  {\n    "keyword": "string",\n    "searchVolume": number,\n    "searchVolumeCategory": "low" | "medium" | "high",\n    "difficulty": "low" | "medium" | "high",\n    "trend": "rising" | "stable" | "declining",\n    "cpc": "string (optional)",\n    "topRankingDomains": ["string"]\n  }\n]\n\nIf exact data unavailable, provide educated estimates based on keyword specificity.`;
 
-        const parsed = JSON.parse(result);
+        const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+        const resultText = result.response.text();
+        if (!resultText) continue;
+
+        // Clean up response (remove markdown code blocks if present)
+        const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+        const parsed = JSON.parse(cleanedResult);
         const metricsData = parsed.keywords || parsed.metrics || [];
 
         for (const metric of metricsData) {

@@ -1,7 +1,7 @@
 /**
  * API Route: Finalize Selection (Step 8)
  * POST /api/keyword/finalize-selection
- * 
+ *
  * Intelligently selects final N keywords with balanced strategic values
  */
 
@@ -9,16 +9,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getKeywordSelectionPrompt } from '@/lib/keyword/prompts';
 import { normalizeKeyword } from '@/lib/keyword/utils';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   FinalizeSelectionRequest,
   FinalizeSelectionResponse,
   SelectedKeyword,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,37 +29,32 @@ export async function POST(request: NextRequest) {
 
     console.log(`🚀 [Keyword API] Finalize Selection: ${enrichedKeywords.length} → ${requestedCount} keywords`);
 
-    // Use GPT-4o for intelligent selection
+    // Use Gemini for intelligent selection
     const selectionPrompt = getKeywordSelectionPrompt(enrichedKeywords, requestedCount, businessContext);
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an SEO strategy expert. Select the best keywords for a business. Return valid JSON only.',
-        },
-        {
-          role: 'user',
-          content: selectionPrompt,
-        },
-      ],
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash',
+      generationConfig: { responseMimeType: 'application/json' },
     });
 
-    const result = completion.choices[0].message.content;
-    if (!result) {
+    const systemPrompt = 'You are an SEO strategy expert. Select the best keywords for a business. Return valid JSON only.';
+
+    const result = await model.generateContent(`${systemPrompt}\n\n${selectionPrompt}`);
+
+    const resultText = result.response.text();
+    if (!resultText) {
       throw new Error('No selection result');
     }
 
-    const parsed = JSON.parse(result);
+    // Clean up response (remove markdown code blocks if present)
+    const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+    const parsed = JSON.parse(cleanedResult);
     const selectedList = parsed.keywords || parsed.selectedKeywords || [];
 
     const selectedKeywords: SelectedKeyword[] = selectedList.slice(0, requestedCount).map((kw: any, index: number) => {
       // Robust matching using normalization
       const keywordText = kw.primaryKeyword || kw.keyword;
-      
+
       if (!keywordText) {
         console.warn('⚠️ [Keyword API] Missing keyword text in selection result', kw);
         return null;
@@ -69,7 +62,7 @@ export async function POST(request: NextRequest) {
 
       const kwNormalized = normalizeKeyword(keywordText);
       const originalKeyword = enrichedKeywords.find(ek => normalizeKeyword(ek.primaryKeyword) === kwNormalized);
-      
+
       if (!originalKeyword) {
         console.warn(`⚠️ [Keyword API] Could not match selected keyword "${keywordText}" to original list. Using fallback.`);
         // Fallback: Create new keyword entry if match fails
@@ -122,9 +115,9 @@ export async function POST(request: NextRequest) {
 
     // Check for "Key Sentences" (Questions/Long-tail) count
     const sentenceTarget = Math.floor(requestedCount / 2);
-    const existingSentences = selectedKeywords.filter(k => 
-      (k.primaryKeyword.split(' ').length >= 4) || 
-      k.primaryKeyword.includes('?') || 
+    const existingSentences = selectedKeywords.filter(k =>
+      (k.primaryKeyword.split(' ').length >= 4) ||
+      k.primaryKeyword.includes('?') ||
       k.searchIntent === 'informational'
     ).length;
 
@@ -133,53 +126,26 @@ export async function POST(request: NextRequest) {
       console.log(`⚠️ [Keyword API] Missing ${remainingNeeded} key sentences. Generating...`);
 
       try {
-        const sentenceCompletion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an SEO expert specializing in long-tail keywords and user questions. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: `Generate ${remainingNeeded} additional "Key Sentences" (Questions or Long-tail keywords with 4+ words) relevant to this business.
-              
-              BUSINESS:
-              - Industry: ${businessContext.industry}
-              - Services: ${businessContext.mainServices.join(', ')}
-              
-              CONTEXT KEYWORDS (Already selected):
-              ${selectedKeywords.slice(0, 10).map(k => k.primaryKeyword).join(', ')}...
-              
-              REQUIREMENTS:
-              1. Must be questions (Who, What, Where, How) or long statements (>4 words).
-              2. Must be relevant to the business.
-              3. Must imply "informational" search intent.
-              
-              Return as JSON array:
-              [
-                {
-                  "primaryKeyword": "string",
-                  "searchVolume": number (estimate),
-                  "difficulty": "low" | "medium" | "high",
-                  "selectionReason": "string"
-                }
-              ]`
-            }
-          ],
-          temperature: 0.7,
-          response_format: { type: 'json_object' },
+        const sentenceModel = genAI.getGenerativeModel({
+          model: 'gemini-2.0-flash',
+          generationConfig: { responseMimeType: 'application/json' },
         });
 
-        const sentenceResult = sentenceCompletion.choices[0].message.content;
-        if (sentenceResult) {
-          const parsedSentences = JSON.parse(sentenceResult);
+        const sentenceSystemPrompt = 'You are an SEO expert specializing in long-tail keywords and user questions. Return valid JSON only.';
+        const sentencePrompt = `Generate ${remainingNeeded} additional "Key Sentences" (Questions or Long-tail keywords with 4+ words) relevant to this business.\n\nBUSINESS:\n- Industry: ${businessContext.industry}\n- Services: ${businessContext.mainServices.join(', ')}\n\nCONTEXT KEYWORDS (Already selected):\n${selectedKeywords.slice(0, 10).map(k => k.primaryKeyword).join(', ')}...\n\nREQUIREMENTS:\n1. Must be questions (Who, What, Where, How) or long statements (>4 words).\n2. Must be relevant to the business.\n3. Must imply "informational" search intent.\n\nReturn as JSON array:\n[\n  {\n    "primaryKeyword": "string",\n    "searchVolume": number (estimate),\n    "difficulty": "low" | "medium" | "high",\n    "selectionReason": "string"\n  }\n]`;
+
+        const sentenceResult = await sentenceModel.generateContent(`${sentenceSystemPrompt}\n\n${sentencePrompt}`);
+
+        const sentenceResultText = sentenceResult.response.text();
+        if (sentenceResultText) {
+          const cleanedSentences = sentenceResultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+          const parsedSentences = JSON.parse(cleanedSentences);
           const newSentences = parsedSentences.sentences || parsedSentences.keywords || [];
-          
+
           if (Array.isArray(newSentences)) {
              newSentences.forEach((s: any, idx) => {
                if (selectedKeywords.length >= requestedCount + remainingNeeded) return;
-               
+
                const vol = s.searchVolume || 50;
                const newKeyword: SelectedKeyword = {
                  keywordId: `gen-sent-${Date.now()}-${idx}`,

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 // POST /api/marketing/ai/generate-email - Generate email content with AI
 export async function POST(request: NextRequest) {
@@ -7,16 +9,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { mode, quickPrompt, goal, targetAudience, tone, length, includeElements, customInstructions } = body;
 
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json(
-        { error: "OpenAI API key not configured" },
+        { error: "Gemini API key not configured" },
         { status: 500 }
       );
     }
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
 
     let prompt = "";
 
@@ -79,23 +77,16 @@ Return JSON format:
 }`;
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert email marketing copywriter. Generate compelling, conversion-focused email content. Always return valid JSON.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      response_format: { type: "json_object" },
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: { responseMimeType: "application/json" },
     });
 
-    const content = JSON.parse(completion.choices[0].message.content || "{}");
+    const systemPrompt = "You are an expert email marketing copywriter. Generate compelling, conversion-focused email content. Always return valid JSON.";
+
+    const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+    const content = JSON.parse(result.response.text() || "{}");
 
     return NextResponse.json(content);
   } catch (error: any) {

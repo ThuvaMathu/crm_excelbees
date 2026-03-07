@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GenerateContentRequest, BlogPost } from "@/types/blog-writer";
 import {
   getContentGenerationPrompt,
@@ -11,9 +11,7 @@ import {
   countWords,
 } from "@/lib/blog-writer/utils";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,37 +51,32 @@ export async function POST(request: NextRequest) {
 
     // Determine max tokens based on target word count
     const targetWords = (configuration?.wordCount || blog.configuration?.wordCount || 2000);
-    let maxTokens = 4000;
-    if (targetWords <= 1300) maxTokens = 2500;
-    else if (targetWords <= 2600) maxTokens = 4000;
-    else if (targetWords <= 3800) maxTokens = 6000;
-    else maxTokens = 8500;
+    let maxOutputTokens = 8000;
+    if (targetWords <= 1300) maxOutputTokens = 2500;
+    else if (targetWords <= 2600) maxOutputTokens = 4000;
+    else if (targetWords <= 3800) maxOutputTokens = 6000;
+    else maxOutputTokens = 8000;
 
-    console.log(`🤖 Calling OpenAI GPT-4o with maxTokens: ${maxTokens}...`);
+    console.log(`🤖 Calling Gemini with maxOutputTokens: ${maxOutputTokens}...`);
 
-    let completion;
+    let content: string;
     try {
-      completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert blog writer. Write high-quality, SEO-optimized content in HTML format following the provided outline and specifications.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: maxTokens,
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens,
+        },
       });
-    } catch (openaiError) {
-      console.error("❌ OpenAI API Error:", openaiError);
-      throw new Error(`OpenAI API failed: ${openaiError instanceof Error ? openaiError.message : "Unknown error"}`);
-    }
+      const systemPrompt = "You are an expert blog writer. Write high-quality, SEO-optimized content in HTML format following the provided outline and specifications.";
 
-    let content = completion.choices[0].message.content || "";
+      const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
+
+      content = result.response.text() || "";
+    } catch (geminiError) {
+      console.error("❌ Gemini API Error:", geminiError);
+      throw new Error(`Gemini API failed: ${geminiError instanceof Error ? geminiError.message : "Unknown error"}`);
+    }
 
     // Remove markdown code blocks if present
     content = content
@@ -91,7 +84,7 @@ export async function POST(request: NextRequest) {
       .replace(/^```\s*/, "")
       .replace(/```\s*$/, "");
     if (!content) {
-      throw new Error("OpenAI returned an empty content response.");
+      throw new Error("Gemini returned an empty content response.");
     }
 
     console.log(`✅ Content generated (${content.length} characters)`);

@@ -1,7 +1,7 @@
 /**
  * API Route: Discover Sitemaps & Select Pages (Step 3)
  * POST /api/keyword/discover-sitemaps
- * 
+ *
  * Discovers sitemaps for each competitor and selects top N pages based on priority
  */
 
@@ -11,17 +11,15 @@ import { getSitemapCategorizationPrompt } from '@/lib/keyword/prompts';
 import { parseSitemapXML, prioritizePages, generateId } from '@/lib/keyword/utils';
 import { getCachedSitemap, cacheSitemap } from '@/lib/keyword/cache';
 import { adminDb as db } from '@/lib/firebase-admin';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type {
   DiscoverSitemapsRequest,
   DiscoverSitemapsResponse,
   SitemapData,
   SelectedPage,
 } from '@/types/keyword-research';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
@@ -119,32 +117,27 @@ export async function POST(request: NextRequest) {
 
         console.log(`✅ [Keyword API] Found ${sitemapUrls.length} URLs for ${competitor.name}`);
 
-        // Categorize pages with GPT-4o (limit to 200 URLs to avoid token limits)
+        // Categorize pages with Gemini (limit to 200 URLs to avoid token limits)
         const urlsToAnalyze = sitemapUrls.slice(0, 200);
         const categorizationPrompt = getSitemapCategorizationPrompt(urlsToAnalyze);
 
-        const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a website analyst. Categorize website pages. Return valid JSON only.',
-            },
-            {
-              role: 'user',
-              content: categorizationPrompt,
-            },
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-2.0-flash',
+          generationConfig: { responseMimeType: 'application/json' },
         });
 
-        const result = completion.choices[0].message.content;
-        if (!result) {
+        const systemPrompt = 'You are a website analyst. Categorize website pages. Return valid JSON only.';
+
+        const result = await model.generateContent(`${systemPrompt}\n\n${categorizationPrompt}`);
+
+        const resultText = result.response.text();
+        if (!resultText) {
           throw new Error('No categorization result');
         }
 
-        const parsed = JSON.parse(result);
+        // Clean up response (remove markdown code blocks if present)
+        const cleanedResult = resultText.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```\s*$/, '');
+        const parsed = JSON.parse(cleanedResult);
         const categorizedPages: SelectedPage[] = (parsed.categorizedPages || []).map(
           (page: any) => {
             let fullUrl = page.url;
@@ -154,7 +147,7 @@ export async function POST(request: NextRequest) {
             } catch (e) {
               // Keep original if invalid
             }
-            
+
             return {
               pageId: generateId(),
               url: fullUrl,
