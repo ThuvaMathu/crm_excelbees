@@ -24,6 +24,17 @@ export function middleware(request: NextRequest) {
     path.startsWith("/settings") ||
     path.startsWith("/profile");
 
+  // Protect Admin Routes at the edge by checking if auth cookie or header exists
+  // We exclude /api/admin/sync-claims because it relies on an internal secret key instead of a user session
+  if ((path.startsWith("/admin") || path.startsWith("/api/admin")) && !path.startsWith("/api/admin/sync-claims")) {
+    const authHeader = request.headers.get("authorization");
+    const sessionCookie = request.cookies.get("session")?.value;
+
+    if (!authHeader && !sessionCookie) {
+       return NextResponse.redirect(new URL("/login", request.url));
+    }
+  }
+
   // For now, we'll rely on client-side auth checks
   // In production, you'd want to verify the Firebase auth token here
   
