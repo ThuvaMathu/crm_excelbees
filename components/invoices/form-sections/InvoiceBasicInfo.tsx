@@ -212,8 +212,11 @@ export function InvoiceBasicInfo() {
                                         <FormItem>
                                             <FormLabel>Invoice Number</FormLabel>
                                             <FormControl>
-                                                <Input {...field} placeholder="INV-0001" className="font-mono" />
+                                                <Input {...field} placeholder="Auto-generated (leave blank)" className="font-mono" />
                                             </FormControl>
+                                            <p className="text-xs text-muted-foreground">
+                                                Leave blank to auto-generate sequential number
+                                            </p>
                                             <FormMessage />
                                         </FormItem>
                                     )}

@@ -33,10 +33,11 @@ import {
     Lock,
     Shield,
     Sparkles,
+    Archive,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { updateTaskStatus, updateTask, deleteTask } from "@/lib/firestore/tasks";
+import { updateTaskStatus, updateTask, deleteTask, archiveTask } from "@/lib/firestore/tasks";
 import { getUsers, type UserProfile } from "@/lib/firestore/users";
 import type { Task, TaskStatus, TaskPriority } from "@/types/crm";
 import type { User } from "@/hooks/useAuth";
@@ -271,6 +272,32 @@ export function TaskDetailSheet({
             onUpdate();
         } else {
             toast.error("Failed to delete task");
+        }
+        setLoading(false);
+    };
+
+    // Archive handler - only allowed for tasks with status "Done"
+    const handleArchive = async () => {
+        if (!canEdit) {
+            toast.error("You don't have permission to archive this task");
+            return;
+        }
+        // Logic guard: Only tasks with status "Done" can be archived
+        if (task.status !== "Done") {
+            toast.error("Only completed tasks (Done) can be archived");
+            return;
+        }
+        if (!confirm("Archive this task? It will be moved to the archived tasks list.")) return;
+
+        setLoading(true);
+        const { success, error } = await archiveTask(task.id);
+
+        if (success) {
+            toast.success("Task archived successfully");
+            onOpenChange(false);
+            onUpdate();
+        } else {
+            toast.error(error || "Failed to archive task");
         }
         setLoading(false);
     };
@@ -665,34 +692,68 @@ export function TaskDetailSheet({
                         <span>Last modified {format(safeToDate(task.updatedAt), "MMM d, yyyy 'at' h:mm a")}</span>
                     </div>
 
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={handleDelete}
-                        disabled={loading || !canDelete}
-                        className={cn(
-                            "gap-2 bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 border border-red-600/30 transition-colors",
-                            !canDelete && "opacity-50 cursor-not-allowed"
+                    <div className="flex items-center gap-2">
+                        {/* Archive button - only shows for "Done" tasks */}
+                        {task.status === "Done" && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleArchive}
+                                disabled={loading || !canEdit}
+                                className={cn(
+                                    "gap-2 bg-yellow-600/10 hover:bg-yellow-600/20 text-yellow-400 hover:text-yellow-300 border border-yellow-600/30 transition-colors",
+                                    !canEdit && "opacity-50 cursor-not-allowed"
+                                )}
+                                title={canEdit ? "Archive this completed task" : "You don't have permission to archive this task"}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Lock className="h-4 w-4" />
+                                        Archiving...
+                                    </>
+                                ) : canEdit ? (
+                                    <>
+                                        <Archive className="h-4 w-4" />
+                                        Archive
+                                    </>
+                                ) : (
+                                    <>
+                                        <Lock className="h-4 w-4" />
+                                        Archive Locked
+                                    </>
+                                )}
+                            </Button>
                         )}
-                        title={canDelete ? "Delete this task" : "Only admins and managers can delete tasks"}
-                    >
-                        {loading ? (
-                            <>
-                                <Lock className="h-4 w-4" />
-                                Deleting...
-                            </>
-                        ) : canDelete ? (
-                            <>
-                                <Trash2 className="h-4 w-4" />
-                                Delete Task
-                            </>
-                        ) : (
-                            <>
-                                <Lock className="h-4 w-4" />
-                                Delete Locked
-                            </>
-                        )}
-                    </Button>
+
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleDelete}
+                            disabled={loading || !canDelete}
+                            className={cn(
+                                "gap-2 bg-red-600/10 hover:bg-red-600/20 text-red-400 hover:text-red-300 border border-red-600/30 transition-colors",
+                                !canDelete && "opacity-50 cursor-not-allowed"
+                            )}
+                            title={canDelete ? "Delete this task" : "Only admins and managers can delete tasks"}
+                        >
+                            {loading ? (
+                                <>
+                                    <Lock className="h-4 w-4" />
+                                    Deleting...
+                                </>
+                            ) : canDelete ? (
+                                <>
+                                    <Trash2 className="h-4 w-4" />
+                                    Delete
+                                </>
+                            ) : (
+                                <>
+                                    <Lock className="h-4 w-4" />
+                                    Delete Locked
+                                </>
+                            )}
+                        </Button>
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>

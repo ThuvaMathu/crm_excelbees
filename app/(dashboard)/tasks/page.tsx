@@ -6,14 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getTasks } from "@/lib/firestore/tasks";
-import type { Task } from "@/types/crm";
-import { Plus, CheckCircle2, Clock, AlertCircle, LayoutGrid, Calendar as CalendarIcon } from "lucide-react";
+import type { Task, TaskPriority, TaskStatus } from "@/types/crm";
+import { Plus, CheckCircle2, Clock, AlertCircle, LayoutGrid, Calendar as CalendarIcon, Archive } from "lucide-react";
 import { format } from "date-fns";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskDetailSheet } from "@/components/tasks/TaskDetailSheet";
 import { TaskCalendar } from "@/components/tasks/TaskCalendar";
+import { TaskFiltersBar } from "@/components/tasks/TaskFiltersBar";
+import { ArchivedTasksDialog } from "@/components/tasks/ArchivedTasksDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 export default function TasksPage() {
     const { user } = useAuth();
@@ -22,6 +25,20 @@ export default function TasksPage() {
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [view, setView] = useState<"list" | "calendar">("list");
+    const [archivedOpen, setArchivedOpen] = useState(false);
+
+    // Advanced filters state
+    const [filters, setFilters] = useState<{
+        userRole: "all" | "assigned" | "created" | "associated";
+        dateRange: { from: Date | null; to: Date | null };
+        priorities: TaskPriority[];
+        statuses: TaskStatus[];
+    }>({
+        userRole: "all",
+        dateRange: { from: null, to: null },
+        priorities: [],
+        statuses: [],
+    });
 
     // Helper to safely convert Firestore Timestamp or Date to JS Date
     const safeToDate = (date: any): Date | null => {
@@ -33,7 +50,36 @@ export default function TasksPage() {
     };
 
     const fetchTasks = async () => {
-        const { tasks: fetchedTasks, error } = await getTasks();
+        // Build filter params for API
+        const filterParams: any = {
+            userId: user?.uid,
+            isArchived: false, // Default to non-archived tasks
+        };
+
+        // Apply user role filter
+        if (filters.userRole !== "all") {
+            filterParams.userRole = filters.userRole;
+        }
+
+        // Apply date range filter
+        if (filters.dateRange.from) {
+            filterParams.dueDateFrom = filters.dateRange.from;
+        }
+        if (filters.dateRange.to) {
+            filterParams.dueDateTo = filters.dateRange.to;
+        }
+
+        // Apply priorities filter
+        if (filters.priorities.length > 0) {
+            filterParams.priorities = filters.priorities;
+        }
+
+        // Apply statuses filter
+        if (filters.statuses.length > 0) {
+            filterParams.statuses = filters.statuses;
+        }
+
+        const { tasks: fetchedTasks, error } = await getTasks(filterParams);
 
         if (error) {
             console.error("Error fetching tasks:", error);
@@ -47,6 +93,13 @@ export default function TasksPage() {
     useEffect(() => {
         fetchTasks();
     }, []);
+
+    // Refetch when filters change
+    useEffect(() => {
+        if (!loading) {
+            fetchTasks();
+        }
+    }, [filters.userRole, filters.dateRange, filters.priorities, filters.statuses]);
 
     const getStatusIcon = (status: string) => {
         const icons: Record<string, React.ReactElement> = {
@@ -78,11 +131,31 @@ export default function TasksPage() {
         return colors[type] || "bg-gray-100 text-gray-800";
     };
 
+    // Helper to check if task should be shown based on statuses filter
+    const shouldShowTask = (task: Task): boolean => {
+        // If no statuses selected, show all
+        if (filters.statuses.length === 0) return true;
+        // Show if task's status is in selected statuses
+        return filters.statuses.includes(task.status);
+    };
+
     const groupedTasks = {
-        "To Do": tasks.filter((t) => t.status === "To Do"),
-        "In Progress": tasks.filter((t) => t.status === "In Progress"),
-        "Review": tasks.filter((t) => t.status === "Review"),
-        "Done": tasks.filter((t) => t.status === "Done"),
+        "To Do": tasks.filter((t) => t.status === "To Do" && shouldShowTask(t)),
+        "In Progress": tasks.filter((t) => t.status === "In Progress" && shouldShowTask(t)),
+        "Review": tasks.filter((t) => t.status === "Review" && shouldShowTask(t)),
+        "Done": tasks.filter((t) => t.status === "Done" && shouldShowTask(t)),
+    };
+
+    // Count of visible columns (for responsive grid)
+    const visibleColumns = Object.entries(groupedTasks).filter(([_, tasks]) => tasks.length > 0 || filters.statuses.length === 0).length;
+
+    const clearFilters = () => {
+        setFilters({
+            userRole: "all",
+            dateRange: { from: null, to: null },
+            priorities: [],
+            statuses: [],
+        });
     };
 
     if (loading) {
@@ -118,6 +191,14 @@ export default function TasksPage() {
                                 </TabsList>
                             </Tabs>
                             <Button
+                                variant="outline"
+                                onClick={() => setArchivedOpen(true)}
+                                className="gap-2"
+                            >
+                                <Archive className="h-4 w-4" />
+                                View Archived
+                            </Button>
+                            <Button
                                 onClick={() => setCreateOpen(true)}
                                 className="bg-primary hover:bg-primary/90 gap-2"
                             >
@@ -128,6 +209,23 @@ export default function TasksPage() {
                     }
                 />
             </div>
+
+            {/* Filter Bar */}
+            {view === "list" && (
+                <div className="flex-none">
+                    <TaskFiltersBar
+                        userRole={filters.userRole}
+                        onUserRoleChange={(role) => setFilters((f) => ({ ...f, userRole: role }))}
+                        dateRange={filters.dateRange}
+                        onDateRangeChange={(range) => setFilters((f) => ({ ...f, dateRange: range }))}
+                        priorities={filters.priorities}
+                        onPrioritiesChange={(priorities) => setFilters((f) => ({ ...f, priorities }))}
+                        statuses={filters.statuses}
+                        onStatusesChange={(statuses) => setFilters((f) => ({ ...f, statuses }))}
+                        onClearFilters={clearFilters}
+                    />
+                </div>
+            )}
 
             <div className="flex-1 overflow-y-auto min-h-0 pr-2">
                 {tasks.length === 0 ? (
@@ -153,7 +251,13 @@ export default function TasksPage() {
                         onSelectTask={setSelectedTask}
                     />
                 ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 pb-6">
+                    <div className={cn(
+                        "grid gap-6 pb-6",
+                        // Adjust columns based on visible content
+                        filters.statuses.length === 0
+                            ? "md:grid-cols-2 lg:grid-cols-4"
+                            : "md:grid-cols-2 lg:grid-cols-3"
+                    )}>
                         {Object.entries(groupedTasks).map(([status, statusTasks]) => (
                             <div key={status} className="space-y-3">
                                 <div className="flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur z-10 py-2">
@@ -236,6 +340,13 @@ export default function TasksPage() {
                 onOpenChange={(open) => !open && setSelectedTask(null)}
                 onUpdate={fetchTasks}
                 user={user}
+            />
+
+            <ArchivedTasksDialog
+                open={archivedOpen}
+                onOpenChange={setArchivedOpen}
+                onSelectTask={setSelectedTask}
+                onUpdate={fetchTasks}
             />
         </div>
     );

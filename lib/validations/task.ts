@@ -11,6 +11,9 @@ export const taskSchema = z.object({
   projectId: z.string().optional(),
   dealId: z.string().optional(),
   tags: z.array(z.string()).default([]),
+  // New fields for filtering and archiving
+  associates: z.array(z.string()).default([]),
+  isArchived: z.boolean().default(false),
 });
 
 export type TaskFormData = z.infer<typeof taskSchema>;

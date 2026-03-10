@@ -470,6 +470,9 @@ export interface Task {
     id: string;
     name: string;
   };
+  // New fields for filtering and archiving
+  associates?: string[];
+  isArchived?: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   completedAt?: Timestamp;
@@ -490,6 +493,14 @@ export interface InvoiceUserSettings {
   colorTheme: InvoiceColorTheme; // Hex color
   invoicePrefix: string; // e.g., "INV-", "EB-"
   nextInvoiceNumber: number; // Auto-incrementing counter
+
+  // Payment Details for Invoice
+  accountName?: string; // Bank account holder name
+  accountNumber?: string; // Bank account number
+  bankName?: string; // Bank name
+  ifsc?: string; // IFSC code for Indian banks
+  upiId?: string; // UPI ID for payments
+  gstin?: string; // GSTIN number
 }
 
 export interface InvoiceLineItem {
@@ -499,6 +510,7 @@ export interface InvoiceLineItem {
   price: number;
   taxRate: number; // Percentage (e.g., 10 for 10%)
   total: number; // Auto-calculated
+  type?: "Service" | "Advance" | "Refund" | "Credit" | "Discount"; // Line item type for adjustments
 }
 
 export interface Invoice {
@@ -662,6 +674,12 @@ export interface TaskFilters {
   search?: string;
   dueDateFrom?: Date;
   dueDateTo?: Date;
+  // New filter parameters
+  userId?: string; // Current user ID for userRole filtering
+  userRole?: "all" | "assigned" | "created" | "associated";
+  priorities?: TaskPriority[];
+  statuses?: TaskStatus[];
+  isArchived?: boolean;
 }
 
 // Pagination

@@ -69,12 +69,12 @@ export function InvoiceForm({ invoice, mode, onSave, saving = false }: InvoiceFo
         } as any
     });
 
-    // Auto-generate invoice number
+    // Auto-generate invoice number (will be generated server-side on save)
+    // No longer generating random numbers client-side to maintain sequential order
     useEffect(() => {
         if (mode === "create" && !invoice?.invoiceNumber && !form.getValues("invoiceNumber")) {
-            const timestamp = Date.now();
-            const randomNum = Math.floor(Math.random() * 1000);
-            form.setValue("invoiceNumber", `INV-${timestamp}-${randomNum}`);
+            // Clear the field - it will be generated server-side
+            form.setValue("invoiceNumber", "");
         }
     }, [mode, invoice?.invoiceNumber, form]);
 

@@ -38,9 +38,24 @@ export async function createInvoice(data: InvoiceInput, userId: string): Promise
   try {
     console.log("📝 Creating invoice:", data.invoiceNumber);
 
+    // Generate invoice number only if not provided
+    let invoiceNumber = data.invoiceNumber;
+    if (!invoiceNumber) {
+      try {
+        invoiceNumber = await generateNextInvoiceNumber(userId);
+      } catch (invoiceNumberError: any) {
+        console.error("❌ Failed to generate invoice number:", invoiceNumberError);
+        return {
+          success: false,
+          id: null,
+          error: `Failed to generate invoice number: ${invoiceNumberError.message}. Please initialize your invoice settings first.`,
+        };
+      }
+    }
+
     const invoiceData = {
       ...data,
-      invoiceNumber: data.invoiceNumber || await generateNextInvoiceNumber(userId),
+      invoiceNumber,
       ownerId: userId,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),

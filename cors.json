@@ -1,7 +1,14 @@
 [
   {
-    "origin": ["http://localhost:3000", "http://localhost:3001"],
+    "origin": [
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "https://crm.excelbees.com",
+      "https://dev.crm.excelbees.com",
+      "https://excelbees.com"
+    ],
     "method": ["GET", "HEAD"],
-    "maxAgeSeconds": 3600
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Authorization", "Content-Length"]
   }
 ]

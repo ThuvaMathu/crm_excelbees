@@ -20,6 +20,96 @@ import { sanitizeData } from "./utils";
 
 const COLLECTION_NAME = "tasks";
 
+// Archive a task (only allowed for tasks with status "Done")
+export async function archiveTask(id: string): Promise<{
+  success: boolean;
+  error: string | null;
+}> {
+  try {
+    console.log("📦 Archiving task:", id);
+
+    // First verify the task exists and is in "Done" status
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      return {
+        success: false,
+        error: "Task not found",
+      };
+    }
+
+    const task = docSnap.data() as Task;
+
+    // Logic guard: Only tasks with status "Done" can be archived
+    if (task.status !== "Done") {
+      return {
+        success: false,
+        error: "Only completed tasks (Done) can be archived",
+      };
+    }
+
+    const updateData = {
+      isArchived: true,
+      archivedAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    };
+
+    await updateDoc(docRef, sanitizeData(updateData));
+    console.log("✅ Task archived successfully");
+
+    // Invalidate cache
+    await redis.del("tasks:list:all");
+    if (task.ownerId) {
+      await redis.del(`dashboard:stats:${task.ownerId}`);
+    }
+
+    return {
+      success: true,
+      error: null,
+    };
+  } catch (error: any) {
+    console.error("❌ Failed to archive task:", error.message);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+// Unarchive a task
+export async function unarchiveTask(id: string): Promise<{
+  success: boolean;
+  error: string | null;
+}> {
+  try {
+    console.log("📦 Unarchiving task:", id);
+    const docRef = doc(db, COLLECTION_NAME, id);
+
+    const updateData = {
+      isArchived: false,
+      updatedAt: Timestamp.now(),
+    };
+
+    await updateDoc(docRef, sanitizeData(updateData));
+    console.log("✅ Task unarchived successfully");
+
+    // Invalidate cache
+    await redis.del("tasks:list:all");
+
+    return {
+      success: true,
+      error: null,
+    };
+  } catch (error: any) {
+    console.error("❌ Failed to unarchive task:", error.message);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
 // Create a new task
 export async function createTask(data: TaskInput, userId: string): Promise<{
   success: boolean;
@@ -82,6 +172,17 @@ export async function getTasks(filters?: TaskFilters): Promise<{
     console.log("📋 Fetching tasks with filters:", filters);
     const constraints: QueryConstraint[] = [];
 
+    // Default to non-archived tasks unless explicitly requested
+    const includeArchived = filters?.isArchived === true;
+    const showOnlyArchived = filters?.isArchived === true;
+
+    // Only filter by isArchived if not explicitly showing archived
+    if (showOnlyArchived) {
+      constraints.push(where("isArchived", "==", true));
+    } else if (!includeArchived) {
+      constraints.push(where("isArchived", "==", false));
+    }
+
     // Apply filters
     if (filters?.status) {
       constraints.push(where("status", "==", filters.status));
@@ -111,11 +212,11 @@ export async function getTasks(filters?: TaskFilters): Promise<{
       ? query(collection(db, COLLECTION_NAME), ...constraints)
       : collection(db, COLLECTION_NAME);
 
-    // Try Cache for unfiltered requests
+    // Try Cache for unfiltered requests (only for non-archived tasks)
     const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && (filters.search === "" || filters.assigneeId));
     const cacheKey = "tasks:list:all";
 
-    if (isUnfiltered) {
+    if (isUnfiltered && !showOnlyArchived) {
       const cached = await redis.get<Task[]>(cacheKey);
       if (cached) {
         console.log("⚡ HIT: Tasks list from Redis");
@@ -140,7 +241,7 @@ export async function getTasks(filters?: TaskFilters): Promise<{
       tasks.push({ id: doc.id, ...doc.data() } as Task);
     });
 
-    if (tasks.length > 0 && isUnfiltered) {
+    if (tasks.length > 0 && isUnfiltered && !showOnlyArchived) {
       await redis.set(cacheKey, tasks, { ex: 300 });
     }
 
@@ -173,6 +274,40 @@ export async function getTasks(filters?: TaskFilters): Promise<{
     if (filters?.dueDateTo) {
       filteredTasks = filteredTasks.filter(
         (task) => task.dueDate && task.dueDate.toDate() <= filters.dueDateTo!
+      );
+    }
+
+    // Apply user role filter (client-side for simplicity)
+    if (filters?.userRole && filters.userId) {
+      const userId = filters.userId;
+      filteredTasks = filteredTasks.filter((task) => {
+        switch (filters.userRole) {
+          case "assigned":
+            return task.assigneeId === userId;
+          case "created":
+            return task.ownerId === userId;
+          case "associated":
+            return task.assigneeId === userId ||
+                   task.ownerId === userId ||
+                   (task.associates && task.associates.includes(userId));
+          case "all":
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply multiple priorities filter
+    if (filters?.priorities && filters.priorities.length > 0) {
+      filteredTasks = filteredTasks.filter((task) =>
+        filters.priorities!.includes(task.priority)
+      );
+    }
+
+    // Apply multiple statuses filter
+    if (filters?.statuses && filters.statuses.length > 0) {
+      filteredTasks = filteredTasks.filter((task) =>
+        filters.statuses!.includes(task.status)
       );
     }
 

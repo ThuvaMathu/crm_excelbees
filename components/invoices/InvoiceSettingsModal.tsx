@@ -14,7 +14,7 @@ import { invoiceUserSettingsSchema, type InvoiceUserSettingsFormData } from "@/l
 import { getUserInvoiceSettings, setUserInvoiceSettings } from "@/lib/firestore/users";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Loader2, Settings } from "lucide-react";
+import { Loader2, Settings, CreditCard } from "lucide-react";
 
 interface InvoiceSettingsModalProps {
     open: boolean;
@@ -37,6 +37,13 @@ export function InvoiceSettingsModal({ open, onOpenChange }: InvoiceSettingsModa
             colorTheme: "#3B82F6", // Default blue
             invoicePrefix: "INV-",
             nextInvoiceNumber: 1,
+            // Payment details defaults
+            accountName: "",
+            accountNumber: "",
+            bankName: "",
+            ifsc: "",
+            upiId: "",
+            gstin: "",
         },
     });
 
@@ -65,6 +72,12 @@ export function InvoiceSettingsModal({ open, onOpenChange }: InvoiceSettingsModa
                     // Ensure these fields have defaults if missing (for backward compatibility)
                     invoicePrefix: settings.invoicePrefix || "INV-",
                     nextInvoiceNumber: settings.nextInvoiceNumber || 1,
+                    accountName: settings.accountName || "",
+                    accountNumber: settings.accountNumber || "",
+                    bankName: settings.bankName || "",
+                    ifsc: settings.ifsc || "",
+                    upiId: settings.upiId || "",
+                    gstin: settings.gstin || "",
                 });
             } else {
                 // Set defaults from user profile
@@ -77,6 +90,13 @@ export function InvoiceSettingsModal({ open, onOpenChange }: InvoiceSettingsModa
                     colorTheme: "#3B82F6", // Default blue
                     invoicePrefix: "INV-",
                     nextInvoiceNumber: 1,
+                    // Payment details defaults
+                    accountName: "",
+                    accountNumber: "",
+                    bankName: "",
+                    ifsc: "",
+                    upiId: "",
+                    gstin: "",
                 });
             }
         } catch (error) {
@@ -245,7 +265,32 @@ export function InvoiceSettingsModal({ open, onOpenChange }: InvoiceSettingsModa
                                             </div>
                                         </FormControl>
                                         <p className="text-xs text-muted-foreground">
-                                            Example: {field.value || "INV-"}001, {field.value || "INV-"}002, {field.value || "INV-"}003...
+                                            Example: {field.value || "INV-"}0001, {field.value || "INV-"}0002, {field.value || "INV-"}0003...
+                                        </p>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Starting Invoice Number */}
+                            <FormField
+                                control={form.control}
+                                name="nextInvoiceNumber"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Starting Invoice Number</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                placeholder="1"
+                                                {...field}
+                                                value={field.value || 1}
+                                                onChange={(e) => field.onChange(Number(e.target.value))}
+                                                className="max-w-[200px]"
+                                            />
+                                        </FormControl>
+                                        <p className="text-xs text-muted-foreground">
+                                            The next invoice will use this number. Useful for importing existing invoices or starting from a specific number.
                                         </p>
                                         <FormMessage />
                                     </FormItem>
@@ -266,6 +311,109 @@ export function InvoiceSettingsModal({ open, onOpenChange }: InvoiceSettingsModa
                                     </FormItem>
                                 )}
                             />
+
+                            {/* Payment Details Section */}
+                            <div className="space-y-4 pt-4 border-t">
+                                <h3 className="text-sm font-medium flex items-center gap-2">
+                                    <CreditCard className="h-4 w-4" />
+                                    Payment Details (for Invoice)
+                                </h3>
+                                <p className="text-xs text-muted-foreground">
+                                    These details will appear in the PAYMENT METHOD section of your invoices.
+                                </p>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Account Name */}
+                                    <FormField
+                                        control={form.control}
+                                        name="accountName"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Account Name</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Account Holder Name" {...field} value={field.value || ""} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {/* Account Number */}
+                                    <FormField
+                                        control={form.control}
+                                        name="accountNumber"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Account Number</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Bank Account Number" {...field} value={field.value || ""} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {/* Bank Name */}
+                                    <FormField
+                                        control={form.control}
+                                        name="bankName"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Bank Name</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., Indian Bank" {...field} value={field.value || ""} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {/* IFSC Code */}
+                                    <FormField
+                                        control={form.control}
+                                        name="ifsc"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>IFSC Code</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., IDIB000T099" {...field} value={field.value || ""} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {/* UPI ID */}
+                                    <FormField
+                                        control={form.control}
+                                        name="upiId"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>UPI ID (Optional)</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., name@upi" {...field} value={field.value || ""} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    {/* GSTIN */}
+                                    <FormField
+                                        control={form.control}
+                                        name="gstin"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>GSTIN (Optional)</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="GST Identification Number" {...field} value={field.value || ""} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </div>
 
                             {/* Actions */}
                             <div className="flex justify-end gap-3 pt-4">
