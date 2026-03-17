@@ -17,16 +17,27 @@ import { redis } from "../redis";
 import type { Task, TaskInput, TaskFilters, TaskStatus } from "@/types/crm";
 import { createNotification } from "./notifications";
 import { sanitizeData } from "./utils";
+import { validateTaskPermission } from "@/lib/auth/permission-utils";
 
 const COLLECTION_NAME = "tasks";
 
 // Archive a task (only allowed for tasks with status "Done")
-export async function archiveTask(id: string): Promise<{
+export async function archiveTask(id: string, currentUserId: string): Promise<{
   success: boolean;
   error: string | null;
 }> {
   try {
     console.log("📦 Archiving task:", id);
+
+    // Check if user has permission to update this task (archiving is an update)
+    const { allowed, reason } = await validateTaskPermission(id, "update", currentUserId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${currentUserId} to archive task ${id}: ${reason}`);
+      return {
+        success: false,
+        error: reason || "You don't have permission to archive this task",
+      };
+    }
 
     // First verify the task exists and is in "Done" status
     const docRef = doc(db, COLLECTION_NAME, id);
@@ -78,12 +89,23 @@ export async function archiveTask(id: string): Promise<{
 }
 
 // Unarchive a task
-export async function unarchiveTask(id: string): Promise<{
+export async function unarchiveTask(id: string, currentUserId: string): Promise<{
   success: boolean;
   error: string | null;
 }> {
   try {
     console.log("📦 Unarchiving task:", id);
+    
+    // Check if user has permission to update this task (unarchiving is an update)
+    const { allowed, reason } = await validateTaskPermission(id, "update", currentUserId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${currentUserId} to unarchive task ${id}: ${reason}`);
+      return {
+        success: false,
+        error: reason || "You don't have permission to unarchive this task",
+      };
+    }
+
     const docRef = doc(db, COLLECTION_NAME, id);
 
     const updateData = {
@@ -118,6 +140,17 @@ export async function createTask(data: TaskInput, userId: string): Promise<{
 }> {
   try {
     console.log("📝 Creating task:", data.title);
+
+    // Check if user has permission to create tasks
+    const { allowed, reason } = await validateTaskPermission(null, "create", userId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${userId} to create task: ${reason}`);
+      return {
+        success: false,
+        id: null,
+        error: reason || "You don't have permission to create tasks",
+      };
+    }
 
     const taskData = {
       ...data,
@@ -358,12 +391,23 @@ export async function getTask(id: string): Promise<{
 }
 
 // Update a task
-export async function updateTask(id: string, data: Partial<TaskInput>, currentUserId?: string): Promise<{
+export async function updateTask(id: string, data: Partial<TaskInput>, currentUserId: string): Promise<{
   success: boolean;
   error: string | null;
 }> {
   try {
     console.log("📝 Updating task:", id);
+    
+    // Check if user has permission to update this task
+    const { allowed, reason } = await validateTaskPermission(id, "update", currentUserId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${currentUserId} to update task ${id}: ${reason}`);
+      return {
+        success: false,
+        error: reason || "You don't have permission to update this task",
+      };
+    }
+
     const docRef = doc(db, COLLECTION_NAME, id);
 
     // Fetch current task to compare changes
@@ -457,12 +501,23 @@ export async function updateTaskStatus(id: string, status: TaskStatus): Promise<
 }
 
 // Delete a task
-export async function deleteTask(id: string): Promise<{
+export async function deleteTask(id: string, currentUserId: string): Promise<{
   success: boolean;
   error: string | null;
 }> {
   try {
     console.log("🗑️ Deleting task:", id);
+    
+    // Check if user has permission to delete this task
+    const { allowed, reason } = await validateTaskPermission(id, "delete", currentUserId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${currentUserId} to delete task ${id}: ${reason}`);
+      return {
+        success: false,
+        error: reason || "You don't have permission to delete this task",
+      };
+    }
+
     const docRef = doc(db, COLLECTION_NAME, id);
     await deleteDoc(docRef);
 

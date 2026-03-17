@@ -95,14 +95,14 @@ export const ROLE_DEFAULTS: Record<UserRole, UserPermissions> = {
     },
   },
   manager: {
-    // CRM Core - Read All, Edit All (except delete some)
-    leads: { read: true, create: true, edit: true, delete: true, editAll: true },
-    contacts: { read: true, create: true, edit: true, delete: true, editAll: true },
-    companies: { read: true, create: true, edit: true, delete: true, editAll: true },
-    deals: { read: true, create: true, edit: true, delete: true, editAll: true },
-    projects: { read: true, create: true, edit: true, delete: true, editAll: true },
-    tasks: { read: true, create: true, edit: true, delete: false, editAll: false },
-    invoices: { read: true, create: true, edit: true, delete: false, editAll: true },
+    // CRM Core - Read All, Edit All, No Create/Delete (RBAC Audit Fix)
+    leads: { read: true, create: false, edit: true, delete: false, editAll: true },
+    contacts: { read: true, create: false, edit: true, delete: false, editAll: true },
+    companies: { read: true, create: false, edit: true, delete: false, editAll: true },
+    deals: { read: true, create: false, edit: true, delete: false, editAll: true },
+    projects: { read: true, create: false, edit: true, delete: false, editAll: true },
+    tasks: { read: true, create: false, edit: true, delete: false, editAll: true },
+    invoices: { read: true, create: false, edit: true, delete: false, editAll: true },
     reports: { read: true, create: false, edit: false, delete: false, editAll: true },
 
     // Marketing AI - Enabled
@@ -127,13 +127,13 @@ export const ROLE_DEFAULTS: Record<UserRole, UserPermissions> = {
     },
   },
   team: {
-    // CRM Core - Own Records Only
-    leads: { read: true, create: true, edit: true, delete: false, editAll: false },
-    contacts: { read: true, create: true, edit: true, delete: false, editAll: false },
+    // CRM Core - Read Only (RBAC Audit Fix)
+    leads: { read: true, create: false, edit: false, delete: false, editAll: false },
+    contacts: { read: true, create: false, edit: false, delete: false, editAll: false },
     companies: { read: true, create: false, edit: false, delete: false, editAll: false },
-    deals: { read: true, create: true, edit: true, delete: false, editAll: false },
+    deals: { read: true, create: false, edit: false, delete: false, editAll: false },
     projects: { read: true, create: false, edit: false, delete: false, editAll: false },
-    tasks: { read: true, create: true, edit: true, delete: false, editAll: false },
+    tasks: { read: true, create: false, edit: false, delete: false, editAll: false },
     invoices: { read: false, create: false, edit: false, delete: false, editAll: false },
     reports: { read: false, create: false, edit: false, delete: false, editAll: false },
 

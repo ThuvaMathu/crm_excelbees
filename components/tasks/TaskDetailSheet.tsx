@@ -39,6 +39,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { updateTaskStatus, updateTask, deleteTask, archiveTask } from "@/lib/firestore/tasks";
 import { getUsers, type UserProfile } from "@/lib/firestore/users";
+import { validateTaskPermission } from "@/lib/auth/permission-utils";
 import type { Task, TaskStatus, TaskPriority } from "@/types/crm";
 import type { User } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -179,6 +180,7 @@ export function TaskDetailSheet({
     if (!task) return null;
 
     // Role-based access control
+    // Note: We use simple role checks for frontend UI, backend will validate permissions
     const canEdit = user?.role === "admin" ||
         user?.role === "manager" ||
         task?.assigneeId === user?.uid ||
@@ -218,7 +220,11 @@ export function TaskDetailSheet({
         // Optimistic update
         setLocalPriority(newPriority as TaskPriority);
 
-        const { success } = await updateTask(task.id, { priority: newPriority as TaskPriority });
+        if (!user?.uid) {
+            toast.error("You must be logged in to update task priority");
+            return;
+        }
+        const { success } = await updateTask(task.id, { priority: newPriority as TaskPriority }, user.uid);
 
         if (success) {
             toast.success(`Priority updated to ${newPriority}`);
@@ -245,7 +251,11 @@ export function TaskDetailSheet({
             assigneeName: newAssigneeId ? assigneeName : null,
         };
 
-        const { success } = await updateTask(task.id, updateData, user?.uid);
+        if (!user?.uid) {
+            toast.error("You must be logged in to update task assignee");
+            return;
+        }
+        const { success } = await updateTask(task.id, updateData, user.uid);
 
         if (success) {
             toast.success(`Assignee updated to ${assigneeName}`);
@@ -264,7 +274,11 @@ export function TaskDetailSheet({
         if (!confirm("Are you sure you want to delete this task?")) return;
 
         setLoading(true);
-        const { success } = await deleteTask(task.id);
+        if (!user?.uid) {
+            toast.error("You must be logged in to delete a task");
+            return;
+        }
+        const { success } = await deleteTask(task.id, user.uid);
 
         if (success) {
             toast.success("Task deleted");
@@ -290,7 +304,11 @@ export function TaskDetailSheet({
         if (!confirm("Archive this task? It will be moved to the archived tasks list.")) return;
 
         setLoading(true);
-        const { success, error } = await archiveTask(task.id);
+        if (!user?.uid) {
+            toast.error("You must be logged in to archive a task");
+            return;
+        }
+        const { success, error } = await archiveTask(task.id, user.uid);
 
         if (success) {
             toast.success("Task archived successfully");
@@ -311,7 +329,11 @@ export function TaskDetailSheet({
         }
 
         setSaving(true);
-        const { success } = await updateTask(task.id, { title: titleValue });
+        if (!user?.uid) {
+            toast.error("You must be logged in to update task title");
+            return;
+        }
+        const { success } = await updateTask(task.id, { title: titleValue }, user.uid);
         if (success) {
             toast.success("Title updated");
             onUpdate();
@@ -328,7 +350,11 @@ export function TaskDetailSheet({
         }
 
         setSaving(true);
-        const { success } = await updateTask(task.id, { description: descriptionValue });
+        if (!user?.uid) {
+            toast.error("You must be logged in to update task description");
+            return;
+        }
+        const { success } = await updateTask(task.id, { description: descriptionValue }, user.uid);
         if (success) {
             toast.success("Description updated");
             onUpdate();

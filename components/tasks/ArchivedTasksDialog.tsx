@@ -12,13 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Archive as ArchiveIcon, Package, RotateCcw as Restore, Clock, User, Calendar } from "lucide-react";
+import { Archive as ArchiveIcon, Package, RotateCcw as Restore, Clock, User as UserIcon, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { getTasks } from "@/lib/firestore/tasks";
 import { unarchiveTask } from "@/lib/firestore/tasks";
 import { toast } from "sonner";
 import type { Task } from "@/types/crm";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ArchivedTasksDialogProps {
     open: boolean;
@@ -33,6 +34,7 @@ export function ArchivedTasksDialog({
     onSelectTask,
     onUpdate,
 }: ArchivedTasksDialogProps) {
+    const { user } = useAuth();
     const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(false);
     const [unarchivingIds, setUnarchivingIds] = useState<Set<string>>(new Set());
@@ -57,8 +59,13 @@ export function ArchivedTasksDialog({
     const handleUnarchive = async (taskId: string, event: React.MouseEvent) => {
         event.stopPropagation(); // Prevent opening the detail sheet
 
+        if (!user?.uid) {
+            toast.error("You must be logged in to unarchive a task");
+            return;
+        }
+
         setUnarchivingIds((prev) => new Set(prev).add(taskId));
-        const { success, error } = await unarchiveTask(taskId);
+        const { success, error } = await unarchiveTask(taskId, user.uid);
 
         if (success) {
             toast.success("Task unarchived successfully");
@@ -68,13 +75,13 @@ export function ArchivedTasksDialog({
         } else {
             toast.error(error || "Failed to unarchive task");
         }
+
         setUnarchivingIds((prev) => {
             const next = new Set(prev);
             next.delete(taskId);
             return next;
         });
     };
-
     const safeToDate = (date: any): Date => {
         if (!date) return new Date();
         if (typeof date.toDate === "function") return date.toDate();
@@ -161,7 +168,7 @@ export function ArchivedTasksDialog({
                                                 {/* Assignee */}
                                                 {task.assigneeName && (
                                                     <span className="flex items-center gap-1">
-                                                        <User className="h-3 w-3" />
+                                                        <UserIcon className="h-3 w-3" />
                                                         {task.assigneeName}
                                                     </span>
                                                 )}

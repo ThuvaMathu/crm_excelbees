@@ -21,7 +21,7 @@ service cloud.firestore {
     
     // Check if user is approved AND active (new field)
     function isApproved() {
-      return isAuthenticated() && 
+      return isAuthenticated() &&
              getUserData().isApproved == true &&
              getUserData().isActive != false; // Default to true if missing
     }
@@ -32,6 +32,67 @@ service cloud.firestore {
     
     function isManager() {
       return isAuthenticated() && (getUserData().role == 'manager' || getUserData().role == 'admin');
+    }
+    
+    function isTeamMember() {
+      return isAuthenticated() && getUserData().role == 'team';
+    }
+    
+    // Task/Project Permission Helpers
+    function isTaskOwner(taskData) {
+      return isAuthenticated() && request.auth.uid == taskData.createdBy;
+    }
+    
+    function isProjectOwner(projectData) {
+      return isAuthenticated() && request.auth.uid == projectData.createdBy;
+    }
+    
+    function canCreateTask() {
+      // Admin: can create any task
+      // Manager: cannot create tasks (update only)
+      // Team: cannot create tasks (read only)
+      // Creator: can create own tasks (handled by isOwner check on creation)
+      return isAdmin() || (isManager() == false && isTeamMember() == false);
+    }
+    
+    function canUpdateTask(taskData) {
+      // Admin: can update any task
+      // Manager: can update any task (update only permission)
+      // Team: cannot update tasks (read only)
+      // Creator: can update own tasks
+      return isAdmin() || isManager() || isTaskOwner(taskData);
+    }
+    
+    function canDeleteTask(taskData) {
+      // Admin: can delete any task
+      // Manager: cannot delete tasks (update only)
+      // Team: cannot delete tasks (read only)
+      // Creator: can delete own tasks
+      return isAdmin() || isTaskOwner(taskData);
+    }
+    
+    function canCreateProject() {
+      // Admin: can create any project
+      // Manager: cannot create projects (update only)
+      // Team: cannot create projects (read only)
+      // Creator: can create own projects (handled by isOwner check on creation)
+      return isAdmin() || (isManager() == false && isTeamMember() == false);
+    }
+    
+    function canUpdateProject(projectData) {
+      // Admin: can update any project
+      // Manager: can update any project (update only permission)
+      // Team: cannot update projects (read only)
+      // Creator: can update own projects
+      return isAdmin() || isManager() || isProjectOwner(projectData);
+    }
+    
+    function canDeleteProject(projectData) {
+      // Admin: can delete any project
+      // Manager: cannot delete projects (update only)
+      // Team: cannot delete projects (read only)
+      // Creator: can delete own projects
+      return isAdmin() || isProjectOwner(projectData);
     }
 
     // ============================================================================
@@ -107,11 +168,43 @@ service cloud.firestore {
     }
     
     match /projects/{projectId} {
-      allow read, write: if isAuthenticated() && isApproved();
+      // Read: All approved users can read projects
+      allow read: if isAuthenticated() && isApproved();
+      
+      // Create: Admin can create any project, creators can create own projects
+      // Manager and Team cannot create projects
+      allow create: if isAuthenticated() && isApproved() &&
+                    (isAdmin() || (isManager() == false && isTeamMember() == false));
+      
+      // Update: Admin can update any project, Manager can update any project, Creator can update own project
+      // Team cannot update projects
+      allow update: if isAuthenticated() && isApproved() &&
+                    (isAdmin() || isManager() || isProjectOwner(resource.data));
+      
+      // Delete: Admin can delete any project, Creator can delete own project
+      // Manager and Team cannot delete projects
+      allow delete: if isAuthenticated() && isApproved() &&
+                    (isAdmin() || isProjectOwner(resource.data));
     }
     
     match /tasks/{taskId} {
-      allow read, write: if isAuthenticated() && isApproved();
+      // Read: All approved users can read tasks
+      allow read: if isAuthenticated() && isApproved();
+      
+      // Create: Admin can create any task, creators can create own tasks
+      // Manager and Team cannot create tasks
+      allow create: if isAuthenticated() && isApproved() &&
+                    (isAdmin() || (isManager() == false && isTeamMember() == false));
+      
+      // Update: Admin can update any task, Manager can update any task, Creator can update own task
+      // Team cannot update tasks
+      allow update: if isAuthenticated() && isApproved() &&
+                    (isAdmin() || isManager() || isTaskOwner(resource.data));
+      
+      // Delete: Admin can delete any task, Creator can delete own task
+      // Manager and Team cannot delete tasks
+      allow delete: if isAuthenticated() && isApproved() &&
+                    (isAdmin() || isTaskOwner(resource.data));
     }
 
     match /email_templates/{templateId} {

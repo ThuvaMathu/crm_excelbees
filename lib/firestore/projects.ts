@@ -16,6 +16,7 @@ import { db } from "../firebase";
 import { redis } from "../redis";
 import type { Project, ProjectInput, ProjectFilters, ProjectStatus } from "@/types/crm";
 import { sanitizeData } from "./utils";
+import { validateProjectPermission } from "@/lib/auth/permission-utils";
 
 const COLLECTION_NAME = "projects";
 
@@ -28,6 +29,17 @@ export async function createProject(data: ProjectInput, userId: string): Promise
 }> {
   try {
     console.log("📝 Creating project:", data.name);
+
+    // Check if user has permission to create projects
+    const { allowed, reason } = await validateProjectPermission(null, "create", userId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${userId} to create project: ${reason}`);
+      return {
+        success: false,
+        id: null,
+        error: reason || "You don't have permission to create projects",
+      };
+    }
 
     const projectData = {
       ...data,
@@ -64,8 +76,15 @@ export async function createProject(data: ProjectInput, userId: string): Promise
 }
 
 // Archive a project
-export async function archiveProject(id: string): Promise<{ success: boolean; error: string | null }> {
+export async function archiveProject(id: string, currentUserId: string): Promise<{ success: boolean; error: string | null }> {
   try {
+    // Check if user has permission to update this project (archiving is an update)
+    const { allowed, reason } = await validateProjectPermission(id, "update", currentUserId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${currentUserId} to archive project ${id}: ${reason}`);
+      return { success: false, error: reason || "You don't have permission to archive this project" };
+    }
+
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, { archived: true, updatedAt: Timestamp.now() });
 
@@ -79,8 +98,15 @@ export async function archiveProject(id: string): Promise<{ success: boolean; er
 }
 
 // Unarchive a project
-export async function unarchiveProject(id: string): Promise<{ success: boolean; error: string | null }> {
+export async function unarchiveProject(id: string, currentUserId: string): Promise<{ success: boolean; error: string | null }> {
   try {
+    // Check if user has permission to update this project (unarchiving is an update)
+    const { allowed, reason } = await validateProjectPermission(id, "update", currentUserId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${currentUserId} to unarchive project ${id}: ${reason}`);
+      return { success: false, error: reason || "You don't have permission to unarchive this project" };
+    }
+
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, { archived: false, updatedAt: Timestamp.now() });
 
@@ -259,12 +285,23 @@ export async function getProject(id: string): Promise<{
 }
 
 // Update a project
-export async function updateProject(id: string, data: Partial<ProjectInput>): Promise<{
+export async function updateProject(id: string, data: Partial<ProjectInput>, currentUserId: string): Promise<{
   success: boolean;
   error: string | null;
 }> {
   try {
     console.log("📝 Updating project:", id);
+    
+    // Check if user has permission to update this project
+    const { allowed, reason } = await validateProjectPermission(id, "update", currentUserId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${currentUserId} to update project ${id}: ${reason}`);
+      return {
+        success: false,
+        error: reason || "You don't have permission to update this project",
+      };
+    }
+
     const docRef = doc(db, COLLECTION_NAME, id);
 
     const updateData = {
@@ -325,12 +362,23 @@ export async function updateProjectStatus(id: string, status: ProjectStatus): Pr
 }
 
 // Delete a project
-export async function deleteProject(id: string): Promise<{
+export async function deleteProject(id: string, currentUserId: string): Promise<{
   success: boolean;
   error: string | null;
 }> {
   try {
     console.log("🗑️ Deleting project:", id);
+    
+    // Check if user has permission to delete this project
+    const { allowed, reason } = await validateProjectPermission(id, "delete", currentUserId);
+    if (!allowed) {
+      console.warn(`❌ Permission denied for user ${currentUserId} to delete project ${id}: ${reason}`);
+      return {
+        success: false,
+        error: reason || "You don't have permission to delete this project",
+      };
+    }
+
     const docRef = doc(db, COLLECTION_NAME, id);
     await deleteDoc(docRef);
 
