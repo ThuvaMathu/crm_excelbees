@@ -13,6 +13,8 @@ import { useState } from "react";
 import { updateProject } from "@/lib/firestore/projects";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/hooks/useAuth";
+import { Timestamp } from "firebase/firestore";
 
 interface ProjectFinancialsCardProps {
     project: Project;
@@ -21,6 +23,14 @@ interface ProjectFinancialsCardProps {
 
 export function ProjectFinancialsCard({ project, onUpdate }: ProjectFinancialsCardProps) {
     const [loading, setLoading] = useState(false);
+    const { user } = useAuth();
+
+    const financials = project.financials || {
+        initialCost: 0,
+        annualRecurringCost: 0,
+        managementBillingCycle: "None",
+        isRecurringEnabled: false
+    };
 
     // Derived state for editing cycle directly for now
     const handleCycleChange = async (cycle: "Quarterly" | "Semi-Annual" | "None") => {
@@ -30,20 +40,17 @@ export function ProjectFinancialsCard({ project, onUpdate }: ProjectFinancialsCa
 
             await updateProject(project.id, {
                 financials: {
-                    ...project.financials,
+                    ...financials,
                     managementBillingCycle: cycle,
                     isRecurringEnabled: cycle !== "None",
-                    nextBillingDate: nextDate ? undefined : undefined // We need to convert Date to Timestamp if avoiding errors, or just let firestore handle Date objects if configured, but let's stick to simple update. 
-                    // Wait, `updateProject` expects Partial<ProjectInput>. `financials` is an object.
-                    // If we want to deep update, we generally need to pass the whole object or use dot notation.
-                    // For simplicity, let's spread existing.
-                } as any // Bypassing deep type check issues for quick implementation
-            });
+                    nextBillingDate: nextDate ? Timestamp.fromDate(nextDate) : undefined,
+                }
+            }, user?.uid || "");
 
             // To properly save Timestamp
             if (cycle !== "None") {
                 // In a real app we'd trigger a server action or specific update function to handle Date -> Timestamp conversion
-                // For now, let's just toast and rely on refresh. 
+                // For now, let's just toast and rely on refresh.
             }
 
             toast.success(`Billing cycle updated to ${cycle}`);
@@ -60,10 +67,10 @@ export function ProjectFinancialsCard({ project, onUpdate }: ProjectFinancialsCa
         try {
             await updateProject(project.id, {
                 financials: {
-                    ...project.financials,
-                    isRecurringEnabled: enabled
-                } as any
-            });
+                    ...financials,
+                    isRecurringEnabled: enabled,
+                }
+            }, user?.uid || "");
             toast.success(enabled ? "Recurring billing enabled" : "Recurring billing disabled");
             if (onUpdate) onUpdate();
         } catch (error) {
@@ -73,12 +80,6 @@ export function ProjectFinancialsCard({ project, onUpdate }: ProjectFinancialsCa
         }
     };
 
-    const financials = project.financials || {
-        initialCost: 0,
-        annualRecurringCost: 0,
-        managementBillingCycle: "None",
-        isRecurringEnabled: false
-    };
 
     return (
         <Card>

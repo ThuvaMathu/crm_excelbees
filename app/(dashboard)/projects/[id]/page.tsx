@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { getProject, updateProject } from "@/lib/firestore/projects";
+import { getProject, updateProject, archiveProject, unarchiveProject } from "@/lib/firestore/projects";
 import { uploadFiles, type UploadedFile } from "@/lib/storage/upload";
 import { getTasks } from "@/lib/firestore/tasks";
 import type { Project, Task } from "@/types/crm";
@@ -116,8 +116,7 @@ export default function ProjectDetailPage() {
         if (!canEdit || !project) return;
         if (!confirm("Are you sure you want to archive this project?")) return;
 
-        const { archiveProject } = await import("@/lib/firestore/projects");
-        const { success, error } = await archiveProject(project.id); // Fixed: using project.id instead of id
+        const { success, error } = await archiveProject(project.id, user?.uid || "");
 
         if (success) {
             toast.success("Project archived successfully");
@@ -130,8 +129,7 @@ export default function ProjectDetailPage() {
     const handleUnarchive = async () => {
         if (!canEdit || !project) return;
 
-        const { unarchiveProject } = await import("@/lib/firestore/projects");
-        const { success, error } = await unarchiveProject(project.id); // Fixed: using project.id instead of id
+        const { success, error } = await unarchiveProject(project.id, user?.uid || "");
 
         if (success) {
             toast.success("Project unarchived successfully");
@@ -492,7 +490,7 @@ export default function ProjectDetailPage() {
 
                                     // Save file metadata to Firestore on the project document
                                     const allFiles = [...uploadedFiles, ...uploaded];
-                                    const { success: updateSuccess } = await updateProject(params.id as string, { files: allFiles } as any);
+                                    const { success: updateSuccess } = await updateProject(params.id as string, { files: allFiles } as any, user?.uid || "");
 
                                     if (updateSuccess) {
                                         setUploadedFiles(allFiles);
@@ -532,7 +530,7 @@ export default function ProjectDetailPage() {
                                                 className="h-6 w-6 text-destructive flex-shrink-0"
                                                 onClick={async () => {
                                                     const newFiles = uploadedFiles.filter((_, i) => i !== index);
-                                                    const { success } = await updateProject(params.id as string, { files: newFiles } as any);
+                                                    const { success } = await updateProject(params.id as string, { files: newFiles } as any, user?.uid || "");
                                                     if (success) {
                                                         setUploadedFiles(newFiles);
                                                         toast.success("File removed");

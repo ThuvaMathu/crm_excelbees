@@ -33,6 +33,7 @@ import { updateProject } from "@/lib/firestore/projects";
 import type { Project, ProjectPriority, ProjectStatus } from "@/types/crm";
 import { toast } from "sonner";
 import { Timestamp } from "firebase/firestore";
+import { useAuth } from "@/hooks/useAuth";
 
 interface EditProjectDialogProps {
     open: boolean;
@@ -75,6 +76,7 @@ export function EditProjectDialog({
     onSuccess,
 }: EditProjectDialogProps) {
     const [loading, setLoading] = useState(false);
+    const { user } = useAuth();
 
     const form = useForm({
         defaultValues: {
@@ -135,7 +137,7 @@ export function EditProjectDialog({
             }
         });
 
-        const { success, error } = await updateProject(project.id, updateData);
+        const { success, error } = await updateProject(project.id, updateData, user?.uid || "");
 
         setLoading(false);
 

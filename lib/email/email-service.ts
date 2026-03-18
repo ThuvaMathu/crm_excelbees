@@ -4,25 +4,44 @@ import {
   getPasswordChangedEmailTemplate,
   getPasswordResetEmailTemplate,
 } from "./templates/auth-templates";
+import { getAppUrl } from "../environment";
 
-// Zoho AU SMTP Configuration
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtppro.zoho.com.au",
-  port: parseInt(process.env.SMTP_PORT || "465"),
-  secure: true, // Use SSL
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false // Allow self-signed certificates for development
+// ============================================================================
+// TRANSPORTER SINGLETON PATTERN FOR LAMBDA COMPATIBILITY
+// ============================================================================
+
+let transporter: nodemailer.Transporter | null = null;
+
+/**
+ * Get or create email transporter
+ * Implements singleton pattern for Lambda compatibility
+ * Reuses existing transporter across Lambda invocations
+ */
+function getTransporter(): nodemailer.Transporter {
+  if (transporter) {
+    return transporter;
   }
-});
+
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtppro.zoho.com.au",
+    port: parseInt(process.env.SMTP_PORT || "465"),
+    secure: true, // Use SSL
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certificates for development
+    }
+  });
+
+  return transporter;
+}
 
 // Verify transporter configuration
 export async function verifyEmailConfig(): Promise<boolean> {
   try {
-    await transporter.verify();
+    await getTransporter().verify();
     console.log("✅ Email server is ready to send messages");
     return true;
   } catch (error) {
@@ -49,7 +68,7 @@ export async function sendEmail(
       throw new Error("Sender email not configured");
     }
 
-    const info = await transporter.sendMail({
+    const info = await getTransporter().sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to: Array.isArray(to) ? to.join(", ") : to,
       cc: cc ? (Array.isArray(cc) ? cc.join(", ") : cc) : undefined,
@@ -76,6 +95,7 @@ export async function sendInvoiceEmail(
   dueDate: string
 ): Promise<{ success: boolean; error: string | null }> {
   const subject = `Invoice ${invoiceNumber} from Excel Bees`;
+  const appUrl = getAppUrl();
   
   const html = `
     <!DOCTYPE html>
@@ -123,7 +143,7 @@ export async function sendInvoiceEmail(
           <p>Please ensure payment is made by the due date to avoid any late fees.</p>
           
           <center>
-            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invoices" class="button">
+            <a href="${appUrl}/invoices" class="button">
               View Invoice
             </a>
           </center>
@@ -150,6 +170,7 @@ export async function sendWelcomeEmail(
   userName: string
 ): Promise<{ success: boolean; error: string | null }> {
   const subject = "Welcome to Excel Bees CRM!";
+  const appUrl = getAppUrl();
   
   const html = `
     <!DOCTYPE html>
@@ -198,7 +219,7 @@ export async function sendWelcomeEmail(
           </div>
 
           <center>
-            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard" class="button">
+            <a href="${appUrl}/dashboard" class="button">
               Go to Dashboard
             </a>
           </center>
@@ -287,6 +308,7 @@ export async function sendTaskReminderEmail(
   taskId: string
 ): Promise<{ success: boolean; error: string | null }> {
   const subject = `Reminder: Task "${taskTitle}" is due soon`;
+  const appUrl = getAppUrl();
   
   const html = `
     <!DOCTYPE html>
@@ -317,7 +339,7 @@ export async function sendTaskReminderEmail(
           </div>
 
           <center>
-            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/tasks" class="button">
+            <a href="${appUrl}/tasks" class="button">
               View Task
             </a>
           </center>
@@ -352,7 +374,8 @@ export async function sendAdminCreatedUserEmail(
     role: string;
   }
 ): Promise<{ success: boolean; error: string | null }> {
-  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`;
+  const appUrl = getAppUrl();
+  const loginUrl = `${appUrl}/login`;
   
   const template = getWelcomeEmailTemplate({
     userName: data.userName,
@@ -374,7 +397,8 @@ export async function sendPasswordChangedConfirmation(
     userName: string;
   }
 ): Promise<{ success: boolean; error: string | null }> {
-  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`;
+  const appUrl = getAppUrl();
+  const loginUrl = `${appUrl}/login`;
   
   const template = getPasswordChangedEmailTemplate({
     userName: data.userName,
@@ -394,7 +418,8 @@ export async function sendAdminPasswordResetEmail(
     tempPassword: string;
   }
 ): Promise<{ success: boolean; error: string | null }> {
-  const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`;
+  const appUrl = getAppUrl();
+  const loginUrl = `${appUrl}/login`;
   
   const template = getPasswordResetEmailTemplate({
     userName: data.userName,

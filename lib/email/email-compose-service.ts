@@ -8,6 +8,7 @@ import { getContact } from "../firestore/contacts";
 import { getCompany } from "../firestore/companies";
 import { getDeal } from "../firestore/deals";
 import { getInvoice } from "../firestore/invoices";
+import { getAppUrl } from "../environment";
 
 // Send email with merge field resolution
 export async function sendEmailWithMergeFields(
@@ -308,7 +309,7 @@ export async function scheduleEmail(
 }
 // Inject tracking pixel
 function injectTrackingPixel(html: string, emailId: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = getAppUrl();
   const pixelUrl = `${baseUrl}/api/email/track/open/${emailId}`;
   const pixelHtml = `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none;width:1px;height:1px;opacity:0;" />`;
   
@@ -322,7 +323,7 @@ function injectTrackingPixel(html: string, emailId: string): string {
 
 // Rewrite links for tracking
 function rewriteLinksForTracking(html: string, emailId: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = getAppUrl();
   const trackingBaseUrl = `${baseUrl}/api/email/track/click`;
   
   // Simple regex to match href attributes
