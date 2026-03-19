@@ -4,6 +4,7 @@
  */
 
 import { GoogleGenerativeAI, DynamicRetrievalMode } from "@google/generative-ai";
+import { AI_MODELS } from "@/lib/ai/config";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -46,7 +47,7 @@ export async function discoverCompetitors(
 
     // Use gemini-2.0-flash-exp for grounding capabilities
     const model = genAI.getGenerativeModel(
-      { model: "gemini-2.0-flash-exp" },
+      { model: AI_MODELS.GEMINI_PRO },
       // Enable Google Search grounding for live web data
       {
         apiVersion: "v1beta",
@@ -212,7 +213,7 @@ export async function naturalLanguageSearch(
   try {
     const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
     const model = genAI.getGenerativeModel(
-      { model: "gemini-2.0-flash-exp" },
+      { model: AI_MODELS.GEMINI_PRO },
       { apiVersion: "v1beta" }
     );
 

@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { batchArray, generateId } from '@/lib/keyword/utils';
 import { adminDb as db } from '@/lib/firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AI_MODELS } from "@/lib/ai/config";
 import type {
   EnrichKeywordsRequest,
   EnrichKeywordsResponse,
@@ -45,12 +46,16 @@ export async function POST(request: NextRequest) {
         const keywordList = batch.map(kw => kw.primaryKeyword).join('\n');
 
         const model = genAI.getGenerativeModel({
-          model: 'gemini-2.0-flash',
+          model: AI_MODELS.GEMINI_PRO,
           generationConfig: { responseMimeType: 'application/json' },
         });
 
         const systemPrompt = 'You are an SEO metrics expert. Provide search metrics for keywords. Return valid JSON only.';
-        const prompt = `Provide SEO metrics for these keywords:\n\n${keywordList}\n\nFor each keyword, provide:\n1. Monthly search volume (approximate)\n2. Keyword difficulty (low/medium/high)\n3. Search trend (rising/stable/declining)\n4. CPC (cost per click, if available)\n5. Top 3 ranking domains\n\nReturn as JSON array:\n[\n  {\n    "keyword": "string",\n    "searchVolume": number,\n    "searchVolumeCategory": "low" | "medium" | "high",\n    "difficulty": "low" | "medium" | "high",\n    "trend": "rising" | "stable" | "declining",\n    "cpc": "string (optional)",\n    "topRankingDomains": ["string"]\n  }\n]\n\nIf exact data unavailable, provide educated estimates based on keyword specificity.`;
+        const prompt = `Provide SEO metrics for these keywords:\n\n${keywordList}\n\nFor each keyword, provide:\n1. Monthly search volume (approximate)\n2. Keyword difficulty (low/medium/high)\n3. Search trend (rising/stable/declining)\n4. CPC (cost per click, if available)\n5. Top 3 ranking domains\n\nReturn as JSON array:\n[\n  {\n    "keyword": "string",\n    "searchVolume": number,\n    "searchVolumeCategory": "low" | "medium" | "high",\n    "difficulty": "low" | "medium" | "high",
+    "trend": "rising" | "stable" | "declining",
+    "cpc": "string (optional)",
+    "topRankingDomains": ["string"]
+  }\n]\n\nIf exact data unavailable, provide educated estimates based on keyword specificity.`;
 
         const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);
 

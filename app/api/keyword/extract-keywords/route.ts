@@ -10,6 +10,7 @@ import { getKeywordExtractionPrompt } from '@/lib/keyword/prompts';
 import { batchArray, normalizeKeyword, filterBrandedKeywords } from '@/lib/keyword/utils';
 import { adminDb as db } from '@/lib/firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AI_MODELS } from "@/lib/ai/config";
 import type {
   ExtractKeywordsRequest,
   ExtractKeywordsResponse,
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
         const extractionPrompt = getKeywordExtractionPrompt(batchData, businessContext);
 
         const model = genAI.getGenerativeModel({
-          model: 'gemini-2.0-flash',
+          model: AI_MODELS.GEMINI_PRO,
           generationConfig: { responseMimeType: 'application/json' },
         });
 

@@ -12,6 +12,7 @@ import { batchArray } from '@/lib/keyword/utils';
 import { getCachedPageContent, cachePageContent } from '@/lib/keyword/cache';
 import { adminDb as db } from '@/lib/firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AI_MODELS } from "@/lib/ai/config";
 import type {
   ExtractPageContentRequest,
   ExtractPageContentResponse,
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
           const metadataPrompt = getPageMetadataPrompt(targetUrl, content);
 
           const model = genAI.getGenerativeModel({
-            model: 'gemini-2.0-flash',
+            model: AI_MODELS.GEMINI_PRO,
             generationConfig: { responseMimeType: 'application/json' },
           });
 

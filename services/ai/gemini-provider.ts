@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI, GenerativeModel } from "@google/generative-ai";
 import { AICostTracker } from "./cost-tracker";
+import { AI_MODELS } from "@/lib/ai/config";
 
 const API_KEY = process.env.GEMINI_API_KEY || "";
 
@@ -8,7 +9,7 @@ export class GeminiProvider {
   private model: GenerativeModel;
   private modelName: string;
 
-  constructor(modelName: string = "gemini-2.0-flash") {
+  constructor(modelName: string = AI_MODELS.GEMINI_PRO) {
     if (!API_KEY) throw new Error("GEMINI_API_KEY is missing");
     this.genAI = new GoogleGenerativeAI(API_KEY);
     this.modelName = modelName;

@@ -10,14 +10,12 @@
 export type AIProvider = 'gemini';
 
 // Available Models
-// Justification:
-// - gemini-pro: Balanced performance/cost. Good default.
-// - gemini-2.0-flash-lite: Extremely low cost ($0.075/1M input), fast, decent reasoning. Best for bulk tasks.
-// - gemini-2.0-flash: Higher performance for complex tasks.
-export type AIModel =
-  | 'gemini-pro'
-  | 'gemini-2.0-flash-lite'
-  | 'gemini-2.0-flash'
+export const AI_MODELS = {
+  GEMINI_PRO: 'gemini-2.5-flash',
+  GEMINI_LITE: 'gemini-2.5-flash-lite',
+} as const;
+
+export type AIModel = typeof AI_MODELS[keyof typeof AI_MODELS];
 
 
 interface TaskConfig {
@@ -42,62 +40,50 @@ export interface AIStrategyConfig {
  */
 export const aiConfig: AIStrategyConfig = {
   // 1. Default Strategy
-  // Use Gemini 1.5 Flash as the workhorse.
-  // WHY: Unbeatable price ($0.075/1M tokens) and speed.
+  // CHOICE: Gemini 2.5 Flash
   default: {
     provider: 'gemini',
-    model: 'gemini-2.0-flash-lite',
+    model: AI_MODELS.GEMINI_PRO,
     temperature: 0.7,
   },
 
   // 2. Email Intelligence
-  // Tasks: Drafting, Replying, Tone adjustment.
-  // CHOICE: Gemini 1.5 Flash
-  // WHY: Sufficient for standard business communication. Fast for UI interaction.
+  // CHOICE: Gemini 2.0 Flash Lite
   email: {
     provider: 'gemini',
-    model: 'gemini-2.0-flash-lite', 
+    model: AI_MODELS.GEMINI_LITE, 
     temperature: 0.7,
   },
 
   // 3. Task Management
-  // Tasks: Breaking down projects, suggesting subtasks, generating descriptions.
-  // CHOICE: Gemini 1.5 Flash
-  // WHY: Tasks are often operational and need speed.
+  // CHOICE: Gemini 2.0 Flash Lite
   tasks: {
     provider: 'gemini',
-    model: 'gemini-2.0-flash-lite',
+    model: AI_MODELS.GEMINI_LITE,
     temperature: 0.7,
   },
 
   // 4. Lead Intelligence
-  // Tasks: Lead Scoring, Enrichment, Qualification.
-  // CHOICE: Gemini 1.5 Pro (or GPT-4o)
-  // WHY: Requires deeper reasoning to analyze company data and probability.
+  // CHOICE: Gemini 2.5 Flash
   leads: {
     provider: 'gemini',
-    // model: 'gemini-2.0-flash-lite', // Good for simple scoring
-    model: 'gemini-2.0-flash', // Better for complex qualification
+    model: AI_MODELS.GEMINI_PRO,
     temperature: 0.2, // Low temp for consistent scoring
   },
 
   // 5. Deal Insights
-  // Tasks: Win probability, Forecasting, Negotiation advice.
-  // CHOICE: Gemini 1.5 Pro
-  // WHY: High intelligence required for financial predictions.
+  // CHOICE: Gemini 2.5 Flash
   deals: {
     provider: 'gemini',
-    model: 'gemini-2.0-flash',
+    model: AI_MODELS.GEMINI_PRO,
     temperature: 0.4,
   },
 
   // 6. CRM Copilot
-  // Tasks: Complex natural language queries, reasoning, and context management.
-  // CHOICE: Gemini 1.5 Pro
-  // WHY: Needs best reasoning to understand dual-mode intent and synthesized context.
+  // CHOICE: Gemini 2.5 Flash
   copilot: {
     provider: 'gemini',
-    model: 'gemini-2.0-flash',
+    model: AI_MODELS.GEMINI_PRO,
     temperature: 0.5, // Balanced for creativity and accuracy
   }
 };

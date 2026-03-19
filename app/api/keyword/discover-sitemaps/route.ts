@@ -12,6 +12,7 @@ import { parseSitemapXML, prioritizePages, generateId } from '@/lib/keyword/util
 import { getCachedSitemap, cacheSitemap } from '@/lib/keyword/cache';
 import { adminDb as db } from '@/lib/firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AI_MODELS } from "@/lib/ai/config";
 import type {
   DiscoverSitemapsRequest,
   DiscoverSitemapsResponse,
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
         const categorizationPrompt = getSitemapCategorizationPrompt(urlsToAnalyze);
 
         const model = genAI.getGenerativeModel({
-          model: 'gemini-2.0-flash',
+          model: AI_MODELS.GEMINI_PRO,
           generationConfig: { responseMimeType: 'application/json' },
         });
 

@@ -10,6 +10,7 @@ import { discoverCompetitors as discoverGeminiCompetitors, isGeminiDiscoveryConf
 import { getCompetitorValidationPrompt, getCompetitorDiscoveryPrompt } from '@/lib/competitor-analysis/prompts';
 import { adminDb as db } from '@/lib/firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AI_MODELS } from "@/lib/ai/config";
 import type {
   DiscoverCompetitorsRequest,
   DiscoverCompetitorsResponse,
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
         );
 
         const model = genAI.getGenerativeModel({
-          model: 'gemini-2.0-flash',
+          model: AI_MODELS.GEMINI_PRO,
           generationConfig: { responseMimeType: 'application/json' },
         });
 
@@ -243,7 +244,7 @@ async function validateCompetitors(
     );
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: AI_MODELS.GEMINI_PRO,
       generationConfig: { responseMimeType: 'application/json' },
     });
 

@@ -11,6 +11,7 @@ import { clusterKeywords, KeywordCluster, type EnrichedKeyword } from "@/lib/ana
 import { CACHE_TTL } from "@/lib/redis";
 import { adminDb as db } from "@/lib/firebase-admin";
 import { genAI } from "@/lib/ai/gemini";
+import { AI_MODELS } from "@/lib/ai/config";
 
 export interface AnalystInput {
   keywords: AuditorKeyword[];
@@ -215,7 +216,7 @@ Only respond with valid JSON, no markdown blocks.
     const { genAI: geminiGenAI } = await import("@/lib/ai/gemini");
 
     const result = await geminiGenAI({
-      model: "models/gemini-1.5-flash",
+      model: AI_MODELS.GEMINI_PRO,
       config: {
         responseMimeType: "application/json",
         temperature: 0.4,
@@ -304,7 +305,7 @@ Only respond with valid JSON.
     const { genAI: geminiGenAI } = await import("@/lib/ai/gemini");
 
     const result = await geminiGenAI({
-      model: "models/gemini-1.5-flash",
+      model: AI_MODELS.GEMINI_PRO,
       config: {
         responseMimeType: "application/json",
         temperature: 0.5,

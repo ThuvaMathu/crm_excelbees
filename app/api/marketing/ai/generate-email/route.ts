@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { AI_MODELS } from "@/lib/ai/config";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -78,7 +79,7 @@ Return JSON format:
     }
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: AI_MODELS.GEMINI_PRO,
       generationConfig: { responseMimeType: "application/json" },
     });
 

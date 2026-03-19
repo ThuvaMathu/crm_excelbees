@@ -3,6 +3,7 @@ import { adminDb as db } from "@/lib/firebase-admin";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AIAssistRequest } from "@/types/blog-writer";
 import { getAIAssistPrompt } from "@/lib/blog-writer/utils";
+import { AI_MODELS } from "@/lib/ai/config";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Call Gemini
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({ model: AI_MODELS.GEMINI_PRO });
     const systemPrompt = "You are an expert blog writing assistant.";
 
     const result = await model.generateContent(`${systemPrompt}\n\n${prompt}`);

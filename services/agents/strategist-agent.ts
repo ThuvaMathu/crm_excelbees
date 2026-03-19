@@ -8,6 +8,7 @@
 
 import { scrapeWebsite } from "@/services/jinaAI";
 import { geminiClient } from "@/lib/ai/gemini";
+import { AI_MODELS } from "@/lib/ai/config";
 
 export interface StrategistInput {
   url?: string;
@@ -110,7 +111,7 @@ ${businessContext}
 
     // Use Gemini 1.5 Flash for cost efficiency
     const result = await geminiGenAI({
-      model: "models/gemini-1.5-flash",
+      model: AI_MODELS.GEMINI_PRO,
       config: {
         responseMimeType: "application/json",
         temperature: 0.3,
@@ -219,7 +220,7 @@ Only respond with the JSON array, no other text.
     const { genAI: geminiGenAI } = await import("@/lib/ai/gemini");
 
     const result = await geminiGenAI({
-      model: "models/gemini-1.5-flash",
+      model: AI_MODELS.GEMINI_PRO,
       config: {
         responseMimeType: "application/json",
         temperature: 0.4,
@@ -280,7 +281,7 @@ Only respond with the JSON array.
 
   try {
     const model = geminiClient.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: AI_MODELS.GEMINI_PRO,
       generationConfig: {
         responseMimeType: "application/json",
         temperature: 0.3,

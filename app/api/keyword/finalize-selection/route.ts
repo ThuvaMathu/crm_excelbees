@@ -10,6 +10,7 @@ import { getKeywordSelectionPrompt } from '@/lib/keyword/prompts';
 import { normalizeKeyword } from '@/lib/keyword/utils';
 import { adminDb as db } from '@/lib/firebase-admin';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AI_MODELS } from "@/lib/ai/config";
 import type {
   FinalizeSelectionRequest,
   FinalizeSelectionResponse,
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     const selectionPrompt = getKeywordSelectionPrompt(enrichedKeywords, requestedCount, businessContext);
 
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
+      model: AI_MODELS.GEMINI_PRO,
       generationConfig: { responseMimeType: 'application/json' },
     });
 
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
 
       try {
         const sentenceModel = genAI.getGenerativeModel({
-          model: 'gemini-2.0-flash',
+          model: AI_MODELS.GEMINI_PRO,
           generationConfig: { responseMimeType: 'application/json' },
         });
 

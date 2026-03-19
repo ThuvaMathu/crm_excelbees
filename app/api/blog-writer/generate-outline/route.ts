@@ -7,6 +7,7 @@ import {
   BlogPost,
 } from "@/types/blog-writer";
 import { getOutlineGenerationPrompt } from "@/lib/blog-writer/utils";
+import { AI_MODELS } from "@/lib/ai/config";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     let outlineText: string;
     try {
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: AI_MODELS.GEMINI_PRO,
         generationConfig: { responseMimeType: "application/json" },
       });
       const systemPrompt = "You are an expert SEO content strategist. Always respond with valid JSON only following the requested structure.";

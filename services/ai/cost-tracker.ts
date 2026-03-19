@@ -14,11 +14,8 @@ export interface AICostRecord {
 
 // Pricing Rates (Approximate - should be configurable)
 const PRICING = {
-  "gemini-2.0-flash": { input: 0.10 / 1000000, output: 0.40 / 1000000 },
-  "gemini-1.5-flash": { input: 0.075 / 1000000, output: 0.30 / 1000000 },
-  "gemini-1.5-pro": { input: 3.50 / 1000000, output: 10.50 / 1000000 },
-  "gpt-4o": { input: 5.00 / 1000000, output: 15.00 / 1000000 },
-  "gpt-4o-mini": { input: 0.15 / 1000000, output: 0.60 / 1000000 },
+  "gemini-2.5-flash": { input: 0.10 / 1000000, output: 0.40 / 1000000 },
+  "gemini-2.0-flash-lite": { input: 0.075 / 1000000, output: 0.30 / 1000000 },
 };
 
 export const AI_USAGE_COLLECTION = "ai_usage_logs";

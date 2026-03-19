@@ -7,6 +7,7 @@
 
 import { generateEmbeddings as generateEmbeddingsImpl } from "./embedding-service";
 import { genAI } from "@/lib/ai/gemini";
+import { AI_MODELS } from "@/lib/ai/config";
 
 export interface EnrichedKeyword {
   keyword: string;
@@ -263,7 +264,7 @@ async function labelCluster(keywords: EnrichedKeyword[]): Promise<string> {
 
   try {
     const result = await genAI({
-      model: "models/gemini-1.5-flash",
+      model: AI_MODELS.GEMINI_PRO,
       config: {
         responseMimeType: "application/json",
         temperature: 0.3,
@@ -320,7 +321,7 @@ async function extractTopic(keywords: EnrichedKeyword[]): Promise<string> {
 
   try {
     const result = await genAI({
-      model: "models/gemini-1.5-flash",
+      model: AI_MODELS.GEMINI_PRO,
       config: {
         responseMimeType: "application/json",
         temperature: 0.3,

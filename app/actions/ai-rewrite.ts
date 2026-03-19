@@ -1,6 +1,6 @@
 "use server";
 
-import { aiService } from "@/lib/ai/service";
+import { getAIAdapter } from "@/lib/ai/service";
 
 export type RewriteOptions = {
     tone: 'professional' | 'casual' | 'formal' | 'creative';
@@ -19,7 +19,7 @@ export async function rewriteText(text: string, options: RewriteOptions): Promis
             return { text: null, error: "Input text cannot be empty" };
         }
 
-        const model = aiService; // Using default gemini service
+        const { service, model, temperature } = getAIAdapter('default');
 
         // Construct a focused prompt for the AI
         const prompt = `
@@ -42,7 +42,7 @@ export async function rewriteText(text: string, options: RewriteOptions): Promis
         REWRITTEN TEXT:
         `;
 
-        const response = await model.generateText({ prompt });
+        const response = await service.generateText({ prompt, model, temperature });
 
         if (!response || !response.text) {
             return { text: null, error: "Failed to generate text" };

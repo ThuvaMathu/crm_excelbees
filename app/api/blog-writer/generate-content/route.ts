@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GenerateContentRequest, BlogPost } from "@/types/blog-writer";
+import { AI_MODELS } from "@/lib/ai/config";
 import {
   getContentGenerationPrompt,
   analyzeKeywordUsage,
@@ -62,10 +63,11 @@ export async function POST(request: NextRequest) {
     let content: string;
     try {
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: AI_MODELS.GEMINI_PRO,
         generationConfig: {
           temperature: 0.7,
           maxOutputTokens,
+          responseMimeType: 'application/json',
         },
       });
       const systemPrompt = "You are an expert blog writer. Write high-quality, SEO-optimized content in HTML format following the provided outline and specifications.";

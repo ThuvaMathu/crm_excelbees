@@ -31,5 +31,10 @@ export function getAIAdapter(useCase: keyof typeof aiConfig = 'default') {
   };
 }
 
-// Default service (uses default config)
-export const aiService = AIServiceFactory.getService();
+/**
+ * Lazy accessor for the AI service.
+ * Always call inside a request handler — never at module scope.
+ */
+export function getAIService(): AIService {
+  return AIServiceFactory.getService();
+}
