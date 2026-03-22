@@ -6,38 +6,109 @@ import { adminDb } from "@/lib/firebase-admin";
 
 async function getCRMContext(userId?: string) {
     try {
-        // Fetch real leads data
-        const leadsSnapshot = await adminDb.collection("leads").get();
-        const leads = leadsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Fetch all CRM data in parallel
+        const [leadsSnapshot, dealsSnapshot, tasksSnapshot, contactsSnapshot, companiesSnapshot, invoicesSnapshot, projectsSnapshot] = await Promise.all([
+            adminDb.collection("leads").get(),
+            adminDb.collection("deals").get(),
+            adminDb.collection("tasks").get(),
+            adminDb.collection("contacts").get(),
+            adminDb.collection("companies").get(),
+            adminDb.collection("invoices").get(),
+            adminDb.collection("projects").get(),
+        ]);
 
+        // --- Leads ---
+        const leads = leadsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const leadsByStatus: Record<string, number> = {};
         leads.forEach((lead: any) => {
             const status = lead.status || "Unknown";
             leadsByStatus[status] = (leadsByStatus[status] || 0) + 1;
         });
-
         const statusBreakdown = Object.entries(leadsByStatus)
             .map(([status, count]) => `${count} ${status}`)
             .join(", ");
+        const recentLeads = leads.slice(0, 10).map((lead: any) =>
+            `"${lead.name || lead.firstName || 'Unnamed'}" (Status: ${lead.status || 'Unknown'}, Source: ${lead.source || 'N/A'})`
+        ).join("; ");
 
-        // Fetch real deals data
-        const dealsSnapshot = await adminDb.collection("deals").get();
+        // --- Deals ---
         const deals = dealsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const dealsByStage: Record<string, number> = {};
+        let totalDealValue = 0;
+        deals.forEach((deal: any) => {
+            const stage = deal.stage || "Unknown";
+            dealsByStage[stage] = (dealsByStage[stage] || 0) + 1;
+            totalDealValue += deal.value || 0;
+        });
+        const stageBreakdown = Object.entries(dealsByStage)
+            .map(([stage, count]) => `${count} ${stage}`)
+            .join(", ");
+        const recentDeals = deals.slice(0, 10).map((deal: any) =>
+            `"${deal.name || deal.title || 'Untitled'}" ($${(deal.value || 0).toLocaleString()}, Stage: ${deal.stage || 'Unknown'})`
+        ).join("; ");
 
-        const recentDeals = deals.slice(0, 5).map((deal: any) =>
-            `"${deal.name || deal.title || 'Untitled'}" ($${(deal.value || 0).toLocaleString()}, ${deal.stage || 'Unknown'})`
-        ).join(", ");
-
-        // Fetch tasks
-        const tasksSnapshot = await adminDb.collection("tasks").get();
+        // --- Tasks ---
         const tasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        const pendingTasks = tasks.filter((t: any) => t.status !== "completed" && t.status !== "done").length;
+        const pendingTasks = tasks.filter((t: any) => t.status !== "Done").length;
+        const tasksByStatus: Record<string, number> = {};
+        tasks.forEach((t: any) => {
+            const status = t.status || "Unknown";
+            tasksByStatus[status] = (tasksByStatus[status] || 0) + 1;
+        });
+        const taskStatusBreakdown = Object.entries(tasksByStatus)
+            .map(([status, count]) => `${count} ${status}`)
+            .join(", ");
+
+        // --- Contacts ---
+        const contacts = contactsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const recentContacts = contacts.slice(0, 10).map((c: any) =>
+            `"${c.firstName || ''} ${c.lastName || ''}" (Email: ${c.email || 'N/A'}, Company: ${c.companyName || 'N/A'})`
+        ).join("; ");
+
+        // --- Companies ---
+        const companies = companiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const recentCompanies = companies.slice(0, 10).map((c: any) =>
+            `"${c.name || 'Unnamed'}" (Industry: ${c.industry || 'N/A'})`
+        ).join("; ");
+
+        // --- Invoices ---
+        const invoices = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const paidInvoices = invoices.filter((i: any) => i.status === "Paid");
+        const overdueInvoices = invoices.filter((i: any) => i.status === "Overdue");
+        const totalRevenue = paidInvoices.reduce((sum: number, i: any) => sum + (i.total || 0), 0);
+        const recentInvoices = invoices.slice(0, 10).map((i: any) =>
+            `#${i.invoiceNumber || i.id} ($${(i.total || 0).toLocaleString()}, Status: ${i.status || 'Unknown'})`
+        ).join("; ");
+
+        // --- Projects ---
+        const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const activeProjects = projects.filter((p: any) => p.status === "Active");
+        const recentProjects = projects.slice(0, 10).map((p: any) =>
+            `"${p.name || 'Unnamed'}" (Status: ${p.status || 'Unknown'})`
+        ).join("; ");
 
         return `
     CURRENT CRM DATA (LIVE):
-    - Total Leads: ${leads.length} (${statusBreakdown || "none"})
-    - Total Deals: ${deals.length}${recentDeals ? ` | Recent: ${recentDeals}` : ""}
-    - Pending Tasks: ${pendingTasks}
+    
+    LEADS (${leads.length} total): ${statusBreakdown || "none"}
+    Recent Leads: ${recentLeads || "none"}
+    
+    DEALS (${deals.length} total, Total Value: $${totalDealValue.toLocaleString()}): ${stageBreakdown || "none"}
+    Recent Deals: ${recentDeals || "none"}
+    
+    TASKS (${tasks.length} total, ${pendingTasks} pending): ${taskStatusBreakdown || "none"}
+    
+    CONTACTS (${contacts.length} total)
+    Recent Contacts: ${recentContacts || "none"}
+    
+    COMPANIES (${companies.length} total)
+    Recent Companies: ${recentCompanies || "none"}
+    
+    INVOICES (${invoices.length} total, ${paidInvoices.length} Paid, ${overdueInvoices.length} Overdue, Revenue: $${totalRevenue.toLocaleString()})
+    Recent Invoices: ${recentInvoices || "none"}
+    
+    PROJECTS (${projects.length} total, ${activeProjects.length} Active)
+    Recent Projects: ${recentProjects || "none"}
     `;
     } catch (error) {
         console.error("Error fetching CRM context:", error);

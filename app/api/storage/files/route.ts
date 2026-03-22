@@ -19,32 +19,30 @@ export async function GET(request: NextRequest) {
     // List files
     const [files] = await bucket.getFiles({ prefix });
 
-    const fileList = await Promise.all(
+    const fileList = (await Promise.all(
         files.map(async (file) => {
-            const [metadata] = await file.getMetadata();
-            // Get public URL or signed URL?
-            // Public URL if publicly readable. 
-            // Signed URL for temporary access.
-            // For email embedding, we generally need a public URL or a long-lived signed URL.
-            // Firebase Storage public URL format:
-            // https://firebasestorage.googleapis.com/v0/b/[bucket]/o/[path]?alt=media
-            
-            const encodedPath = encodeURIComponent(file.name);
-            const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
+            try {
+                const [metadata] = await file.getMetadata();
+                const encodedPath = encodeURIComponent(file.name);
+                const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
 
-            return {
-                name: file.name.split('/').pop(),
-                fullPath: file.name,
-                contentType: metadata.contentType,
-                size: metadata.size,
-                updated: metadata.updated,
-                url: publicUrl
-            };
+                return {
+                    name: file.name.split('/').pop(),
+                    fullPath: file.name,
+                    contentType: metadata.contentType,
+                    size: metadata.size,
+                    updated: metadata.updated,
+                    url: publicUrl
+                };
+            } catch (err) {
+                console.warn(`Skipping file ${file.name}: failed to get metadata`);
+                return null;
+            }
         })
-    );
+    )).filter(Boolean);
     
     // Filter out directory placeholders if any
-    const images = fileList.filter(f => f.contentType?.startsWith('image/'));
+    const images = fileList.filter((f): f is NonNullable<typeof f> => f != null && !!f.contentType?.startsWith('image/'));
 
     return NextResponse.json({ success: true, files: images });
 

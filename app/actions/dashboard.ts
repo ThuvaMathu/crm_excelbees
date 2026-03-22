@@ -71,7 +71,7 @@ export async function getCachedDashboardStats(userId: string): Promise<Dashboard
             getDeals(),
             getCompanies(),
             getProjects(),
-            getTasks({ assigneeId: userId }),
+            getTasks({ userId: userId, userRole: "associated" }),
             getInvoiceStats(),
         ]);
 

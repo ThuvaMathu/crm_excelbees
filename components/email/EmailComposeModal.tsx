@@ -81,23 +81,26 @@ export function EmailComposeModal({
     const [isSavingTemplate, setIsSavingTemplate] = useState(false);
     const [templateSelectorKey, setTemplateSelectorKey] = useState(0);
 
-    // Initialize from context
+    // Initialize from context or initialRecipients
     useEffect(() => {
-        if (isOpen && context) {
-            if (context.to) {
+        if (isOpen) {
+            // Prioritize initialRecipients over context.to
+            if (initialRecipients && initialRecipients.length > 0) {
+                setTo(initialRecipients);
+            } else if (context?.to) {
                 setTo(context.to);
             }
-            if (context.subject) {
+            if (context?.subject) {
                 setSubject(context.subject);
             }
-            if (context.body) {
+            if (context?.body) {
                 setBody(context.body);
             }
-            if (context.attachments) {
+            if (context?.attachments) {
                 setAttachments(context.attachments);
             }
         }
-    }, [context]);
+    }, [isOpen, context, initialRecipients]);
 
     const handleSelectTemplate = (template: EmailTemplate) => {
         setSelectedTemplate(template);

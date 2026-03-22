@@ -48,6 +48,7 @@ interface TaskFiltersBarProps {
     statuses: TaskStatus[];
     onStatusesChange: (statuses: TaskStatus[]) => void;
     onClearFilters: () => void;
+    onApply?: () => void;
 }
 
 export function TaskFiltersBar({
@@ -60,6 +61,7 @@ export function TaskFiltersBar({
     statuses,
     onStatusesChange,
     onClearFilters,
+    onApply,
 }: TaskFiltersBarProps) {
     const [open, setOpen] = useState(false);
 
@@ -291,7 +293,10 @@ export function TaskFiltersBar({
                             <Button
                                 size="sm"
                                 className="w-full"
-                                onClick={() => setOpen(false)}
+                                onClick={() => {
+                                    setOpen(false);
+                                    onApply?.();
+                                }}
                             >
                                 Apply Filters
                             </Button>

@@ -69,7 +69,8 @@ export default function ReportsPage() {
                 activePipeline: activeDealsValue,
                 totalLeads,
                 churnRiskCount,
-                recentTrend: monthlyMetrics.slice(-3) // Last 3 months
+                monthlyBreakdown: monthlyMetrics, // Full 6-month breakdown
+                recentTrend: monthlyMetrics.slice(-3), // Last 3 months emphasized
             };
 
             const response = await generateReportInsight(query, context);

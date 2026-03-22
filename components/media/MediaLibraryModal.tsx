@@ -79,6 +79,17 @@ export function MediaLibraryModal({ isOpen, onClose, onSelect }: MediaLibraryMod
                                         alt={file.name}
                                         className="w-full h-full object-cover"
                                         loading="lazy"
+                                        onError={(e) => {
+                                            const target = e.currentTarget;
+                                            target.style.display = "none";
+                                            const parent = target.parentElement;
+                                            if (parent && !parent.querySelector('.fallback-icon')) {
+                                                const fallback = document.createElement("div");
+                                                fallback.className = "fallback-icon w-full h-full flex items-center justify-center bg-muted text-muted-foreground";
+                                                fallback.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>';
+                                                parent.insertBefore(fallback, parent.firstChild);
+                                            }
+                                        }}
                                     />
                                     <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 truncate">
                                         {file.name}

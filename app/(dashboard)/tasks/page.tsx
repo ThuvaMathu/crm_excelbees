@@ -94,12 +94,10 @@ export default function TasksPage() {
         fetchTasks();
     }, []);
 
-    // Refetch when filters change
-    useEffect(() => {
-        if (!loading) {
-            fetchTasks();
-        }
-    }, [filters.userRole, filters.dateRange, filters.priorities, filters.statuses]);
+    // Explicit apply handler — only fetches when user clicks "Apply Filters"
+    const applyFilters = () => {
+        fetchTasks();
+    };
 
     const getStatusIcon = (status: string) => {
         const icons: Record<string, React.ReactElement> = {
@@ -223,6 +221,7 @@ export default function TasksPage() {
                         statuses={filters.statuses}
                         onStatusesChange={(statuses) => setFilters((f) => ({ ...f, statuses }))}
                         onClearFilters={clearFilters}
+                        onApply={applyFilters}
                     />
                 </div>
             )}
