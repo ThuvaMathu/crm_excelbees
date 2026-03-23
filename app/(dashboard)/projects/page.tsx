@@ -160,7 +160,7 @@ export default function ProjectsPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     {/* Progress Bar */}
-                                    <div className="space-y-1">
+                                    {/* <div className="space-y-1">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-muted-foreground">Progress</span>
                                             <span className="font-medium">{project.progress}%</span>
@@ -171,7 +171,7 @@ export default function ProjectsPage() {
                                                 style={{ width: `${project.progress}%` }}
                                             />
                                         </div>
-                                    </div>
+                                    </div> */}
 
                                     {/* Dates */}
                                     <div className="flex items-center justify-between text-xs text-muted-foreground">
