@@ -12,7 +12,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserProfile, updateUserProfile, type UserProfile } from "@/lib/firestore/users";
 import { uploadUserProfileImage } from "@/lib/storage/users";
-import { User, Mail, Phone, Briefcase, Upload, Save } from "lucide-react";
+import { User, Mail, Phone, Upload, Save } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ProfilePage() {
@@ -28,7 +28,6 @@ export default function ProfilePage() {
         lastName: "",
         email: "",
         phone: "",
-        employeeId: "",
     });
 
     useEffect(() => {
@@ -51,7 +50,6 @@ export default function ProfilePage() {
                 lastName: userProfile.lastName || "",
                 email: userProfile.email || "",
                 phone: userProfile.phone || "",
-                employeeId: userProfile.employeeId || "",
             });
         }
         setLoading(false);
@@ -116,7 +114,6 @@ export default function ProfilePage() {
             firstName: formData.firstName,
             lastName: formData.lastName,
             phone: formData.phone,
-            employeeId: formData.employeeId,
         });
 
         setSaving(false);
@@ -263,17 +260,6 @@ export default function ProfilePage() {
                                 value={formData.phone}
                                 onChange={handleInputChange}
                                 placeholder="+1 (555) 123-4567"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="employeeId">Employee ID</Label>
-                            <Input
-                                id="employeeId"
-                                name="employeeId"
-                                value={formData.employeeId}
-                                onChange={handleInputChange}
-                                placeholder="EMP-001"
                             />
                         </div>
 

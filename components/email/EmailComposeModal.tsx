@@ -13,20 +13,18 @@ import { Switch } from "@/components/ui/switch";
 import { RecipientInput } from "./RecipientInput";
 import { TemplateSelector } from "./TemplateSelector";
 import { MergeFieldDropdown } from "./MergeFieldDropdown";
-import { AIAssistantEnhanced } from "./AIAssistantEnhanced";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Send, Save, X, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { AIEmailAssistant } from "./AIEmailAssistant";
 import { createEmail, saveDraft } from "@/lib/firestore/emails";
 import { validateEmail } from "@/lib/email/merge-fields";
 import { incrementUsageCount, createTemplate } from "@/lib/firestore/email-templates";
-import type { EmailContext, EmailRecipient, EmailTemplate, MergeFieldDefinition, EmailAttachment } from "@/types/email";
+import type { Email, EmailContext, EmailRecipient, EmailTemplate, MergeFieldDefinition, EmailAttachment } from "@/types/email";
 import { Timestamp } from "firebase/firestore";
 import { uploadAttachment } from "@/lib/storage/attachments";
-import { Paperclip, XCircle, Loader2, Image as ImageIcon } from "lucide-react";
-import { AIAssistant } from "./AIAssistant";
-import { MediaLibraryModal } from "@/components/media/MediaLibraryModal";
+import { Paperclip, XCircle, Loader2 } from "lucide-react";
 
 interface EmailComposeModalProps {
     isOpen: boolean;
@@ -35,6 +33,8 @@ interface EmailComposeModalProps {
     defaultTemplateId?: string;
     initialRecipients?: EmailRecipient[];
     isBulkMode?: boolean;
+    /** Load an existing draft or email into the composer */
+    initialEmail?: Email;
 }
 
 export function EmailComposeModal({
@@ -44,6 +44,7 @@ export function EmailComposeModal({
     defaultTemplateId,
     initialRecipients,
     isBulkMode,
+    initialEmail,
 }: EmailComposeModalProps) {
     const { user } = useAuth();
 
@@ -67,13 +68,8 @@ export function EmailComposeModal({
     const [draftId, setDraftId] = useState<string | null>(null);
     const [attachments, setAttachments] = useState<EmailAttachment[]>([]);
     const [isUploading, setIsUploading] = useState(false);
-    const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
     const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
     const [isScheduleOpen, setIsScheduleOpen] = useState(false);
-
-    // Undo state for AI Assistant
-    const [subjectHistory, setSubjectHistory] = useState<string[]>([]);
-    const [bodyHistory, setBodyHistory] = useState<string[]>([]);
 
     // Save as Template State
     const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false);
@@ -81,26 +77,32 @@ export function EmailComposeModal({
     const [isSavingTemplate, setIsSavingTemplate] = useState(false);
     const [templateSelectorKey, setTemplateSelectorKey] = useState(0);
 
-    // Initialize from context or initialRecipients
+    // Initialize form from initialEmail (draft/existing) or from context / initialRecipients
     useEffect(() => {
-        if (isOpen) {
-            // Prioritize initialRecipients over context.to
-            if (initialRecipients && initialRecipients.length > 0) {
-                setTo(initialRecipients);
-            } else if (context?.to) {
-                setTo(context.to);
-            }
-            if (context?.subject) {
-                setSubject(context.subject);
-            }
-            if (context?.body) {
-                setBody(context.body);
-            }
-            if (context?.attachments) {
-                setAttachments(context.attachments);
-            }
+        if (!isOpen) return;
+
+        if (initialEmail) {
+            setTo(initialEmail.to || []);
+            setCc(initialEmail.cc || []);
+            setBcc(initialEmail.bcc || []);
+            setSubject(initialEmail.subject || "");
+            setBody(initialEmail.body || "");
+            setAttachments(initialEmail.attachments || []);
+            setTrackOpens(initialEmail.tracking?.trackOpens ?? true);
+            setTrackClicks(initialEmail.tracking?.trackClicks ?? true);
+            setDraftId(initialEmail.id || null);
+            return;
         }
-    }, [isOpen, context, initialRecipients]);
+
+        if (initialRecipients && initialRecipients.length > 0) {
+            setTo(initialRecipients);
+        } else if (context?.to) {
+            setTo(context.to);
+        }
+        if (context?.subject) setSubject(context.subject);
+        if (context?.body) setBody(context.body);
+        if (context?.attachments) setAttachments(context.attachments);
+    }, [isOpen, context, initialRecipients, initialEmail]);
 
     const handleSelectTemplate = (template: EmailTemplate) => {
         setSelectedTemplate(template);
@@ -168,44 +170,6 @@ export function EmailComposeModal({
     };
 
     // AI Assistant handlers
-    const handleAIGenerateSubject = (text: string, shouldReplace: boolean) => {
-        if (shouldReplace && subject) {
-            // Save current subject to history before replacing
-            setSubjectHistory(prev => [...prev, subject]);
-        }
-
-        setSubject(text);
-        toast.success("Subject updated with AI");
-    };
-
-    const handleAIGenerateBody = (text: string, shouldReplace: boolean) => {
-        if (shouldReplace && body) {
-            // Save current body to history before replacing
-            setBodyHistory(prev => [...prev, body]);
-        }
-
-        setBody(text);
-        toast.success("Email content updated");
-    };
-
-    const handleUndoSubject = () => {
-        if (subjectHistory.length === 0) return;
-
-        const previous = subjectHistory[subjectHistory.length - 1];
-        setSubjectHistory(prev => prev.slice(0, -1));
-        setSubject(previous);
-        toast.success("Subject restored");
-    };
-
-    const handleUndoBody = () => {
-        if (bodyHistory.length === 0) return;
-
-        const previous = bodyHistory[bodyHistory.length - 1];
-        setBodyHistory(prev => prev.slice(0, -1));
-        setBody(previous);
-        toast.success("Content restored");
-    };
-
     const handleSaveDraft = async () => {
         if (!user) {
             toast.error("You must be logged in");
@@ -443,7 +407,6 @@ export function EmailComposeModal({
         setShowCCBCC(false);
         setDraftId(null);
         setAttachments([]);
-        setIsMediaLibraryOpen(false);
         setScheduledDate(undefined);
         setIsScheduleOpen(false);
         setNewTemplateName("");
@@ -546,6 +509,20 @@ export function EmailComposeModal({
                         )}
                     </div>
 
+                    {/* AI Email Assistant */}
+                    <div className="flex items-center justify-between">
+                        <AIEmailAssistant
+                            recipientName={to[0]?.name}
+                            companyName={context?.relatedRecordName}
+                            context={context?.type}
+                            currentBody={body}
+                            onDraft={(newSubject, newBody) => {
+                                setSubject(newSubject);
+                                setBody(newBody);
+                            }}
+                        />
+                    </div>
+
                     {/* Subject */}
                     <div className="space-y-2">
                         <Label htmlFor="subject">Subject:</Label>
@@ -557,14 +534,6 @@ export function EmailComposeModal({
                                 placeholder="Email subject..."
                             />
                             <MergeFieldDropdown onInsertField={(field) => setSubject((prev) => prev + ` {{${field.key}}}`)} />
-                        </div>
-                        <div className="flex justify-end mt-1">
-                            <AIAssistantEnhanced
-                                context="subject"
-                                currentContent={subject}
-                                onGenerate={handleAIGenerateSubject}
-                                onUndo={subjectHistory.length > 0 ? handleUndoSubject : undefined}
-                            />
                         </div>
                     </div>
 
@@ -579,21 +548,6 @@ export function EmailComposeModal({
                             <div className="flex justify-between items-center">
                                 <Label>Body:</Label>
                                 <div className="flex gap-2">
-                                    <AIAssistantEnhanced
-                                        context="body"
-                                        currentContent={body}
-                                        onGenerate={handleAIGenerateBody}
-                                        onUndo={bodyHistory.length > 0 ? handleUndoBody : undefined}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm" // Matches AI button size
-                                        onClick={() => setIsMediaLibraryOpen(true)}
-                                        title="Insert Image"
-                                    >
-                                        <ImageIcon className="h-4 w-4" />
-                                    </Button>
                                     <div className="relative">
                                         <input
                                             type="file"
@@ -716,16 +670,6 @@ export function EmailComposeModal({
                         </div>
                     </div>
                 </div>
-
-                <MediaLibraryModal
-                    isOpen={isMediaLibraryOpen}
-                    onClose={() => setIsMediaLibraryOpen(false)}
-                    onSelect={(url, alt) => {
-                        const imgTag = `<img src="${url}" alt="${alt}" style="max-width: 100%; border-radius: 4px;" /><br/>`;
-                        setBody((prev) => prev + imgTag);
-                        toast.success("Image inserted");
-                    }}
-                />
 
                 {/* Save Template Dialog */}
                 <Dialog open={isSaveTemplateOpen} onOpenChange={setIsSaveTemplateOpen}>

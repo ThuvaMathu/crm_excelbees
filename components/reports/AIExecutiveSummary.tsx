@@ -12,10 +12,11 @@ interface Insight {
 interface AIExecutiveSummaryProps {
     summary: string;
     insights: Insight[];
+    recommendations?: string[];
     isLoading?: boolean;
 }
 
-export function AIExecutiveSummary({ summary, insights, isLoading = false }: AIExecutiveSummaryProps) {
+export function AIExecutiveSummary({ summary, insights, recommendations = [], isLoading = false }: AIExecutiveSummaryProps) {
     if (isLoading) {
         return (
             <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-slate-900 dark:to-slate-800 border-indigo-100 dark:border-indigo-900">
@@ -66,6 +67,23 @@ export function AIExecutiveSummary({ summary, insights, isLoading = false }: AIE
                         </div>
                     ))}
                 </div>
+
+                {recommendations.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <Sparkles className="h-3 w-3" />
+                            Recommendations
+                        </h4>
+                        <ul className="space-y-1.5">
+                            {recommendations.map((rec, idx) => (
+                                <li key={idx} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
+                                    <span className="text-indigo-500 font-medium shrink-0">{idx + 1}.</span>
+                                    {rec}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

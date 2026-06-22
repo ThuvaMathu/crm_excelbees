@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
     path === "/forgot-password";
 
   // Define protected paths
-  const isProtectedPath = path.startsWith("/dashboard") || 
+  const isProtectedPath = path.startsWith("/dashboard") ||
     path.startsWith("/leads") ||
     path.startsWith("/contacts") ||
     path.startsWith("/companies") ||
@@ -22,7 +22,8 @@ export function middleware(request: NextRequest) {
     path.startsWith("/invoices") ||
     path.startsWith("/reports") ||
     path.startsWith("/settings") ||
-    path.startsWith("/profile");
+    path.startsWith("/profile") ||
+    path.startsWith("/users");
 
   // Protect Admin Routes at the edge by checking if auth cookie or header exists
   // We exclude /api/admin/sync-claims because it relies on an internal secret key instead of a user session

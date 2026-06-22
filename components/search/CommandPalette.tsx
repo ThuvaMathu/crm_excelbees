@@ -15,6 +15,7 @@ import {
     CheckSquare,
     DollarSign,
     Loader2,
+    Sparkles,
 } from "lucide-react";
 import { getLeads } from "@/lib/firestore/leads";
 import { getContacts } from "@/lib/firestore/contacts";
@@ -23,6 +24,7 @@ import { getDeals } from "@/lib/firestore/deals";
 import { getProjects } from "@/lib/firestore/projects";
 import { getTasks } from "@/lib/firestore/tasks";
 import { getInvoices } from "@/lib/firestore/invoices";
+import { smartSearch } from "@/app/actions/ai/smart-search";
 import { useUIStore } from "@/store/ui";
 
 interface SearchResult {
@@ -59,6 +61,8 @@ export function CommandPalette() {
     const [search, setSearch] = useState("");
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
+    const [aiMode, setAiMode] = useState(false);
+    const [aiSearching, setAiSearching] = useState(false);
 
     // Keyboard shortcut: Cmd+K / Ctrl+K
     useEffect(() => {
@@ -189,20 +193,45 @@ export function CommandPalette() {
         }
     }, []);
 
-    // Debounced search
+    // Debounced search (skip in AI mode)
     useEffect(() => {
+        if (aiMode) return;
+
         const timer = setTimeout(() => {
             performSearch(search);
         }, 300);
 
         return () => clearTimeout(timer);
-    }, [search, performSearch]);
+    }, [search, performSearch, aiMode]);
 
     const handleSelect = (url: string) => {
         setSearchOpen(false);
         setSearch("");
         setResults([]);
         router.push(url);
+    };
+
+    const handleAISearch = async () => {
+        if (!search.trim() || search.trim().length < 3) return;
+
+        setAiSearching(true);
+        setResults([]);
+        try {
+            const result = await smartSearch(search);
+            if (result.success && result.data) {
+                const aiResults: SearchResult[] = result.data.map((r) => ({
+                    id: r.id,
+                    title: r.title,
+                    subtitle: r.subtitle,
+                    type: (r.type as any) || "lead",
+                    url: r.url,
+                }));
+                setResults(aiResults);
+            }
+        } catch {
+            // Fall back to regular search
+        }
+        setAiSearching(false);
     };
 
     // Group results by type
@@ -237,16 +266,41 @@ export function CommandPalette() {
                 <div className="rounded-lg border bg-background shadow-2xl overflow-hidden">
                     {/* Search Input */}
                     <div className="flex items-center border-b px-4">
-                        <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                        {aiMode ? (
+                            <Sparkles className="mr-2 h-4 w-4 shrink-0 text-primary" />
+                        ) : (
+                            <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
                         <Command.Input
-                            placeholder="Search leads, contacts, companies, deals..."
+                            placeholder={aiMode ? "Ask AI: e.g., 'deals worth over 10k in follow up'" : "Search leads, contacts, companies, deals..."}
                             value={search}
                             onValueChange={setSearch}
+                            onKeyDown={(e) => {
+                                if (aiMode && e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAISearch();
+                                }
+                            }}
                             className="flex h-12 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         />
-                        {loading && (
+                        {(loading || aiSearching) && (
                             <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin text-muted-foreground" />
                         )}
+                        <button
+                            onClick={() => {
+                                setAiMode(!aiMode);
+                                setResults([]);
+                            }}
+                            className={`ml-2 shrink-0 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                                aiMode
+                                    ? "bg-primary text-primary-foreground"
+                                    : "text-muted-foreground hover:bg-accent"
+                            }`}
+                            title="Toggle AI Search"
+                        >
+                            <Sparkles className="h-3.5 w-3.5 inline mr-1" />
+                            AI
+                        </button>
                     </div>
 
                     {/* Results */}

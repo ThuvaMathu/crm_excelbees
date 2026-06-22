@@ -1,281 +1,200 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // ============================================================================
     // HELPER FUNCTIONS
     // ============================================================================
-    
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // User Data Helpers
+
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
-    
-    // Check if user is approved AND active (new field)
+
+    // Admins and managers are always considered approved.
+    // Regular users need isApproved == true AND isActive != false.
     function isApproved() {
-      return isAuthenticated() &&
-             getUserData().isApproved == true &&
-             getUserData().isActive != false; // Default to true if missing
+      let data = getUserData();
+      return isAuthenticated() && (
+        data.role == 'admin' ||
+        data.role == 'manager' ||
+        (data.isApproved == true && data.isActive != false)
+      );
     }
-    
+
     function isAdmin() {
       return isAuthenticated() && getUserData().role == 'admin';
     }
-    
+
     function isManager() {
       return isAuthenticated() && (getUserData().role == 'manager' || getUserData().role == 'admin');
     }
-    
+
     function isTeamMember() {
       return isAuthenticated() && getUserData().role == 'team';
     }
-    
-    // Task/Project Permission Helpers
+
     function isTaskOwner(taskData) {
       return isAuthenticated() && request.auth.uid == taskData.createdBy;
     }
-    
+
     function isProjectOwner(projectData) {
       return isAuthenticated() && request.auth.uid == projectData.createdBy;
     }
-    
-    function canCreateTask() {
-      // Admin: can create any task
-      // Manager: cannot create tasks (update only)
-      // Team: cannot create tasks (read only)
-      // Creator: can create own tasks (handled by isOwner check on creation)
-      return isAdmin() || (isManager() == false && isTeamMember() == false);
-    }
-    
-    function canUpdateTask(taskData) {
-      // Admin: can update any task
-      // Manager: can update any task (update only permission)
-      // Team: cannot update tasks (read only)
-      // Creator: can update own tasks
-      return isAdmin() || isManager() || isTaskOwner(taskData);
-    }
-    
-    function canDeleteTask(taskData) {
-      // Admin: can delete any task
-      // Manager: cannot delete tasks (update only)
-      // Team: cannot delete tasks (read only)
-      // Creator: can delete own tasks
-      return isAdmin() || isTaskOwner(taskData);
-    }
-    
-    function canCreateProject() {
-      // Admin: can create any project
-      // Manager: cannot create projects (update only)
-      // Team: cannot create projects (read only)
-      // Creator: can create own projects (handled by isOwner check on creation)
-      return isAdmin() || (isManager() == false && isTeamMember() == false);
-    }
-    
-    function canUpdateProject(projectData) {
-      // Admin: can update any project
-      // Manager: can update any project (update only permission)
-      // Team: cannot update projects (read only)
-      // Creator: can update own projects
-      return isAdmin() || isManager() || isProjectOwner(projectData);
-    }
-    
-    function canDeleteProject(projectData) {
-      // Admin: can delete any project
-      // Manager: cannot delete projects (update only)
-      // Team: cannot delete projects (read only)
-      // Creator: can delete own projects
-      return isAdmin() || isProjectOwner(projectData);
-    }
 
     // ============================================================================
-    // USERS COLLECTION (Admin-Only User Creation System)
+    // USERS COLLECTION
     // ============================================================================
-    
+
     match /users/{userId} {
-      // Read: Users can read their own profile. Managers/Admins can read all.
       allow read: if isOwner(userId) || isManager();
-      
-      // Create: ONLY ADMINS can create users (no public registration).
-      // Exception: Allow self-creation on FIRST login if document doesn't exist,
-      // but STRICTLY limit the role to 'team' to prevent privilege escalation.
+
+      // New users can self-create with role='team' only (no privilege escalation).
+      // Admins can create any user document.
       allow create: if isAdmin() || (
         isOwner(userId) &&
         !exists(/databases/$(database)/documents/users/$(userId)) &&
-        request.resource.data.role == 'team' // Clients can never self-assign admin/manager
+        request.resource.data.role == 'team'
       );
-      
-      // Update rules:
-      // - PROTECTED FIELDS: role, isApproved, isActive, permissions, createdBy
-      //   can ONLY be changed by admins/managers.
-      // - SELF-SERVICE FIELDS: displayName, photoURL, settings, phone, etc.
-      //   can be updated by the owner, as long as they don't touch protected fields.
-      // - isFirstLogin + passwordChangedAt: owner can ONLY flip isFirstLogin to false.
-      allow update: if isManager() || // Admins/Managers can update any field
-        (isOwner(userId) && !(
-          // Blocked fields — owners can NEVER modify these
-          request.resource.data.diff(resource.data)
+
+      // Admins: full update on any user document.
+      // Managers: update ONLY team members' non-sensitive fields (NOT role, isActive, etc.).
+      //           Cannot modify admin or manager documents at all.
+      // Owners: update own non-sensitive fields only.
+      // Special: owner flips isFirstLogin → false on first password change.
+      allow update: if
+        isAdmin() ||
+        (isManager() &&
+          isOwner(userId) == false &&
+          resource.data.role == 'team' &&
+          !request.resource.data.diff(resource.data)
             .affectedKeys()
-            .hasAny(['role', 'isApproved', 'isActive', 'permissions', 'createdBy'])
-        )) ||
-        // Special case: owner can mark isFirstLogin = false when changing password
+            .hasAny(['role', 'isApproved', 'isActive', 'permissions', 'createdBy'])) ||
+        (isOwner(userId) &&
+          !request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasAny(['role', 'isApproved', 'isActive', 'permissions', 'createdBy'])) ||
         (isOwner(userId) &&
           request.resource.data.diff(resource.data)
             .affectedKeys()
             .hasOnly(['isFirstLogin', 'passwordChangedAt', 'updatedAt', 'lastLoginAt']) &&
           request.resource.data.isFirstLogin == false);
-      
-      // Delete: Only admins can delete user documents
+
       allow delete: if isAdmin();
     }
 
     // ============================================================================
-    // DEFAULT PROTECTION REMOVED
-    // The previous catch-all rule allowed any approved user to read/write ANY collection.
-    // This is insecure for HR/Payroll data.
-    // All collections must be explicitly defined below.
+    // CRM CORE COLLECTIONS
+    // All require an approved, active user (admins/managers bypass isApproved check).
     // ============================================================================
-    
-    // match /{collection}/{docId} {
-    //   allow read, write: if isAuthenticated() && isApproved();
-    // }
-    
-    // ============================================================================
-    // SPECIFIC COLLECTION RULES
-    // ============================================================================
-    
+
     match /leads/{leadId} {
-      allow read, write: if isAuthenticated() && isApproved();
+      allow read, write: if isApproved();
     }
-    
+
     match /contacts/{contactId} {
-      allow read, write: if isAuthenticated() && isApproved();
+      allow read, write: if isApproved();
     }
-    
+
     match /companies/{companyId} {
-      allow read, write: if isAuthenticated() && isApproved();
+      allow read, write: if isApproved();
     }
-    
+
     match /deals/{dealId} {
-      allow read, write: if isAuthenticated() && isApproved();
-    }
-    
-    match /projects/{projectId} {
-      // Read: All approved users can read projects
-      allow read: if isAuthenticated() && isApproved();
-      
-      // Create: Admin can create any project, creators can create own projects
-      // Manager and Team cannot create projects
-      allow create: if isAuthenticated() && isApproved() &&
-                    (isAdmin() || (isManager() == false && isTeamMember() == false));
-      
-      // Update: Admin can update any project, Manager can update any project, Creator can update own project
-      // Team cannot update projects
-      allow update: if isAuthenticated() && isApproved() &&
-                    (isAdmin() || isManager() || isProjectOwner(resource.data));
-      
-      // Delete: Admin can delete any project, Creator can delete own project
-      // Manager and Team cannot delete projects
-      allow delete: if isAuthenticated() && isApproved() &&
-                    (isAdmin() || isProjectOwner(resource.data));
-    }
-    
-    match /tasks/{taskId} {
-      // Read: All approved users can read tasks
-      allow read: if isAuthenticated() && isApproved();
-      
-      // Create: Admin can create any task, creators can create own tasks
-      // Manager and Team cannot create tasks
-      allow create: if isAuthenticated() && isApproved() &&
-                    (isAdmin() || (isManager() == false && isTeamMember() == false));
-      
-      // Update: Admin can update any task, Manager can update any task, Creator can update own task
-      // Team cannot update tasks
-      allow update: if isAuthenticated() && isApproved() &&
-                    (isAdmin() || isManager() || isTaskOwner(resource.data));
-      
-      // Delete: Admin can delete any task, Creator can delete own task
-      // Manager and Team cannot delete tasks
-      allow delete: if isAuthenticated() && isApproved() &&
-                    (isAdmin() || isTaskOwner(resource.data));
+      allow read, write: if isApproved();
     }
 
-    match /email_templates/{templateId} {
-      allow read: if isAuthenticated() && isApproved();
-      allow write: if isAuthenticated() && isApproved(); 
-    }
-    
     match /invoices/{invoiceId} {
-      allow read, write: if isAuthenticated() && isApproved();
+      allow read, write: if isApproved();
     }
 
     // ============================================================================
-    // MARKETING AI - CALENDAR COLLECTIONS
-    // ============================================================================
-    
-    // Calendar collections - user-specific data
-    match /marketing/calendar/users/{userId}/calendars/{calendarId} {
-      allow read, write: if isOwner(userId) && isApproved();
-    }
-    
-    match /marketing/calendar/users/{userId}/plans/{planId} {
-      allow read, write: if isOwner(userId) && isApproved();
-    }
-    
-    // Calendar templates - read by all, write by owner
-    match /marketing/calendar/templates/{templateId} {
-      allow read: if isAuthenticated() && isApproved();
-      allow create: if isAuthenticated() && isApproved() && 
-                      request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && isApproved() && 
-                              resource.data.userId == request.auth.uid;
-    }
-    
-    // Marketing AI - Blog Writer collections (existing)
-    match /marketing/blog-writer/users/{userId}/blogs/{blogId} {
-      allow read, write: if isOwner(userId) && isApproved();
-    }
-    // ============================================================================
-    // HR / EMPLOYEE MANAGEMENT (Strict RBAC)
+    // ACTIVITIES (notes, calls, meetings logged against leads/contacts/deals)
+    // Collection name used in code: "activities"
     // ============================================================================
 
-    match /employees/{employeeId} {
-      // Read: Users can see themselves. Managers/Admins can see all.
-      allow read: if isOwner(employeeId) || isManager();
-      // Write: Only Admins can modify employee profiles.
-      allow write: if isAdmin();
+    match /activities/{activityId} {
+      allow read: if isApproved();
+      allow create: if isApproved();
+      allow update: if isApproved() && (isAdmin() || isManager() || resource.data.createdBy == request.auth.uid);
+      allow delete: if isAdmin() || (isApproved() && resource.data.createdBy == request.auth.uid);
     }
 
-    match /attendance/{attendanceId} {
-      // Read: Enable if user owns the record or if manager
-      allow read: if (resource == null && request.auth.uid != null) || 
-                   isOwner(resource.data.userId) || isManager();
-                   
-      // Create: Users can clock in (userId must match auth)
-      allow create: if isOwner(request.resource.data.userId);
-      
-      // Update: Users can clock out. Managers can edit.
-      allow update: if isOwner(resource.data.userId) || isManager();
+    // ============================================================================
+    // EMAILS (sent/received emails logged in CRM)
+    // Collection name used in code: "emails"
+    // ============================================================================
+
+    match /emails/{emailId} {
+      allow read: if isApproved();
+      allow create: if isApproved();
+      allow update: if isApproved() && (isAdmin() || isManager() || resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || (isApproved() && resource.data.userId == request.auth.uid);
     }
 
-    match /leaves/{leaveId} {
-      allow read: if (resource == null && request.auth.uid != null) || 
-                   isOwner(resource.data.userId) || isManager();
-      allow create: if isOwner(request.resource.data.userId);
-      allow update: if isOwner(resource.data.userId) || isManager();
+    // ============================================================================
+    // EMAIL TEMPLATES
+    // IMPORTANT: collection name in code is "emailTemplates" (camelCase)
+    // ============================================================================
+
+    match /emailTemplates/{templateId} {
+      allow read: if isApproved();
+      allow write: if isApproved();
     }
 
-    match /payroll/{payrollId} {
-      // Only owner can read their own payroll. Admin can write.
-      allow read: if isOwner(resource.data.userId);
-      allow write: if isAdmin();
+    // ============================================================================
+    // PROJECTS & TASKS (role-based create/update/delete)
+    // ============================================================================
+
+    match /projects/{projectId} {
+      allow read: if isApproved();
+      // Admin or non-manager/non-team users (i.e. regular creators) can create
+      allow create: if isApproved() && (isAdmin() || (isManager() == false && isTeamMember() == false));
+      // Admin, Manager, or the project creator can update
+      allow update: if isApproved() && (isAdmin() || isManager() || isProjectOwner(resource.data));
+      // Only Admin or creator can delete
+      allow delete: if isApproved() && (isAdmin() || isProjectOwner(resource.data));
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isApproved();
+      // Admin or non-manager/non-team users can create
+      allow create: if isApproved() && (isAdmin() || (isManager() == false && isTeamMember() == false));
+      // Admin, Manager, or the task creator can update
+      allow update: if isApproved() && (isAdmin() || isManager() || isTaskOwner(resource.data));
+      // Only Admin or creator can delete
+      allow delete: if isApproved() && (isAdmin() || isTaskOwner(resource.data));
+    }
+
+    // ============================================================================
+    // NOTIFICATIONS
+    // ============================================================================
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isManager());
+      allow create: if isApproved();
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isManager());
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ============================================================================
+    // AUDIT LOGS
+    // Collection name used in code: "audit_logs"
+    // Only admins can read. Approved users can create (system writes on actions).
+    // No one can update or delete audit logs (immutable record).
+    // ============================================================================
+
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isApproved();
+      allow update, delete: if false;
     }
 
   }

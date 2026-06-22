@@ -16,12 +16,14 @@ import {
     Trash2,
     FileText,
     Paperclip,
-    Download
+    Download,
+    Sparkles,
 } from "lucide-react";
 import { createActivity, deleteActivity, type Activity } from "@/lib/firestore/activities";
 import { uploadFiles, type UploadedFile } from "@/lib/storage/upload";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
+import { MeetingSummarizer } from "@/components/shared/MeetingSummarizer";
 
 interface ActivityTimelineProps {
     entityCollection: string;
@@ -147,6 +149,20 @@ export function ActivityTimeline({
             {canEdit && (
                 <Card>
                     <CardContent className="p-4">
+                        <div className="flex justify-end mb-2">
+                            <MeetingSummarizer
+                                onActionItem={(task) => {
+                                    setNoteContent(task);
+                                    toast.info("Action item added to notes. Save to create activity.");
+                                }}
+                                trigger={
+                                    <Button variant="outline" size="sm">
+                                        <Sparkles className="h-4 w-4 mr-1.5 text-primary" />
+                                        Summarize Meeting
+                                    </Button>
+                                }
+                            />
+                        </div>
                         <RichTextEditor
                             value={noteContent}
                             onChange={setNoteContent}

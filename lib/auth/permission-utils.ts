@@ -287,7 +287,7 @@ export async function canEditAll(
 }
 
 /**
- * Log permission denial for audit purposes
+ * Log permission denial to the audit_logs collection and console.
  */
 export async function logPermissionDenial(
   userId: string,
@@ -296,16 +296,21 @@ export async function logPermissionDenial(
   action: string,
   reason: string
 ): Promise<void> {
-  // In a production system, this would write to an audit log
-  console.warn(`[RBAC DENIED] User ${userId} attempted ${action} on ${resourceType} ${resourceId || '(create)'}: ${reason}`);
-  
-  // TODO: Integrate with audit log system
-  // await createAuditLog({
-  //   userId,
-  //   action: "permission_denied",
-  //   resourceType,
-  //   resourceId,
-  //   details: { reason, attemptedAction: action },
-  //   timestamp: new Date().toISOString()
-  // });
+  console.warn(
+    `[RBAC DENIED] User ${userId} attempted ${action} on ${resourceType} ${resourceId || "(create)"}: ${reason}`
+  );
+
+  try {
+    const { createAuditLog } = await import("@/lib/firestore/audit-logs");
+    await createAuditLog({
+      action: "permission_denied",
+      performedBy: userId,
+      performedByName: userId,
+      targetUserId: resourceId || undefined,
+      targetUserName: resourceType,
+      details: { attemptedAction: action, reason },
+    });
+  } catch (err) {
+    console.error("[RBAC] Failed to write audit log:", err);
+  }
 }

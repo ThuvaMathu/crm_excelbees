@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getDeal, deleteDeal, updateDealStage, updateDeal } from "@/lib/firestore/deals";
 import { getActivities, type Activity } from "@/lib/firestore/activities";
@@ -30,10 +31,16 @@ import {
     Clock,
     Mail,
     UserPlus,
+    Sparkles,
+    TrendingUp,
+    AlertTriangle,
+    Lightbulb,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
+import { analyzeDeal } from "@/app/actions/ai/deal-insights";
+import type { DealInsight } from "@/types/gemini";
 
 const STAGES: DealStage[] = [
     "Pipeline",
@@ -60,6 +67,8 @@ export default function DealDetailPage({
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [linkContactOpen, setLinkContactOpen] = useState(false);
     const [availableContacts, setAvailableContacts] = useState<any[]>([]);
+    const [dealInsight, setDealInsight] = useState<DealInsight | null>(null);
+    const [insightLoading, setInsightLoading] = useState(false);
 
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || deal?.ownerId === user?.uid;
@@ -199,6 +208,22 @@ export default function DealDetailPage({
         } else {
             toast.error(error || "Failed to unarchive deal");
         }
+    };
+
+    const handleAnalyzeDeal = async () => {
+        setInsightLoading(true);
+        try {
+            const result = await analyzeDeal(id);
+            if (result.success && result.data) {
+                setDealInsight(result.data);
+                toast.success("Deal analyzed!");
+            } else {
+                toast.error(result.error || "Analysis failed");
+            }
+        } catch {
+            toast.error("Something went wrong");
+        }
+        setInsightLoading(false);
     };
 
     if (loading) {
@@ -547,6 +572,67 @@ export default function DealDetailPage({
                             </CardContent>
                         </Card>
                     )}
+
+                    {/* AI Deal Insights Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Sparkles className="h-5 w-5 text-primary" />
+                                AI Deal Insights
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {dealInsight ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Win Probability</p>
+                                            <p className={`text-2xl font-bold ${dealInsight.winProbability >= 60 ? "text-green-600" : dealInsight.winProbability >= 30 ? "text-amber-600" : "text-red-600"}`}>
+                                                {dealInsight.winProbability}%
+                                            </p>
+                                        </div>
+                                        <Badge className={dealInsight.riskLevel === "low" ? "bg-green-100 text-green-700" : dealInsight.riskLevel === "medium" ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}>
+                                            {dealInsight.riskLevel} risk
+                                        </Badge>
+                                    </div>
+                                    {dealInsight.keyFactors.length > 0 && (
+                                        <div className="space-y-1 pt-2 border-t">
+                                            {dealInsight.keyFactors.slice(0, 3).map((f, i) => (
+                                                <p key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                                                    <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5 text-amber-500" />
+                                                    {f}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div className="p-2 rounded-lg bg-primary/5 border border-primary/20">
+                                        <p className="text-xs flex items-start gap-1.5">
+                                            <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-0.5 text-primary" />
+                                            <span className="font-medium">Next step:</span> {dealInsight.recommendedNextStep}
+                                        </p>
+                                    </div>
+                                    <Button variant="outline" size="sm" className="w-full" onClick={handleAnalyzeDeal} disabled={insightLoading}>
+                                        <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                                        Re-analyze
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="text-center py-4">
+                                    <Sparkles className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                                    <p className="text-xs text-muted-foreground mb-3">
+                                        Get AI-powered deal analysis
+                                    </p>
+                                    <Button onClick={handleAnalyzeDeal} disabled={insightLoading} size="sm">
+                                        {insightLoading ? (
+                                            <><span className="h-3.5 w-3.5 mr-1.5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> Analyzing...</>
+                                        ) : (
+                                            <><Sparkles className="h-3.5 w-3.5 mr-1.5" /> Analyze Deal</>
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 

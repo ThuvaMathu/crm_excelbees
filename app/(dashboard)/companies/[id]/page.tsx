@@ -15,6 +15,7 @@ import { getDeals } from "@/lib/firestore/deals";
 import { EmailComposeModal } from "@/components/email/EmailComposeModal";
 import { EditCompanyDialog } from "@/components/companies/EditCompanyDialog";
 import { CreateDealDialog } from "@/components/deals/CreateDealDialog";
+import { RelationshipHealth } from "@/components/shared/RelationshipHealth";
 import type { Company } from "@/types/crm";
 import {
     ArrowLeft,
@@ -417,6 +418,8 @@ export default function CompanyDetailPage({
                             </Button>
                         </CardContent>
                     </Card>
+
+                    <RelationshipHealth entityType="company" entityId={company.id} />
 
                     <Card>
                         <CardHeader>

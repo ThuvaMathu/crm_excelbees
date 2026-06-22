@@ -124,46 +124,6 @@ export function usePermission() {
     return user?.role ? labels[user.role] : "Unknown";
   };
 
-  // HR-specific permission checks
-  const canHr = (
-    module: "employees" | "attendance" | "leaves" | "payroll",
-    action: ActionKey = "read"
-  ): boolean => {
-    // Admin bypass
-    if (user?.role === "admin") return true;
-
-    // No permissions data
-    if (!permissions) return false;
-
-    const hrPerm = permissions.hr;
-    if (!hrPerm) return false;
-
-    const modulePerm = hrPerm[module];
-    if (!modulePerm) return false;
-
-    // Handle action checks
-    if (action === "edit") {
-      return (modulePerm as { edit: boolean; editAll: boolean }).edit ||
-             (modulePerm as { editAll: boolean }).editAll;
-    }
-    return (modulePerm as Record<ActionKey, boolean>)[action];
-  };
-
-  const canHrEditAll = (
-    module: "employees" | "attendance" | "leaves" | "payroll"
-  ): boolean => {
-    if (user?.role === "admin") return true;
-    if (!permissions) return false;
-
-    const hrPerm = permissions.hr;
-    if (!hrPerm) return false;
-
-    const modulePerm = hrPerm[module];
-    if (!modulePerm || typeof modulePerm !== "object") return false;
-
-    return "editAll" in modulePerm ? (modulePerm as { editAll: boolean }).editAll : false;
-  };
-
   return {
     can,
     hasFeature,
@@ -173,8 +133,6 @@ export function usePermission() {
     isManager,
     getEnabledModules,
     getRoleLabel,
-    canHr,
-    canHrEditAll,
     permissions,
     userRole: user?.role,
   };

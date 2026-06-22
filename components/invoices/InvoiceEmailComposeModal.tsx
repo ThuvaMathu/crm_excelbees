@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AITextarea } from "@/components/ui/ai-textarea";
+import { AIEmailAssistant } from "@/components/email/AIEmailAssistant";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Loader2, Send, X, Paperclip, FileText } from "lucide-react";
@@ -15,7 +16,6 @@ import { getInvoicePDFBlob } from "@/lib/pdf/invoice-generator";
 import { getUserInvoiceSettings } from "@/lib/firestore/users";
 import { generateInvoiceEmailTemplate } from "@/lib/email/templates/invoice-template";
 import type { Invoice } from "@/types/crm";
-import { AIAssistant } from "@/components/email/AIAssistant";
 
 interface InvoiceEmailComposeModalProps {
     invoice: Invoice;
@@ -140,10 +140,6 @@ export function InvoiceEmailComposeModal({
         }
     };
 
-    const handleAIRewrite = (newContent: string) => {
-        setBody(newContent);
-    };
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -211,16 +207,23 @@ export function InvoiceEmailComposeModal({
                             />
                         </div>
 
-                        {/* Body Field with AI Assistant */}
+                        {/* AI Email Assistant */}
+                        <div className="flex justify-end">
+                            <AIEmailAssistant
+                                recipientName={invoice.contactName || invoice.companyName}
+                                companyName={invoice.companyName}
+                                context={`Invoice #${invoice.invoiceNumber} for $${invoice.total?.toLocaleString() || 0}`}
+                                currentBody={body}
+                                onDraft={(newSubject, newBody) => {
+                                    setSubject(newSubject);
+                                    setBody(newBody);
+                                }}
+                            />
+                        </div>
+
+                        {/* Body Field */}
                         <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="body">Message *</Label>
-                                <AIAssistant
-                                    contextContent={body}
-                                    onGenerate={(text) => handleAIRewrite(text)}
-                                    contextType="compose"
-                                />
-                            </div>
+                            <Label htmlFor="body">Message *</Label>
                             <AITextarea
                                 id="body"
                                 value={body}
@@ -229,7 +232,6 @@ export function InvoiceEmailComposeModal({
                                 rows={12}
                                 className="font-mono text-sm"
                                 required
-                                minWords={5}
                             />
                         </div>
 

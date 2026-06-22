@@ -50,8 +50,6 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Project, User, Deal, TaskStatus, TaskPriority, TaskType } from "@/types/crm";
 import { toast } from "sonner";
 import { Timestamp } from "firebase/firestore";
-import { generateText } from "@/app/actions/ai";
-import { aiConfig } from "@/lib/ai/config";
 
 interface CreateTaskDialogProps {
     open: boolean;

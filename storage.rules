@@ -2,35 +2,132 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Helper functions
+
+    // ============================================================================
+    // HELPER FUNCTIONS
+    // ============================================================================
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-       return request.auth.uid == userId;
+      return request.auth.uid == userId;
     }
 
-    // Profile Images
-    match /users/{userId}/profile.jpg {
-      allow read: if true; // Public profiles usually
-      allow write: if isOwner(userId) && request.resource.size < 5 * 1024 * 1024 && request.resource.contentType.matches('image/.*');
+    function getUserData() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Attachments (General)
-    match /attachments/{userId}/{fileName} {
+    // Mirrors the Firestore isApproved() logic:
+    // Admins and managers are always considered approved.
+    function isApproved() {
+      let data = getUserData();
+      return isAuthenticated() && (
+        data.role == 'admin' ||
+        data.role == 'manager' ||
+        (data.isApproved == true && data.isActive != false)
+      );
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'admin';
+    }
+
+    function isManager() {
+      return isAuthenticated() && (getUserData().role == 'admin' || getUserData().role == 'manager');
+    }
+
+    function isValidImage() {
+      return request.resource.size < 5 * 1024 * 1024
+          && request.resource.contentType.matches('image/.*');
+    }
+
+    function isValidAttachment() {
+      return request.resource.size < 20 * 1024 * 1024;
+    }
+
+    // ============================================================================
+    // USER PROFILE IMAGES
+    // Path: /users/{userId}/profile/{fileName}
+    // ============================================================================
+
+    match /users/{userId}/profile/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ============================================================================
+    // USER DOCUMENTS (contracts, agreements)
+    // Path: /users/{userId}/documents/{documentType}/{fileName}
+    // ============================================================================
+
+    match /users/{userId}/documents/{documentType}/{fileName} {
+      allow read: if isOwner(userId) || isManager();
+      allow write: if (isOwner(userId) || isManager()) && isValidAttachment();
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ============================================================================
+    // ACTIVITY ATTACHMENTS (notes, call logs, meeting files)
+    // Path: /activities/attachments/{fileName}
+    // ============================================================================
+
+    match /activities/attachments/{fileName} {
+      allow read: if isApproved();
+      allow write: if isApproved() && isValidAttachment();
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // EMAIL ATTACHMENTS
+    // Path: /attachments/{userId}/{fileId}-{fileName}
+    // ============================================================================
+
+    match /attachments/{userId}/{allPaths=**} {
       allow read: if isAuthenticated();
-      allow write: if isOwner(userId) && request.resource.size < 10 * 1024 * 1024; // 10MB limit
+      allow write: if isOwner(userId) && isValidAttachment();
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
-    // Employee Documents
-    match /documents/{userId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && request.resource.size < 20 * 1024 * 1024; // 20MB limit
+    // ============================================================================
+    // COMPANY LOGOS
+    // Path: /companies/{companyId}/logo/{fileName}
+    // ============================================================================
+
+    match /companies/{companyId}/logo/{fileName} {
+      allow read: if true;
+      allow write: if isManager() && isValidImage();
+      allow delete: if isManager();
     }
-    
-    // Fallback
+
+    // ============================================================================
+    // INVOICE PDFs
+    // Path: /invoices/{invoiceId}/{fileName}
+    // ============================================================================
+
+    match /invoices/{invoiceId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isApproved() && isValidAttachment();
+      allow delete: if isAdmin() || isManager();
+    }
+
+    // ============================================================================
+    // PROJECT ATTACHMENTS
+    // Path: /projects/{projectId}/{fileName}
+    // ============================================================================
+
+    match /projects/{projectId}/{fileName} {
+      allow read: if isApproved();
+      allow write: if isApproved() && isValidAttachment();
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // DENY ALL OTHER PATHS
+    // ============================================================================
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

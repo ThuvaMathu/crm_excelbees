@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
+import { auth } from "@/lib/firebase";
+import { updateUserAction } from "@/app/actions/admin-users";
+import { clearPermissionCache } from "@/lib/auth/permission-utils";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -25,10 +28,8 @@ import {
 } from "@/components/ui/select";
 import { Loader2, UserCog, Shield, ShieldCheck, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import type { UserRole, UserPermissions, ModuleKey } from "@/types/crm";
+import type { UserRole, UserPermissions } from "@/types/crm";
 import { ROLE_DEFAULTS } from "@/types/crm";
-import { updateUserProfile } from "@/lib/firestore/users";
-import { createAuditLog, AuditActions } from "@/lib/firestore/audit-logs";
 
 interface EditUserDialogProps {
     user: {
@@ -51,70 +52,64 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<"profile" | "permissions">("profile");
 
-    // Form state
     const [formData, setFormData] = useState({
         displayName: user.displayName || "",
-        email: user.email || "",
-        role: user.role || "team",
+        role: user.role || "team" as UserRole,
         isActive: user.isActive !== false,
     });
 
-    // Permission state - use custom or role defaults
     const [permissions, setPermissions] = useState<UserPermissions>(
         user.permissions || ROLE_DEFAULTS[user.role || "team"]
     );
 
-    // Update form data when user prop changes
     useEffect(() => {
         setFormData({
             displayName: user.displayName || "",
-            email: user.email || "",
             role: user.role || "team",
             isActive: user.isActive !== false,
         });
         setPermissions(user.permissions || ROLE_DEFAULTS[user.role || "team"]);
     }, [user]);
 
+    // Only admins can edit users; owners cannot edit themselves
+    const canEdit = isAdmin() && currentUser?.uid !== user.uid;
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!currentUser || !isAdmin()) {
-            toast.error("You don't have permission to edit users");
+        if (!canEdit) {
+            toast.error("You don't have permission to edit this user");
             return;
         }
 
         setLoading(true);
 
         try {
-            // Update user profile
-            const { success, error } = await updateUserProfile(user.uid, {
-                displayName: formData.displayName,
-                role: formData.role,
-                isActive: formData.isActive,
-                permissions,
+            const callerToken = await auth.currentUser?.getIdToken(true);
+            if (!callerToken) {
+                toast.error("Session expired. Please sign in again.");
+                return;
+            }
+
+            const result = await updateUserAction({
+                callerToken,
+                targetUid: user.uid,
+                updates: {
+                    displayName: formData.displayName,
+                    role: formData.role,
+                    isActive: formData.isActive,
+                    permissions,
+                },
             });
 
-            if (success) {
-                // Log audit
-                await createAuditLog({
-                    action: formData.role !== user.role ? AuditActions.ROLE_CHANGED : AuditActions.PERMISSION_CHANGED,
-                    performedBy: currentUser.uid,
-                    performedByName: currentUser.displayName || currentUser.email || "",
-                    targetUserId: user.uid,
-                    targetUserName: user.displayName || user.email,
-                    details: {
-                        oldRole: user.role,
-                        newRole: formData.role,
-                        oldPermissions: user.permissions,
-                        newPermissions: permissions,
-                    },
-                });
-
+            if (result.success) {
+                // Immediately flush the permission cache for the updated user
+                clearPermissionCache(user.uid);
                 toast.success("User updated successfully!");
                 onUserUpdated();
                 onOpenChange(false);
             } else {
-                toast.error(error || "Failed to update user");
+                toast.error(result.error || "Failed to update user");
             }
         } catch (error: any) {
             console.error("Error updating user:", error);
@@ -132,11 +127,12 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
         }
     };
 
-    const canEditField = (field: string): boolean => {
-        // Can't edit own role/status
-        if (currentUser?.uid === user.uid) return false;
-        return isAdmin();
-    };
+    // Available roles — admins can assign any role; prevents self-edit implicitly via canEdit
+    const availableRoles: { value: UserRole; label: string }[] = [
+        { value: "team", label: "Team Member" },
+        { value: "manager", label: "Manager" },
+        { value: "admin", label: "Administrator" },
+    ];
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,8 +156,8 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                     <button
                         onClick={() => setActiveTab("profile")}
                         className={`px-6 py-3 font-medium transition-colors ${activeTab === "profile"
-                                ? "border-b-2 border-primary text-primary"
-                                : "text-muted-foreground hover:text-foreground"
+                            ? "border-b-2 border-primary text-primary"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
                         Profile
@@ -169,8 +165,8 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                     <button
                         onClick={() => setActiveTab("permissions")}
                         className={`px-6 py-3 font-medium transition-colors ${activeTab === "permissions"
-                                ? "border-b-2 border-primary text-primary"
-                                : "text-muted-foreground hover:text-foreground"
+                            ? "border-b-2 border-primary text-primary"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                     >
                         Permissions
@@ -180,7 +176,6 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                 <form onSubmit={handleSubmit} className="mt-6">
                     {activeTab === "profile" ? (
                         <div className="space-y-6">
-                            {/* User Info Card */}
                             <div className="bg-muted/50 rounded-lg p-6 space-y-4">
                                 <h3 className="text-lg font-semibold flex items-center gap-2">
                                     <Shield className="h-5 w-5" />
@@ -194,7 +189,7 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                                             id="displayName"
                                             value={formData.displayName}
                                             onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                                            disabled={!canEditField("displayName")}
+                                            disabled={!canEdit}
                                             placeholder="John Doe"
                                         />
                                     </div>
@@ -204,7 +199,7 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                                         <Input
                                             id="email"
                                             type="email"
-                                            value={formData.email}
+                                            value={user.email}
                                             disabled
                                             className="bg-muted"
                                         />
@@ -221,18 +216,19 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                                             value={formData.role}
                                             onValueChange={(value: UserRole) => {
                                                 setFormData({ ...formData, role: value });
-                                                // Reset permissions to new role defaults
                                                 setPermissions(ROLE_DEFAULTS[value]);
                                             }}
-                                            disabled={!canEditField("role")}
+                                            disabled={!canEdit}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="team">Team Member</SelectItem>
-                                                <SelectItem value="manager">Manager</SelectItem>
-                                                <SelectItem value="admin">Administrator</SelectItem>
+                                                {availableRoles.map((r) => (
+                                                    <SelectItem key={r.value} value={r.value}>
+                                                        {r.label}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -243,8 +239,10 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                                             <Switch
                                                 id="isActive"
                                                 checked={formData.isActive}
-                                                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                                                disabled={!canEditField("isActive")}
+                                                onCheckedChange={(checked) =>
+                                                    setFormData({ ...formData, isActive: checked })
+                                                }
+                                                disabled={!canEdit}
                                             />
                                             <span className="text-sm">
                                                 {formData.isActive ? (
@@ -260,7 +258,6 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                                     </div>
                                 </div>
 
-                                {/* Current Role Badge */}
                                 <div className="flex items-center justify-between pt-2">
                                     <Badge
                                         variant="outline"
@@ -274,7 +271,7 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                                     >
                                         Current Role: {formData.role.toUpperCase()}
                                     </Badge>
-                                    {user.uid === currentUser?.uid && (
+                                    {currentUser?.uid === user.uid && (
                                         <p className="text-xs text-amber-600 flex items-center gap-1">
                                             <AlertCircle className="h-3 w-3" />
                                             You cannot edit your own account
@@ -284,11 +281,10 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                             </div>
                         </div>
                     ) : (
-                        /* Permissions Tab */
                         <PermissionEditor
                             permissions={permissions}
                             onChange={setPermissions}
-                            canEdit={canEditField("permissions")}
+                            canEdit={canEdit}
                         />
                     )}
 
@@ -306,12 +302,12 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                                 type="button"
                                 variant="secondary"
                                 onClick={resetToDefaults}
-                                disabled={loading || !canEditField("permissions")}
+                                disabled={loading || !canEdit}
                             >
                                 Reset to Defaults
                             </Button>
                         )}
-                        <Button type="submit" disabled={loading}>
+                        <Button type="submit" disabled={loading || !canEdit}>
                             {loading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -331,9 +327,10 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
     );
 }
 
-/**
- * PermissionEditor Component
- */
+// ============================================================================
+// Permission Editor Component
+// ============================================================================
+
 interface PermissionEditorProps {
     permissions: UserPermissions;
     onChange: (permissions: UserPermissions) => void;
@@ -352,14 +349,6 @@ function PermissionEditor({ permissions, onChange, canEdit }: PermissionEditorPr
         });
     };
 
-    const updateFeature = (feature: keyof UserPermissions, value: boolean) => {
-        if (!canEdit) return;
-        onChange({
-            ...permissions,
-            [feature]: { enabled: value },
-        });
-    };
-
     const modules: Array<{ key: keyof UserPermissions; label: string; description: string }> = [
         { key: "leads", label: "Leads", description: "Manage leads and prospects" },
         { key: "contacts", label: "Contacts", description: "Contact management" },
@@ -371,20 +360,8 @@ function PermissionEditor({ permissions, onChange, canEdit }: PermissionEditorPr
         { key: "reports", label: "Reports", description: "Analytics & reports" },
     ];
 
-    const features: Array<{ key: keyof UserPermissions; label: string; icon: string }> = [
-        { key: "marketingAI", label: "Marketing AI", icon: "🤖" },
-        { key: "competitorAnalysis", label: "Competitor Analysis", icon: "🎯" },
-        { key: "keywordResearch", label: "Keyword Research", icon: "🔍" },
-        { key: "blogWriter", label: "Blog Writer", icon: "✍️" },
-        { key: "emailCampaigns", label: "Email Campaigns", icon: "📧" },
-        { key: "marketingCalendar", label: "Marketing Calendar", icon: "📅" },
-        { key: "seoAnalyzer", label: "SEO Analyzer", icon: "📊" },
-        { key: "aiCopilot", label: "AI Copilot", icon: "🤝" },
-    ];
-
     return (
         <div className="space-y-6">
-            {/* CRM Module Permissions */}
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                     <Shield className="h-5 w-5 text-primary" />
@@ -400,10 +377,7 @@ function PermissionEditor({ permissions, onChange, canEdit }: PermissionEditorPr
                         if (!perm || typeof perm !== "object") return null;
 
                         return (
-                            <div
-                                key={module.key}
-                                className="border rounded-lg p-4 space-y-3 bg-card"
-                            >
+                            <div key={module.key} className="border rounded-lg p-4 space-y-3 bg-card">
                                 <div className="flex items-center justify-between">
                                     <h4 className="font-semibold">{module.label}</h4>
                                     <Switch
@@ -463,52 +437,12 @@ function PermissionEditor({ permissions, onChange, canEdit }: PermissionEditorPr
                 </div>
             </div>
 
-            {/* Premium Feature Access */}
-            <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <span className="text-2xl">⚡</span>
-                    Premium Features Access
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Enable/disable access to premium Marketing AI features
-                </p>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {features.map((feature) => {
-                        const feat = permissions[feature.key] as import("@/types/crm").FeatureToggle;
-                        if (!feat) return null;
-
-                        const isEnabled = typeof feat === "object" ? feat.enabled : false;
-
-                        return (
-                            <div
-                                key={feature.key}
-                                className={`border rounded-lg p-4 flex items-center justify-between transition-colors ${isEnabled
-                                        ? "border-primary bg-primary/5"
-                                        : "border-muted bg-muted/30 opacity-60"
-                                    }`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xl">{feature.icon}</span>
-                                    <span className="text-sm font-medium">{feature.label}</span>
-                                </div>
-                                <Switch
-                                    checked={isEnabled}
-                                    onCheckedChange={(v) => updateFeature(feature.key, v)}
-                                    disabled={!canEdit}
-                                />
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
             {!canEdit && (
                 <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-amber-800 dark:text-amber-200">
                         <p className="font-semibold">Read-only mode</p>
-                        <p>You don't have permission to modify user settings. Changes you make here won't be saved.</p>
+                        <p>You don't have permission to modify user settings.</p>
                     </div>
                 </div>
             )}

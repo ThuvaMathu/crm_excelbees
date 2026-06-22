@@ -38,7 +38,6 @@ export async function createUserProfile(
     lastName?: string;
     photoURL?: string;
     phone?: string;
-    employeeId?: string;
     role?: UserRole;
   }
 ) {
@@ -90,7 +89,6 @@ export async function createUserProfile(
       lastName: data.lastName || "",
       photoURL: data.photoURL || "",
       phone: data.phone || "",
-      employeeId: data.employeeId || "",
       
       // Critical Security Fields — role MUST be explicitly passed in
       role: data.role || "team", 

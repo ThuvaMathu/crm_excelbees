@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getCachedDashboardStats } from "@/app/actions/dashboard";
+import { SmartFollowUps } from "@/components/dashboard/SmartFollowUps";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 
 export default function DashboardPage() {
@@ -194,6 +195,9 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
+                {/* Smart Follow-ups (AI) */}
+                {user?.uid && <SmartFollowUps userId={user.uid} />}
+
                 {/* Upcoming Tasks Widget */}
                 <Card>
                     <CardHeader>

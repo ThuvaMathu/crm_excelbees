@@ -39,11 +39,12 @@ import {
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
-import { scoreLead, enrichLead } from "@/app/actions/ai_leads";
-import { aiConfig } from "@/lib/ai/config";
 import { EmailComposeModal } from "@/components/email/EmailComposeModal";
 import { EditLeadDialog } from "@/components/leads/EditLeadDialog";
 import { getTasks } from "@/lib/firestore/tasks";
+import { scoreLead } from "@/app/actions/ai/lead-intelligence";
+import { RelationshipHealth } from "@/components/shared/RelationshipHealth";
+import type { LeadScore } from "@/types/gemini";
 
 export default function LeadDetailPage({
     params,
@@ -59,11 +60,12 @@ export default function LeadDetailPage({
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
-    const [aiLoading, setAiLoading] = useState(false);
     const [isEmailOpen, setIsEmailOpen] = useState(false);
     const [isConverting, setIsConverting] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [relatedTasks, setRelatedTasks] = useState<any[]>([]);
+    const [leadScore, setLeadScore] = useState<LeadScore | null>(null);
+    const [scoreLoading, setScoreLoading] = useState(false);
 
     // Role-based access control
     const canEdit = user?.role === "admin" || user?.role === "manager" || lead?.ownerId === user?.uid;
@@ -128,64 +130,6 @@ export default function LeadDetailPage({
         }
 
         setUpdating(false);
-    };
-
-    const handleScoreLead = async () => {
-        if (!lead) return;
-        setAiLoading(true);
-        const toastId = toast.loading("Analyzing lead profile...");
-
-        try {
-            // Serialize lead to plain object to avoid passing complex Firestore types (Timestamps) to Server Action
-            const plainLead = JSON.parse(JSON.stringify(lead));
-            const { success, data, error } = await scoreLead(plainLead as any);
-
-            if (success && data) {
-                toast.success("Lead qualification complete", { id: toastId });
-                // Update local state with new AI data
-                setLead(prev => prev ? ({
-                    ...prev,
-                    aiScore: data.score,
-                    aiReasoning: data.reasoning,
-                    aiLastUpdated: Timestamp.now()
-                }) : null);
-            } else {
-                toast.error(error || "Failed to score lead", { id: toastId });
-            }
-        } catch (err) {
-            toast.error("An error occurred", { id: toastId });
-        } finally {
-            setAiLoading(false);
-        }
-    };
-
-    const handleEnrichLead = async () => {
-        if (!lead?.companyName) {
-            toast.error("Company name is required for enrichment");
-            return;
-        }
-        setAiLoading(true);
-        const toastId = toast.loading(`Researching ${lead.companyName}...`);
-
-        try {
-            const { success, data, error } = await enrichLead(lead.companyName);
-
-            if (success && data) {
-                toast.success("Company data found", { id: toastId });
-                // Show results in a dialog or toast (For now, just a detailed toast)
-                toast.message("Enrichment Results", {
-                    description: `${data.summary}\n\nEmployees: ${data.employeeCount}\nIndustry: ${data.industry}`,
-                    duration: 10000,
-                });
-                // In a real app, we would update the lead's company fields here
-            } else {
-                toast.error(error || "Failed to enrich data", { id: toastId });
-            }
-        } catch (err) {
-            toast.error("AI Error", { id: toastId });
-        } finally {
-            setAiLoading(false);
-        }
     };
 
     const handleDelete = async () => {
@@ -321,6 +265,22 @@ export default function LeadDetailPage({
         }
     };
 
+    const handleScoreLead = async () => {
+        setScoreLoading(true);
+        try {
+            const result = await scoreLead(id);
+            if (result.success && result.data) {
+                setLeadScore(result.data);
+                toast.success("Lead analyzed!");
+            } else {
+                toast.error(result.error || "Analysis failed");
+            }
+        } catch {
+            toast.error("Something went wrong");
+        }
+        setScoreLoading(false);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
@@ -378,78 +338,6 @@ export default function LeadDetailPage({
             <div className="grid gap-6 md:grid-cols-3">
                 {/* Main Info */}
                 <div className="md:col-span-2 space-y-6">
-                    {/* AI Lead Qualification */}
-                    <Card className="bg-gradient-to-br from-indigo-50 to-white border-indigo-100">
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2 text-indigo-900">
-                                    <Sparkles className="h-5 w-5 text-indigo-600" />
-                                    AI Qualification Score
-                                </CardTitle>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleScoreLead}
-                                    disabled={aiLoading}
-                                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                >
-                                    <TrendingUp className="h-4 w-4 mr-2" />
-                                    {lead.aiScore !== undefined ? "Recalculate" : "Calculate Score"}
-                                </Button>
-                            </div>
-                            <CardDescription>
-                                Powered by {aiConfig.leads.model}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {lead.aiScore !== undefined ? (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-6">
-                                        <div className="relative h-24 w-24 flex items-center justify-center rounded-full border-4 border-indigo-200 bg-white">
-                                            <div className="text-2xl font-bold text-indigo-700">
-                                                {lead.aiScore}
-                                            </div>
-                                            <div className="absolute top-0 right-0">
-                                                {lead.aiScore >= 80 ? (
-                                                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600">Consider High</span>
-                                                ) : lead.aiScore >= 50 ? (
-                                                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-yellow-100 text-yellow-600">Med</span>
-                                                ) : (
-                                                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-600">Low</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="flex-1 space-y-2">
-                                            <h4 className="font-medium text-sm text-indigo-900 flex items-center gap-2">
-                                                <Lightbulb className="h-4 w-4" />
-                                                Why this score?
-                                            </h4>
-                                            <ul className="text-sm text-gray-600 space-y-1 list-disc pl-4">
-                                                {lead.aiReasoning?.slice(0, 3).map((reason, i) => (
-                                                    <li key={i}>{reason}</li>
-                                                )) || <li>No reasoning available.</li>}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground text-right border-t border-indigo-100 pt-2">
-                                        Last updated: {lead.aiLastUpdated ? format(lead.aiLastUpdated.toDate(), "MMM d, h:mm a") : "Just now"}
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="text-center py-6 text-sm text-muted-foreground">
-                                    <p>No qualification score generated yet.</p>
-                                    <Button
-                                        variant="link"
-                                        onClick={handleScoreLead}
-                                        className="text-indigo-600 mt-2"
-                                    >
-                                        Run AI Analysis
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
                     <Card>
                         <CardHeader>
                             <div className="flex items-center justify-between">
@@ -534,22 +422,9 @@ export default function LeadDetailPage({
 
                                 {lead.companyName && (
                                     <div className="space-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Building2 className="h-4 w-4" />
-                                                <span>Company</span>
-                                            </div>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-6 px-2 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                                onClick={handleEnrichLead}
-                                                disabled={aiLoading}
-                                                title="Find company details with AI"
-                                            >
-                                                <Sparkles className="h-3 w-3 mr-1" />
-                                                Enrich
-                                            </Button>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Building2 className="h-4 w-4" />
+                                            <span>Company</span>
                                         </div>
                                         <p className="text-sm font-medium">{lead.companyName}</p>
                                     </div>
@@ -639,6 +514,80 @@ export default function LeadDetailPage({
 
                 {/* Sidebar */}
                 <div className="space-y-6">
+                    {/* AI Lead Score Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base">
+                                <Sparkles className="h-5 w-5 text-primary" />
+                                AI Lead Score
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {leadScore ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-center">
+                                        <div className="relative w-24 h-24">
+                                            <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted" />
+                                                <circle
+                                                    cx="50" cy="50" r="40" fill="none" strokeWidth="8"
+                                                    stroke="currentColor"
+                                                    className={leadScore.tier === "hot" ? "text-red-500" : leadScore.tier === "warm" ? "text-amber-500" : "text-blue-500"}
+                                                    strokeDasharray={`${leadScore.score * 2.51} 251`}
+                                                    strokeLinecap="round"
+                                                />
+                                            </svg>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <span className="text-2xl font-bold">{leadScore.score}</span>
+                                                <span className="text-xs text-muted-foreground capitalize">{leadScore.tier}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {leadScore.reasoning.length > 0 && (
+                                        <div className="space-y-1">
+                                            {leadScore.reasoning.slice(0, 3).map((r, i) => (
+                                                <p key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                                                    <TrendingUp className="h-3 w-3 shrink-0 mt-0.5 text-primary" />
+                                                    {r}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {leadScore.suggestedActions.length > 0 && (
+                                        <div className="space-y-1 pt-2 border-t">
+                                            {leadScore.suggestedActions.slice(0, 2).map((a, i) => (
+                                                <p key={i} className="text-xs flex items-start gap-1.5">
+                                                    <Lightbulb className="h-3 w-3 shrink-0 mt-0.5 text-amber-500" />
+                                                    {a}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <Button variant="outline" size="sm" className="w-full" onClick={handleScoreLead} disabled={scoreLoading}>
+                                        <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                                        Re-analyze
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="text-center py-4">
+                                    <Sparkles className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                                    <p className="text-xs text-muted-foreground mb-3">
+                                        Get AI-powered lead qualification score
+                                    </p>
+                                    <Button onClick={handleScoreLead} disabled={scoreLoading} size="sm">
+                                        {scoreLoading ? (
+                                            <><span className="h-3.5 w-3.5 mr-1.5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" /> Analyzing...</>
+                                        ) : (
+                                            <><Sparkles className="h-3.5 w-3.5 mr-1.5" /> Analyze Lead</>
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <RelationshipHealth entityType="lead" entityId={id} />
+
                     <Card>
                         <CardHeader>
                             <CardTitle>Quick Actions</CardTitle>

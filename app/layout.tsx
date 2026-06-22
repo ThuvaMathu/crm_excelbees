@@ -2,55 +2,31 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/components/auth/AuthProvider";
-import { AuthGate } from "@/components/auth/AuthGate";
 import { Toaster } from "sonner";
-import { siteConfig } from "@/config/site";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
+    metadataBase: new URL("https://excelbees.com.au"),
     title: {
-        default: siteConfig.name,
-        template: `%s | ${siteConfig.name}`,
+        default: "RCRM by ExcelBees — Custom CRM for Australian Businesses",
+        template: "%s | RCRM by ExcelBees",
     },
-    description: siteConfig.description,
-    keywords: siteConfig.seo.keywords,
+    description:
+        "Affordable, modular CRM built for Australian SMBs. Role-based access, integrated AI assistant, invoice management, and transparent pricing.",
     icons: {
         icon: "/favicon.ico",
         apple: "/logo.png",
     },
-    authors: [{ name: siteConfig.name }],
-    creator: siteConfig.name,
-    publisher: siteConfig.name,
-    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://excelbees.com"),
-    openGraph: {
-        type: "website",
-        locale: "en_US",
-        url: "/",
-        title: siteConfig.name,
-        description: siteConfig.description,
-        siteName: siteConfig.name,
-        images: [
-            {
-                url: siteConfig.seo.ogImage,
-                width: 1200,
-                height: 630,
-                alt: siteConfig.name,
-            },
-        ],
+    viewport: {
+        width: "device-width",
+        initialScale: 1,
+        maximumScale: 5,
     },
-    twitter: {
-        card: siteConfig.seo.twitterCard,
-        title: siteConfig.name,
-        description: siteConfig.description,
-        images: [siteConfig.seo.ogImage],
-    },
-    verification: {
-        // Add your verification codes here when available
-        // google: "verification_code",
-        // yandex: "verification_code",
-    },
+    themeColor: [
+        { media: "(prefers-color-scheme: dark)", color: "#0A1628" },
+        { media: "(prefers-color-scheme: light)", color: "#F59E0B" },
+    ],
 };
 
 export default function RootLayout({
@@ -59,33 +35,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }>) {
     return (
-        <html lang="en" suppressHydrationWarning>
-            <head>
-                {/* JSON-LD Structured Data for Organization */}
-                <script
-                    type="application/ld+json"
-                    dangerouslySetInnerHTML={{
-                        __html: JSON.stringify({
-                            "@context": "https://schema.org",
-                            "@type": "Organization",
-                            name: siteConfig.name,
-                            description: siteConfig.description,
-                            url: process.env.NEXT_PUBLIC_APP_URL || "https://excelbees.com",
-                            contactPoint: {
-                                "@type": "ContactPoint",
-                                email: siteConfig.contact.email,
-                                telephone: siteConfig.contact.phone,
-                                contactType: "sales",
-                                availableLanguage: "English",
-                            },
-                            sameAs: [
-                                siteConfig.social.twitter,
-                                siteConfig.social.linkedin,
-                            ].filter(Boolean),
-                        }),
-                    }}
-                />
-            </head>
+        <html lang="en-AU" suppressHydrationWarning>
             <body className={inter.className} suppressHydrationWarning>
                 <ThemeProvider
                     attribute="class"
@@ -93,11 +43,7 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                 >
-                    <AuthProvider>
-                        <AuthGate>
-                            {children}
-                        </AuthGate>
-                    </AuthProvider>
+                    {children}
                     <Toaster richColors position="top-right" />
                 </ThemeProvider>
             </body>

@@ -58,18 +58,21 @@ export async function sendEmail(
   from?: string,
   attachments?: Array<{ filename: string; path?: string; content?: string | Buffer }>,
   cc?: string | string[],
-  bcc?: string | string[]
+  bcc?: string | string[],
+  replyTo?: string,
+  fromDisplayName?: string
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    const fromEmail = from || process.env.FROM_EMAIL || process.env.SMTP_USER;
-    const fromName = process.env.FROM_EMAIL_NAME || "Excel Bees CRM";
-    
+    const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
+    const fromName = fromDisplayName || process.env.FROM_EMAIL_NAME || "Excel Bees CRM";
+
     if (!fromEmail) {
       throw new Error("Sender email not configured");
     }
 
     const info = await getTransporter().sendMail({
       from: `"${fromName}" <${fromEmail}>`,
+      replyTo: replyTo || undefined,
       to: Array.isArray(to) ? to.join(", ") : to,
       cc: cc ? (Array.isArray(cc) ? cc.join(", ") : cc) : undefined,
       bcc: bcc ? (Array.isArray(bcc) ? bcc.join(", ") : bcc) : undefined,

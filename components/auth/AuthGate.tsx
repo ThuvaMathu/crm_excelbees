@@ -79,15 +79,24 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     // 2. Loading state is true
     // AND we are not on a public route (optional: public routes can render instantly if we want, but checking auth state first is safer to prevent flashing login form if already logged in)
 
-    // Better UX: 
-    // If we are waiting for auth (loading/!hydrated):
-    // - If on public route: Maybe show content (login form)? But if they are actually logged in, they will see login form then flash to dashboard.
     // ----------------------------------------------------------------
     // 1. GLOBAL LOADING STATE (The "Wait for Decision" Phase)
     // ----------------------------------------------------------------
-    // If not mounted or still loading auth state, show a full-screen spinner.
-    // We explicitly wait for 'loading' to be false, which now means Firestore is completely done.
+    // If not mounted or still loading auth state:
+    // - Public routes (landing page, login, etc.) render immediately — no spinner needed.
+    //   The Navbar handles the logged-in/out toggle once hydration completes.
+    // - Protected routes show a spinner until we know the auth state.
     if (!isMounted || loading || !hydrated) {
+        const isPublicNow = PUBLIC_ROUTES.some(route => {
+            if (route === "/") return pathname === "/";
+            return pathname?.startsWith(route);
+        });
+
+        if (isPublicNow) {
+            // Render public content immediately; auth state catches up client-side
+            return <>{children}</>;
+        }
+
         console.log("⚠️ SHOWING LOADING SCREEN:", {
             notMounted: !isMounted,
             stillLoading: loading,

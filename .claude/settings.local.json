@@ -4,7 +4,15 @@
       "Bash(npx next build:*)",
       "Bash(powershell -Command:*)",
       "Bash(cat:*)",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Skill(run)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl *)",
+      "Bash(python3 \"C:/Users/thuva/.claude/skills/ui-ux-pro-max/scripts/search.py\" \"Australian CRM SaaS enterprise professional dark\" --design-system -p \"RCRM ExcelBees\" -f markdown)",
+      "Bash(awk 'NF {print}')",
+      "PowerShell(New-Item -ItemType Directory -Path \"d:\\\\Excel bees\\\\Projects\\\\crm_excelbees\\\\public\\\\images\\\\blog\" -Force)",
+      "PowerShell(node -e \"const p = require\\('./lib/constants/blog/posts.ts'\\); console.log\\('posts count:', p\\)\" 2>&1)",
+      "PowerShell(head -5)"
     ]
   }
 }

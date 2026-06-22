@@ -1,7 +1,5 @@
 import { sendEmail } from "./email-service";
 import { resolveMergeFields } from "./merge-fields";
-import { createActivity } from "../firestore/activities";
-import { updateEmailStatus } from "../firestore/emails";
 import type { Email, EmailContext } from "@/types/email";
 import type { Contact, Company, Deal, Invoice } from "@/types/crm";
 import { getContact } from "../firestore/contacts";
@@ -9,6 +7,10 @@ import { getCompany } from "../firestore/companies";
 import { getDeal } from "../firestore/deals";
 import { getInvoice } from "../firestore/invoices";
 import { getAppUrl } from "../environment";
+// Use Admin SDK for all server-side Firestore writes so they are not
+// subject to client-auth rules (this module only runs in API routes).
+import { adminDb } from "../firebase-admin";
+import { Timestamp } from "firebase-admin/firestore";
 
 // Send email with merge field resolution
 export async function sendEmailWithMergeFields(
@@ -48,33 +50,39 @@ export async function sendEmailWithMergeFields(
       finalBody = rewriteLinksForTracking(finalBody, email.id);
     }
 
+    // Build From display name: "User Name via ExcelBees" so recipients see who sent it.
+    // Actual SMTP sender stays as the authenticated account; Reply-To routes replies to the user.
+    const displayName = email.fromName
+      ? `${email.fromName} via ExcelBees`
+      : "ExcelBees CRM";
+    const replyTo = email.from || undefined;
+
     // Send email using existing email service
     const result = await sendEmail(
       toEmails.join(", "),
       resolvedSubject,
       finalBody,
-      undefined, // use default sender
-      attachments
+      undefined,
+      attachments,
+      undefined,
+      undefined,
+      replyTo,
+      displayName
     );
     
     if (result.success) {
-      // Update email status to sent
-      await updateEmailStatus(email.id, "sent", new Date());
-      
-      // Log to CRM timeline
+      await adminUpdateEmailStatus(email.id, "sent", new Date());
       await logEmailToTimeline(email, context);
-      
       console.log("✅ Email sent successfully");
     } else {
-      // Update email status to failed
-      await updateEmailStatus(email.id, "failed");
+      await adminUpdateEmailStatus(email.id, "failed");
       console.error("❌ Email send failed:", result.error);
     }
-    
+
     return result;
   } catch (error: any) {
     console.error("❌ Failed to send email:", error.message);
-    await updateEmailStatus(email.id, "failed");
+    await adminUpdateEmailStatus(email.id, "failed");
     return {
       success: false,
       error: error.message,
@@ -203,6 +211,54 @@ function generatePlainText(html: string): string {
   return text;
 }
 
+// ============================================================================
+// Admin SDK helpers — used only in this server-side module
+// ============================================================================
+
+async function adminUpdateEmailStatus(
+  id: string,
+  status: string,
+  sentAt?: Date
+): Promise<void> {
+  try {
+    console.log("📝 Updating email status:", id, "to", status);
+    const patch: Record<string, unknown> = {
+      status,
+      updatedAt: Timestamp.now(),
+    };
+    if (status === "sent" && sentAt) {
+      patch.sentAt = Timestamp.fromDate(sentAt);
+    }
+    await adminDb.collection("emails").doc(id).update(patch);
+    console.log("✅ Email status updated");
+  } catch (error: any) {
+    console.error("❌ Failed to update email status:", error.message);
+  }
+}
+
+async function adminCreateActivity(data: {
+  type: string;
+  content: string;
+  performedBy: string;
+  performedByName: string;
+  relatedTo: { collection: string; id: string };
+}): Promise<void> {
+  try {
+    console.log("📝 Creating activity:", data.type);
+    const payload: Record<string, unknown> = { ...data, createdAt: Timestamp.now() };
+    // Remove undefined values — Firestore rejects them
+    Object.keys(payload).forEach((k) => {
+      if (payload[k] === undefined) delete payload[k];
+    });
+    await adminDb.collection("activities").add(payload);
+    console.log("✅ Activity created");
+  } catch (error: any) {
+    console.error("❌ Failed to create activity:", error.message);
+  }
+}
+
+// ============================================================================
+
 // Log email to CRM timeline
 async function logEmailToTimeline(
   email: Email,
@@ -212,23 +268,29 @@ async function logEmailToTimeline(
     if (!email.relatedTo && !context?.relatedRecordId) {
       return; // No CRM entity to log to
     }
-    
+
     const relatedTo = email.relatedTo || {
-      collection: context?.type === "invoice" ? "invoices" :
-                  context?.type === "deal" ? "deals" :
-                  context?.type === "contact" ? "contacts" :
-                  context?.type === "company" ? "companies" : "emails",
+      collection:
+        context?.type === "invoice"
+          ? "invoices"
+          : context?.type === "deal"
+          ? "deals"
+          : context?.type === "contact"
+          ? "contacts"
+          : context?.type === "company"
+          ? "companies"
+          : "emails",
       id: context?.relatedRecordId || email.id,
     };
-    
-    await createActivity({
+
+    await adminCreateActivity({
       type: "email",
       content: `Email sent: ${email.subject}`,
       performedBy: email.createdBy,
       performedByName: email.createdByName || email.fromName || "Unknown",
       relatedTo,
     });
-    
+
     console.log("✅ Email logged to CRM timeline");
   } catch (error: any) {
     console.error("❌ Failed to log email to timeline:", error.message);
@@ -287,7 +349,7 @@ export async function scheduleEmail(
 ): Promise<{ success: boolean; error: string | null }> {
   try {
     // Update email with scheduled time
-    await updateEmailStatus(email.id, "scheduled");
+    await adminUpdateEmailStatus(email.id, "scheduled");
     
     // In a production app, you would:
     // 1. Use a job queue (Bull, Agenda, etc.)

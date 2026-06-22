@@ -21,16 +21,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { getUsers, UserProfile } from "@/lib/firestore/users";
 import {
-    getUsers,
-    approveUser,
-    updateUserRole,
-    UserProfile
-} from "@/lib/firestore/users";
-import { deleteUserAction } from "@/app/actions/admin-users";
+    deleteUserAction,
+    setUserActiveAction,
+} from "@/app/actions/admin-users";
+import { auth } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermission } from "@/hooks/usePermission";
-import { UserRole, AuditAction } from "@/types/crm";
+import { UserRole } from "@/types/crm";
 import { CreateUserDialog } from "@/components/users/CreateUserDialog";
 import { EditUserDialog } from "@/components/users/EditUserDialog";
 import { RBACGuard, RoleGate } from "@/components/auth/RBACGuard";
@@ -38,17 +37,14 @@ import {
     MoreHorizontal,
     CheckCircle2,
     Shield,
-    Users as UsersIcon,
     ShieldAlert,
     Trash2,
     Edit,
-    UserPlus,
     Eye,
     EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { createAuditLog, AuditActions } from "@/lib/firestore/audit-logs";
 
 type EditingUser = UserProfile & { originalRole?: UserRole };
 
@@ -63,11 +59,11 @@ export default function UsersPage() {
 
     const fetchUsers = async () => {
         setLoading(true);
-        const { users: fetchedUsers, error } = await getUsers();
+        const { users: fetched, error } = await getUsers();
         if (error) {
             toast.error("Failed to load users");
         } else {
-            setUsers(fetchedUsers || []);
+            setUsers(fetched || []);
         }
         setLoading(false);
     };
@@ -76,26 +72,51 @@ export default function UsersPage() {
         fetchUsers();
     }, []);
 
-    const handleApprove = async (userId: string) => {
-        const { success, error } = await approveUser(userId, true);
+    /** Returns a fresh ID token for the current admin user. */
+    const getToken = async (): Promise<string | null> => {
+        const token = await auth.currentUser?.getIdToken(true);
+        if (!token) {
+            toast.error("Session expired. Please sign in again.");
+        }
+        return token || null;
+    };
+
+    const handleActivate = async (userId: string, targetRole: UserRole) => {
+        // Only admins can activate/deactivate admins or managers
+        if ((targetRole === "admin" || targetRole === "manager") && !isAdmin()) {
+            toast.error("Only admins can change the status of admins or managers");
+            return;
+        }
+
+        const token = await getToken();
+        if (!token) return;
+
+        const { success, error } = await setUserActiveAction(token, userId, true);
         if (success) {
-            toast.success("User activated successfully");
-            await logAudit("user_activated", userId);
+            toast.success("User activated");
             fetchUsers();
         } else {
             toast.error("Failed to activate user: " + error);
         }
     };
 
-    const handleDeactivate = async (userId: string) => {
+    const handleDeactivate = async (userId: string, targetRole: UserRole) => {
+        // Block managers from deactivating other admins or managers
+        if ((targetRole === "admin" || targetRole === "manager") && !isAdmin()) {
+            toast.error("Only admins can deactivate admins or managers");
+            return;
+        }
+
         if (!confirm("Are you sure you want to deactivate this user? They will not be able to sign in.")) {
             return;
         }
 
-        const { success, error } = await approveUser(userId, false);
+        const token = await getToken();
+        if (!token) return;
+
+        const { success, error } = await setUserActiveAction(token, userId, false);
         if (success) {
             toast.success("User deactivated");
-            await logAudit("user_deactivated", userId);
             fetchUsers();
         } else {
             toast.error("Failed to deactivate user: " + error);
@@ -107,43 +128,29 @@ export default function UsersPage() {
             return;
         }
 
-        const { success, error } = await deleteUserAction(userId);
+        const token = await getToken();
+        if (!token) return;
+
+        const { success, error } = await deleteUserAction(token, userId);
         if (success) {
             toast.success("User deleted successfully");
-            setUsers(prevUsers => prevUsers.filter(u => u.uid !== userId));
+            setUsers((prev) => prev.filter((u) => u.uid !== userId));
         } else {
             toast.error("Failed to delete user: " + error);
         }
     };
 
-    // Filter users based on RBAC
-    const filteredUsers = users.filter(u => {
-        if (currentUser?.role === 'admin') return true;
-        if (currentUser?.role === 'manager') {
-            // Managers see only Team members
-            return u.role === 'team';
-        }
+    // Managers see only team members; admins see all
+    const filteredUsers = users.filter((u) => {
+        if (currentUser?.role === "admin") return true;
+        if (currentUser?.role === "manager") return u.role === "team";
         return false;
     });
-
-    const logAudit = async (action: AuditAction, targetUserId: string) => {
-        if (!currentUser) return;
-        await createAuditLog({
-            action,
-            performedBy: currentUser.uid,
-            performedByName: currentUser.displayName || currentUser.email || "",
-            targetUserId,
-            targetUserName: users.find(u => u.uid === targetUserId)?.displayName || targetUserId,
-            details: {},
-        });
-    };
 
     const openEditDialog = (user: UserProfile) => {
         setEditingUser(user);
         setEditDialogOpen(true);
     };
-
-
 
     const roleColors: Record<string, string> = {
         admin: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
@@ -161,9 +168,7 @@ export default function UsersPage() {
                         { label: "Users" },
                     ]}
                     description="Manage user access, roles, and permissions"
-                    action={
-                        isAdmin() ? <CreateUserDialog onUserCreated={fetchUsers} /> : undefined
-                    }
+                    action={isAdmin() ? <CreateUserDialog onUserCreated={fetchUsers} /> : undefined}
                 />
 
                 <Card>
@@ -185,101 +190,128 @@ export default function UsersPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredUsers.map((user) => (
-                                        <TableRow key={user.uid}>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium">
-                                                        {user.displayName || user.email?.split('@')[0] || user.email}
+                                    {filteredUsers.map((u) => {
+                                        const isSelf = u.uid === currentUser?.uid;
+                                        // Managers cannot touch admin or manager rows
+                                        const canManage =
+                                            isAdmin() ||
+                                            (currentUser?.role === "manager" && u.role === "team");
+
+                                        return (
+                                            <TableRow key={u.uid}>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium">
+                                                            {u.displayName || u.email?.split("@")[0] || u.email}
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">{u.email}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className={roleColors[u.role] || ""}
+                                                    >
+                                                        {u.role}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {u.isActive !== false ? (
+                                                        <div className="flex items-center gap-1.5 text-green-600 text-sm font-medium">
+                                                            <CheckCircle2 className="h-4 w-4" />
+                                                            Active
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-1.5 text-red-600 text-sm font-medium">
+                                                            <ShieldAlert className="h-4 w-4" />
+                                                            Deactivated
+                                                        </div>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-muted-foreground text-sm">
+                                                        {u.lastLoginAt
+                                                            ? format(u.lastLoginAt.toDate(), "MMM d, yyyy h:mm a")
+                                                            : "Never"}
                                                     </span>
-                                                    <span className="text-xs text-muted-foreground">{user.email}</span>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary" className={roleColors[user.role] || ""}>
-                                                    {user.role}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {user.isActive !== false ? (
-                                                    <div className="flex items-center gap-1.5 text-green-600 text-sm font-medium">
-                                                        <CheckCircle2 className="h-4 w-4" />
-                                                        Active
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-1.5 text-red-600 text-sm font-medium">
-                                                        <ShieldAlert className="h-4 w-4" />
-                                                        Deactivated
-                                                    </div>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <span className="text-muted-foreground text-sm">
-                                                    {user.lastLoginAt ? format(user.lastLoginAt.toDate(), "MMM d, yyyy h:mm a") : "Never"}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell>
-                                                <span className="text-muted-foreground text-sm">
-                                                    {user.createdAt?.toDate ? format(user.createdAt.toDate(), "MMM d, yyyy") : "N/A"}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                                                                <Edit className="h-4 w-4 mr-2" />
-                                                                Edit User & Permissions
-                                                            </DropdownMenuItem>
-
-                                                            <DropdownMenuSeparator />
-
-                                                            {user.isActive !== false ? (
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleDeactivate(user.uid)}
-                                                                    className="text-amber-600 focus:text-amber-600"
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="text-muted-foreground text-sm">
+                                                        {u.createdAt?.toDate
+                                                            ? format(u.createdAt.toDate(), "MMM d, yyyy")
+                                                            : "N/A"}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    {canManage && !isSelf && (
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8"
                                                                 >
-                                                                    <EyeOff className="h-4 w-4 mr-2" />
-                                                                    Deactivate User
-                                                                </DropdownMenuItem>
-                                                            ) : (
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleApprove(user.uid)}
-                                                                    className="text-green-600 focus:text-green-600"
-                                                                >
-                                                                    <Eye className="h-4 w-4 mr-2" />
-                                                                    Activate User
-                                                                </DropdownMenuItem>
-                                                            )}
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                {/* Edit: admin only */}
+                                                                {isAdmin() && (
+                                                                    <DropdownMenuItem onClick={() => openEditDialog(u)}>
+                                                                        <Edit className="h-4 w-4 mr-2" />
+                                                                        Edit User & Permissions
+                                                                    </DropdownMenuItem>
+                                                                )}
 
-                                                            <RoleGate allowedRoles={["admin"]}>
                                                                 <DropdownMenuSeparator />
-                                                                <DropdownMenuItem
-                                                                    onClick={() => handleDeleteUser(user.uid, user.displayName || user.email)}
-                                                                    className="text-red-600 focus:text-red-600"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                                    Delete User
-                                                                </DropdownMenuItem>
-                                                            </RoleGate>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+
+                                                                {u.isActive !== false ? (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleDeactivate(u.uid, u.role)}
+                                                                        className="text-amber-600 focus:text-amber-600"
+                                                                    >
+                                                                        <EyeOff className="h-4 w-4 mr-2" />
+                                                                        Deactivate User
+                                                                    </DropdownMenuItem>
+                                                                ) : (
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => handleActivate(u.uid, u.role)}
+                                                                        className="text-green-600 focus:text-green-600"
+                                                                    >
+                                                                        <Eye className="h-4 w-4 mr-2" />
+                                                                        Activate User
+                                                                    </DropdownMenuItem>
+                                                                )}
+
+                                                                {/* Delete: admin only */}
+                                                                <RoleGate allowedRoles={["admin"]}>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            handleDeleteUser(
+                                                                                u.uid,
+                                                                                u.displayName || u.email
+                                                                            )
+                                                                        }
+                                                                        className="text-red-600 focus:text-red-600"
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4 mr-2" />
+                                                                        Delete User
+                                                                    </DropdownMenuItem>
+                                                                </RoleGate>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                         </div>
                     )}
                 </Card>
 
-                {/* Edit User Dialog with Permissions */}
                 {editingUser && (
                     <EditUserDialog
                         user={editingUser}

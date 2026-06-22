@@ -1,26 +1,32 @@
 "use client";
 
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { AuthGate } from "@/components/auth/AuthGate";
 import { useAuth } from "@/hooks/useAuth";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { CommandPalette } from "@/components/search/CommandPalette";
 import { useUIStore } from "@/store/ui";
-import { redirect } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { CopilotWidget } from "@/components/ai/CopilotWidget";
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    return (
+        <AuthProvider>
+            <AuthGate>
+                <DashboardShell>{children}</DashboardShell>
+            </AuthGate>
+        </AuthProvider>
+    );
+}
+
+function DashboardShell({ children }: { children: React.ReactNode }) {
     const { user } = useAuth();
     const { sidebarCollapsed } = useUIStore();
-
-    // Redirect to login if not authenticated
-    // Note: RBACGuard handles this now
 
     return (
         <div className="min-h-screen bg-background">
@@ -53,9 +59,6 @@ export default function DashboardLayout({
                     {children}
                 </main>
             </div>
-
-            {/* Copilot Widget */}
-            <CopilotWidget />
         </div>
     );
 }

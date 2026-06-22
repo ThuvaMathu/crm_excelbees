@@ -1,10 +1,73 @@
 "use server";
 
 import { adminDb, adminAuth } from "@/lib/firebase-admin";
+import type { UserRole, UserPermissions } from "@/types/crm";
+import { ROLE_DEFAULTS } from "@/types/crm";
+
+// ============================================================================
+// INTERNAL AUTH HELPERS
+// ============================================================================
 
 /**
- * Generate a secure random password
+ * Verifies that the caller's Firebase ID token belongs to an admin user.
+ * Uses the Admin SDK (server-side only) — cannot be spoofed by the client.
+ * Returns the verified caller UID or throws with an error message.
  */
+async function verifyCallerIsAdmin(
+  callerToken: string
+): Promise<{ callerUid: string }> {
+  if (!callerToken) {
+    throw new Error("Authentication required");
+  }
+
+  let decoded: { uid: string };
+  try {
+    decoded = await adminAuth.verifyIdToken(callerToken, true);
+  } catch {
+    throw new Error("Invalid or expired authentication token");
+  }
+
+  const callerDoc = await adminDb.collection("users").doc(decoded.uid).get();
+  const callerRole = callerDoc.data()?.role;
+
+  if (callerRole !== "admin") {
+    throw new Error("Admin access required");
+  }
+
+  return { callerUid: decoded.uid };
+}
+
+/**
+ * Counts the number of active admin accounts.
+ * Used to prevent deleting the last admin.
+ */
+async function countAdmins(): Promise<number> {
+  const snap = await adminDb
+    .collection("users")
+    .where("role", "==", "admin")
+    .get();
+  return snap.size;
+}
+
+/**
+ * Writes an entry to the audit_logs collection.
+ */
+async function writeAuditLog(entry: {
+  action: string;
+  performedBy: string;
+  targetUid?: string;
+  details: Record<string, unknown>;
+}) {
+  await adminDb.collection("audit_logs").add({
+    ...entry,
+    createdAt: new Date(),
+  });
+}
+
+// ============================================================================
+// GENERATE SECURE PASSWORD
+// ============================================================================
+
 function generateSecurePassword(length: number = 12): string {
   const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lowercase = "abcdefghijklmnopqrstuvwxyz";
@@ -12,7 +75,6 @@ function generateSecurePassword(length: number = 12): string {
   const special = "!@#$%^&*";
   const allChars = uppercase + lowercase + numbers + special;
 
-  // Guarantee at least one character of each type
   const chars = [
     uppercase[Math.floor(Math.random() * uppercase.length)],
     lowercase[Math.floor(Math.random() * lowercase.length)],
@@ -20,12 +82,10 @@ function generateSecurePassword(length: number = 12): string {
     special[Math.floor(Math.random() * special.length)],
   ];
 
-  // Fill remaining positions
   for (let i = chars.length; i < length; i++) {
     chars.push(allChars[Math.floor(Math.random() * allChars.length)]);
   }
 
-  // Fisher-Yates shuffle — cryptographically fair, never loses characters
   for (let i = chars.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [chars[i], chars[j]] = [chars[j], chars[i]];
@@ -34,23 +94,23 @@ function generateSecurePassword(length: number = 12): string {
   return chars.join("");
 }
 
-/**
- * Server action to create a new user (Admin only)
- */
+// ============================================================================
+// CREATE USER (Admin only)
+// ============================================================================
+
 export async function createUserAction(data: {
+  callerToken: string;
   email: string;
   displayName: string;
   phoneNumber?: string;
-  role: "admin" | "manager" | "team";
-  employeeId?: string; // Optional: Link to existing employee record
-  createdBy: string; // Admin UID
+  role: UserRole;
 }) {
   try {
-    // Generate temporary password
+    const { callerUid } = await verifyCallerIsAdmin(data.callerToken);
+
     const tempPassword = generateSecurePassword(12);
 
-    // Create user in Firebase Auth
-    const createUserPayload: {
+    const createPayload: {
       email: string;
       password: string;
       displayName: string;
@@ -60,38 +120,35 @@ export async function createUserAction(data: {
       password: tempPassword,
       displayName: data.displayName,
     };
-    // Only include phoneNumber if it is a non-empty string — Firebase rejects undefined/empty
     if (data.phoneNumber) {
-      createUserPayload.phoneNumber = data.phoneNumber;
+      createPayload.phoneNumber = data.phoneNumber;
     }
 
-    // DIAGNOSTIC: log password metadata (never log the actual key)
-    console.log("[createUserAction] payload check:", {
-      email: data.email,
-      displayName: data.displayName,
-      passwordLength: tempPassword.length,
-      passwordMeetsMin: tempPassword.length >= 6,
-      hasPhone: !!createUserPayload.phoneNumber,
-    });
+    const userRecord = await adminAuth.createUser(createPayload);
 
-    const userRecord = await adminAuth.createUser(createUserPayload);
+    // Set custom claims immediately so AuthProvider resolves the correct role
+    await adminAuth.setCustomUserClaims(userRecord.uid, { role: data.role });
 
-    // Create user profile in Firestore
-    const userDoc: any = {
+    // Admins and managers are pre-approved; team members need explicit approval
+    const isPreApproved = data.role === "admin" || data.role === "manager";
+
+    const userDoc = {
       uid: userRecord.uid,
       email: data.email,
       displayName: data.displayName,
       phoneNumber: data.phoneNumber || "",
       role: data.role,
-      isActive: true, // Active by default
-      isFirstLogin: true, // Force password change
+      isActive: true,
+      isApproved: isPreApproved,
+      isFirstLogin: true,
       status: "active",
       createdAt: new Date(),
-      createdBy: data.createdBy,
+      createdBy: callerUid,
       lastLoginAt: new Date(),
       updatedAt: new Date(),
       provider: "password",
       documents: [],
+      permissions: ROLE_DEFAULTS[data.role],
       settings: {
         theme: "system",
         notifications: true,
@@ -99,109 +156,172 @@ export async function createUserAction(data: {
       },
     };
 
-    // Add employeeId if provided
-    if (data.employeeId) {
-      userDoc.employeeId = data.employeeId;
-    }
-
     await adminDb.collection("users").doc(userRecord.uid).set(userDoc);
 
-    // If employeeId is provided, link the employee to this user
-    if (data.employeeId) {
-      try {
-        await adminDb.collection("employees").doc(data.employeeId).update({
-          userId: userRecord.uid,
-          hasCRMAccess: true,
-          updatedAt: new Date(),
-        });
-        console.log("✅ Employee linked to user:", data.employeeId);
-      } catch (linkError) {
-        console.error("⚠️ Failed to link employee to user:", linkError);
-        // Don't fail user creation if linking fails
-      }
-    }
+    await writeAuditLog({
+      action: "user_created",
+      performedBy: callerUid,
+      targetUid: userRecord.uid,
+      details: { email: data.email, role: data.role },
+    });
 
-    console.log("✅ User created successfully:", userRecord.uid);
+    console.log("✅ User created:", userRecord.uid, "role:", data.role);
 
-    // Send welcome email with credentials
     try {
-      const { sendAdminCreatedUserEmail } = await import("@/lib/email/email-service");
+      const { sendAdminCreatedUserEmail } = await import(
+        "@/lib/email/email-service"
+      );
       await sendAdminCreatedUserEmail({
         email: data.email,
         userName: data.displayName,
         tempPassword,
         role: data.role,
       });
-      console.log("📧 Welcome email sent to:", data.email);
     } catch (emailError) {
-      console.error("⚠️ Failed to send welcome email:", emailError);
-      // Don't fail user creation if email fails
+      console.error("⚠️ Welcome email failed (non-fatal):", emailError);
     }
 
-    return {
-      success: true,
-      uid: userRecord.uid,
-      tempPassword,
-    };
+    return { success: true, uid: userRecord.uid, tempPassword };
   } catch (error: any) {
-    console.error("❌ Failed to create user:", {
-      message: error.message,
-      code: error.code,
-      errorInfo: error.errorInfo,
-    });
-    return {
-      success: false,
-      error: error.message || "Failed to create user",
-    };
+    console.error("❌ createUserAction failed:", error.message);
+    return { success: false, error: error.message || "Failed to create user" };
   }
 }
 
-/**
- * Server action to reset user password (Admin only)
- */
-export async function resetUserPasswordAction(uid: string) {
-  try {
-    // Generate new temporary password
-    const tempPassword = generateSecurePassword(12);
+// ============================================================================
+// UPDATE USER (Admin only) — role, permissions, isActive, displayName
+// ============================================================================
 
-    // Update password in Firebase Auth
-    await adminAuth.updateUser(uid, {
-      password: tempPassword,
+export async function updateUserAction(data: {
+  callerToken: string;
+  targetUid: string;
+  updates: {
+    displayName?: string;
+    role?: UserRole;
+    isActive?: boolean;
+    permissions?: UserPermissions;
+  };
+}) {
+  try {
+    const { callerUid } = await verifyCallerIsAdmin(data.callerToken);
+
+    if (callerUid === data.targetUid && data.updates.role !== undefined) {
+      throw new Error("Admins cannot change their own role");
+    }
+
+    const targetDoc = await adminDb
+      .collection("users")
+      .doc(data.targetUid)
+      .get();
+    if (!targetDoc.exists) {
+      throw new Error("Target user not found");
+    }
+
+    const before = targetDoc.data()!;
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+
+    if (data.updates.displayName !== undefined) {
+      patch.displayName = data.updates.displayName;
+    }
+    if (data.updates.role !== undefined) {
+      patch.role = data.updates.role;
+      // Keep isApproved consistent: admins and managers are always approved
+      patch.isApproved =
+        data.updates.role === "admin" || data.updates.role === "manager";
+    }
+    if (data.updates.isActive !== undefined) {
+      patch.isActive = data.updates.isActive;
+    }
+    if (data.updates.permissions !== undefined) {
+      patch.permissions = data.updates.permissions;
+    }
+
+    await adminDb.collection("users").doc(data.targetUid).update(patch);
+
+    // Sync custom claims whenever the role changes
+    if (data.updates.role !== undefined) {
+      await adminAuth.setCustomUserClaims(data.targetUid, {
+        role: data.updates.role,
+      });
+      // Force token refresh on next sign-in by revoking existing refresh tokens
+      await adminAuth.revokeRefreshTokens(data.targetUid);
+    }
+
+    await writeAuditLog({
+      action:
+        data.updates.role !== undefined
+          ? "role_changed"
+          : data.updates.permissions !== undefined
+          ? "permissions_changed"
+          : "user_updated",
+      performedBy: callerUid,
+      targetUid: data.targetUid,
+      details: {
+        before: {
+          role: before.role,
+          isActive: before.isActive,
+          displayName: before.displayName,
+        },
+        after: data.updates,
+      },
     });
 
-    // Update Firestore to mark as first login
+    console.log("✅ User updated:", data.targetUid, "by admin:", callerUid);
+    return { success: true };
+  } catch (error: any) {
+    console.error("❌ updateUserAction failed:", error.message);
+    return { success: false, error: error.message || "Failed to update user" };
+  }
+}
+
+// ============================================================================
+// RESET PASSWORD (Admin only)
+// ============================================================================
+
+export async function resetUserPasswordAction(
+  callerToken: string,
+  uid: string
+) {
+  try {
+    const { callerUid } = await verifyCallerIsAdmin(callerToken);
+
+    const tempPassword = generateSecurePassword(12);
+
+    await adminAuth.updateUser(uid, { password: tempPassword });
     await adminDb.collection("users").doc(uid).update({
       isFirstLogin: true,
       updatedAt: new Date(),
     });
 
-    console.log("✅ Password reset successfully:", uid);
+    await writeAuditLog({
+      action: "password_reset",
+      performedBy: callerUid,
+      targetUid: uid,
+      details: {},
+    });
 
-    // Send password reset email
+    console.log("✅ Password reset for:", uid);
+
     try {
-      const { sendAdminPasswordResetEmail } = await import("@/lib/email/email-service");
-      const { getUserProfile } = await import("@/lib/firestore/users");
-      
-      const { user } = await getUserProfile(uid);
-      if (user) {
+      const { sendAdminPasswordResetEmail } = await import(
+        "@/lib/email/email-service"
+      );
+      const userDoc = await adminDb.collection("users").doc(uid).get();
+      const userData = userDoc.data();
+      if (userData) {
         await sendAdminPasswordResetEmail({
-          email: user.email,
-          userName: user.displayName,
+          email: userData.email,
+          userName: userData.displayName,
           tempPassword,
         });
-        console.log("📧 Password reset email sent to:", user.email);
       }
     } catch (emailError) {
-      console.error("⚠️ Failed to send password reset email:", emailError);
-      // Don't fail password reset if email fails
+      console.error("⚠️ Password reset email failed (non-fatal):", emailError);
     }
 
-    return {
-      success: true,
-      tempPassword,
-    };
+    return { success: true, tempPassword };
   } catch (error: any) {
-    console.error("❌ Failed to reset password:", error);
+    console.error("❌ resetUserPasswordAction failed:", error.message);
     return {
       success: false,
       error: error.message || "Failed to reset password",
@@ -209,25 +329,84 @@ export async function resetUserPasswordAction(uid: string) {
   }
 }
 
-/**
- * Server action to delete user (Admin only)
- */
-export async function deleteUserAction(uid: string) {
-  try {
-    // Delete from Firebase Auth
-    await adminAuth.deleteUser(uid);
+// ============================================================================
+// DELETE USER (Admin only) — prevents deleting the last admin
+// ============================================================================
 
-    // Delete from Firestore
+export async function deleteUserAction(callerToken: string, uid: string) {
+  try {
+    const { callerUid } = await verifyCallerIsAdmin(callerToken);
+
+    if (callerUid === uid) {
+      throw new Error("Admins cannot delete their own account");
+    }
+
+    const targetDoc = await adminDb.collection("users").doc(uid).get();
+    if (!targetDoc.exists) {
+      throw new Error("User not found");
+    }
+
+    const targetRole = targetDoc.data()?.role;
+
+    if (targetRole === "admin") {
+      const adminCount = await countAdmins();
+      if (adminCount <= 1) {
+        throw new Error("Cannot delete the last admin account");
+      }
+    }
+
+    await adminAuth.deleteUser(uid);
     await adminDb.collection("users").doc(uid).delete();
 
-    console.log("✅ User deleted successfully:", uid);
+    await writeAuditLog({
+      action: "user_deleted",
+      performedBy: callerUid,
+      targetUid: uid,
+      details: { deletedRole: targetRole },
+    });
+
+    console.log("✅ User deleted:", uid);
+    return { success: true };
+  } catch (error: any) {
+    console.error("❌ deleteUserAction failed:", error.message);
+    return { success: false, error: error.message || "Failed to delete user" };
+  }
+}
+
+// ============================================================================
+// ACTIVATE / DEACTIVATE USER (Admin only for admins/managers; manager for team)
+// ============================================================================
+
+export async function setUserActiveAction(
+  callerToken: string,
+  targetUid: string,
+  isActive: boolean
+) {
+  try {
+    const { callerUid } = await verifyCallerIsAdmin(callerToken);
+
+    if (callerUid === targetUid) {
+      throw new Error("Cannot change your own active status");
+    }
+
+    await adminDb.collection("users").doc(targetUid).update({
+      isActive,
+      updatedAt: new Date(),
+    });
+
+    await writeAuditLog({
+      action: isActive ? "user_activated" : "user_deactivated",
+      performedBy: callerUid,
+      targetUid,
+      details: {},
+    });
 
     return { success: true };
   } catch (error: any) {
-    console.error("❌ Failed to delete user:", error);
+    console.error("❌ setUserActiveAction failed:", error.message);
     return {
       success: false,
-      error: error.message || "Failed to delete user",
+      error: error.message || "Failed to update user status",
     };
   }
 }

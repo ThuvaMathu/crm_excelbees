@@ -15,6 +15,7 @@ import { getTasks } from "@/lib/firestore/tasks";
 import { ActivityTimeline } from "@/components/activity/ActivityTimeline";
 import { EmailComposeModal } from "@/components/email/EmailComposeModal";
 import { EditContactDialog } from "@/components/contacts/EditContactDialog";
+import { RelationshipHealth } from "@/components/shared/RelationshipHealth";
 import type { Contact } from "@/types/crm";
 import {
     ArrowLeft,
@@ -378,6 +379,8 @@ export default function ContactDetailPage({
                             </Button>
                         </CardContent>
                     </Card>
+
+                    <RelationshipHealth entityType="contact" entityId={contact.id} />
 
                     <Card>
                         <CardHeader>

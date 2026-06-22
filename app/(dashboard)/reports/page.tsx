@@ -10,8 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Download, Calendar, ArrowUpRight, ArrowDownRight, Users, DollarSign, Activity, Shield, Lock } from "lucide-react";
 import { format } from "date-fns";
-import { generateReportInsight } from "@/actions/generate-report";
 import { useAuth } from "@/hooks/useAuth";
+import { generateReportInsight } from "@/app/actions/ai/report-insights";
+import type { ReportInsight as AIReportInsight } from "@/types/gemini";
 
 export default function ReportsPage() {
     const { user } = useAuth();
@@ -22,67 +23,61 @@ export default function ReportsPage() {
     const canViewFinancialData = user?.role === "admin" || user?.role === "manager";
 
     // AI State
-    const [summary, setSummary] = useState("Analyzing your latest business data...");
+    const [summary, setSummary] = useState("");
     const [insights, setInsights] = useState<{ type: "positive" | "negative" | "warning", text: string }[]>([]);
-    const [aiLoading, setAiLoading] = useState(true);
+    const [recommendations, setRecommendations] = useState<string[]>([]);
+    const [aiLoading, setAiLoading] = useState(false);
 
-    // Initial AI Analysis (Simulated based on real data)
-    useEffect(() => {
-        if (!isLoading) {
-            setAiLoading(true);
-            setTimeout(() => {
-                // Generate dynamic summary based on real stats
-                const revenueTrend = monthlyMetrics.length >= 2
-                    ? monthlyMetrics[monthlyMetrics.length - 1].revenue > monthlyMetrics[monthlyMetrics.length - 2].revenue
-                    : true;
-
-                setSummary(`Overall performance is ${revenueTrend ? "trending upward" : "stabilizing"}. You have generated $${totalRevenue.toLocaleString()} in total revenue with a healthy pipeline of $${activeDealsValue.toLocaleString()}.`);
-
-                const newInsights: { type: "positive" | "negative" | "warning", text: string }[] = [];
-
-                if (activeDealsValue > totalRevenue * 0.5) newInsights.push({ type: "positive", text: "Strong pipeline coverage (50%+ of revenue)." });
-                if (churnRiskCount > 0) newInsights.push({ type: "warning", text: `${churnRiskCount} leads detected with high churn risk.` });
-                if (revenueTrend) newInsights.push({ type: "positive", text: "Revenue growth month-over-month." });
-
-                setInsights(newInsights);
-                setAiLoading(false);
-            }, 1000);
-        }
-    }, [isLoading, monthlyMetrics, totalRevenue, activeDealsValue, churnRiskCount]);
-
-
-    const handleQuery = async (query: string) => {
+    const runAIAnalysis = async (query: string = "Provide a comprehensive business overview") => {
         setAiLoading(true);
-        const lowerQuery = query.toLowerCase();
-
-        // 1. Client-Side Intent (UI Switching)
-        if (lowerQuery.includes("lead") || lowerQuery.includes("churn")) {
-            setActiveTab("leads");
-        } else if (lowerQuery.includes("sales") || lowerQuery.includes("revenue") || lowerQuery.includes("forecast")) {
-            setActiveTab("sales");
-        }
-
-        // 2. Real AI Analysis
         try {
             const context = {
                 totalRevenue,
                 activePipeline: activeDealsValue,
                 totalLeads,
                 churnRiskCount,
-                monthlyBreakdown: monthlyMetrics, // Full 6-month breakdown
-                recentTrend: monthlyMetrics.slice(-3), // Last 3 months emphasized
+                monthlyBreakdown: monthlyMetrics,
+                recentTrend: monthlyMetrics.slice(-3),
             };
 
-            const response = await generateReportInsight(query, context);
-            setSummary(response.summary);
-            setInsights(response.insights);
-        } catch (e) {
-            console.error(e);
-            setSummary("Failed to generate AI insight. Please try again.");
+            const result = await generateReportInsight(query, context);
+
+            if (result.success && result.data) {
+                setSummary(result.data.summary);
+                setInsights(result.data.insights);
+                setRecommendations(result.data.recommendations);
+            } else {
+                setSummary(result.error || "AI analysis unavailable. Ensure GEMINI_API_KEY is configured.");
+                setInsights([]);
+                setRecommendations([]);
+            }
+        } catch {
+            setSummary("Failed to generate AI insight.");
             setInsights([{ type: "negative", text: "Connection error" }]);
         } finally {
             setAiLoading(false);
         }
+    };
+
+    // Initial AI Analysis
+    useEffect(() => {
+        if (!isLoading && canViewFinancialData) {
+            runAIAnalysis();
+        }
+    }, [isLoading]);
+
+
+    const handleQuery = async (query: string) => {
+        const lowerQuery = query.toLowerCase();
+
+        // Switch tab based on query intent
+        if (lowerQuery.includes("lead") || lowerQuery.includes("churn")) {
+            setActiveTab("leads");
+        } else if (lowerQuery.includes("sales") || lowerQuery.includes("revenue") || lowerQuery.includes("forecast")) {
+            setActiveTab("sales");
+        }
+
+        await runAIAnalysis(query);
     };
 
     if (error) {
@@ -144,7 +139,7 @@ export default function ReportsPage() {
             {canViewFinancialData ? (
                 <div className="space-y-6">
                     <ReportQueryInput onQuery={handleQuery} isLoading={aiLoading} />
-                    <AIExecutiveSummary summary={summary} insights={insights} isLoading={aiLoading} />
+                    <AIExecutiveSummary summary={summary} insights={insights} recommendations={recommendations} isLoading={aiLoading} />
                 </div>
             ) : (
                 <Card>

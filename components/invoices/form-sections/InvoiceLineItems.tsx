@@ -4,11 +4,7 @@ import { useFormContext, useFieldArray } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Wand2, Calculator } from "lucide-react";
-import { suggestLineItems } from "@/app/actions/invoice-ai";
-import { toast } from "sonner";
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Plus, Trash2, Calculator } from "lucide-react";
 
 export function InvoiceLineItems() {
     const form = useFormContext();
@@ -16,42 +12,6 @@ export function InvoiceLineItems() {
         control: form.control,
         name: "lineItems",
     });
-
-    const [loadingAI, setLoadingAI] = useState(false);
-
-    const handleAutoSuggest = async () => {
-        const clientName = form.getValues("companyName");
-        const dealName = form.getValues("dealName");
-
-        if (!clientName && !dealName) {
-            toast.error("Please select a client or deal first to get personalized suggestions.");
-            return;
-        }
-
-        setLoadingAI(true);
-        try {
-            const result = await suggestLineItems({ clientName, dealName });
-            if (result.success && result.items) {
-                result.items.forEach((item: any) => {
-                    append({
-                        description: item.description,
-                        quantity: item.quantity || 1,
-                        price: item.price || 0,
-                        total: (item.quantity || 1) * (item.price || 0),
-                        taxRate: 0
-                    });
-                });
-                toast.success(`Added ${result.items.length} suggested items.`);
-            } else {
-                toast.error("Could not generate suggestions.");
-            }
-        } catch (error) {
-            console.error(error);
-            toast.error("AI Suggestion failed.");
-        } finally {
-            setLoadingAI(false);
-        }
-    };
 
     return (
         <div className="space-y-4">
@@ -63,17 +23,6 @@ export function InvoiceLineItems() {
                     </span>
                 </div>
                 <div className="flex gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAutoSuggest}
-                        disabled={loadingAI}
-                        className="text-purple-600 hover:text-purple-600 border-purple-200 hover:bg-purple-50"
-                    >
-                        {loadingAI ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-                        AI Suggest
-                    </Button>
                     <Button
                         type="button"
                         variant="secondary"
@@ -169,7 +118,7 @@ export function InvoiceLineItems() {
                     {fields.length === 0 && (
                         <div className="p-8 text-center text-muted-foreground bg-muted/10 border-dashed">
                             <Calculator className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                            <p>No line items yet. Add one manually or ask AI to suggest.</p>
+                            <p>No line items yet. Click "Add Item" to create one.</p>
                         </div>
                     )}
                 </div>

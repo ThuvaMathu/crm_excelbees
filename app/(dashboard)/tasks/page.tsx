@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { getTasks } from "@/lib/firestore/tasks";
 import type { Task, TaskPriority, TaskStatus } from "@/types/crm";
-import { Plus, CheckCircle2, Clock, AlertCircle, LayoutGrid, Calendar as CalendarIcon, Archive } from "lucide-react";
+import { Plus, CheckCircle2, Clock, AlertCircle, LayoutGrid, Calendar as CalendarIcon, Archive, Sparkles, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskDetailSheet } from "@/components/tasks/TaskDetailSheet";
@@ -15,7 +15,11 @@ import { TaskCalendar } from "@/components/tasks/TaskCalendar";
 import { TaskFiltersBar } from "@/components/tasks/TaskFiltersBar";
 import { ArchivedTasksDialog } from "@/components/tasks/ArchivedTasksDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { prioritizeTasks } from "@/app/actions/ai/task-priority";
+import type { TaskPrioritySuggestion } from "@/types/gemini";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function TasksPage() {
@@ -26,6 +30,9 @@ export default function TasksPage() {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [view, setView] = useState<"list" | "calendar">("list");
     const [archivedOpen, setArchivedOpen] = useState(false);
+    const [aiPriorityMode, setAiPriorityMode] = useState(false);
+    const [aiSuggestions, setAiSuggestions] = useState<TaskPrioritySuggestion[]>([]);
+    const [aiLoading, setAiLoading] = useState(false);
 
     // Advanced filters state
     const [filters, setFilters] = useState<{
@@ -147,6 +154,30 @@ export default function TasksPage() {
     // Count of visible columns (for responsive grid)
     const visibleColumns = Object.entries(groupedTasks).filter(([_, tasks]) => tasks.length > 0 || filters.statuses.length === 0).length;
 
+    const handleAIPriority = async () => {
+        if (!user) return;
+
+        if (aiPriorityMode) {
+            setAiPriorityMode(false);
+            return;
+        }
+
+        setAiLoading(true);
+        try {
+            const result = await prioritizeTasks(user.uid);
+            if (result.success && result.data) {
+                setAiSuggestions(result.data);
+                setAiPriorityMode(true);
+                toast.success("Tasks prioritized by AI!");
+            } else {
+                toast.error(result.error || "Failed to prioritize");
+            }
+        } catch {
+            toast.error("Something went wrong");
+        }
+        setAiLoading(false);
+    };
+
     const clearFilters = () => {
         setFilters({
             userRole: "all",
@@ -188,6 +219,20 @@ export default function TasksPage() {
                                     </TabsTrigger>
                                 </TabsList>
                             </Tabs>
+                            <Button
+                                variant={aiPriorityMode ? "default" : "outline"}
+                                onClick={handleAIPriority}
+                                disabled={aiLoading}
+                                className="gap-2"
+                                size="sm"
+                            >
+                                {aiLoading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Sparkles className="h-4 w-4" />
+                                )}
+                                AI Priority
+                            </Button>
                             <Button
                                 variant="outline"
                                 onClick={() => setArchivedOpen(true)}
@@ -249,6 +294,60 @@ export default function TasksPage() {
                         tasks={tasks}
                         onSelectTask={setSelectedTask}
                     />
+                ) : aiPriorityMode && aiSuggestions.length > 0 ? (
+                    <div className="space-y-3 pb-6">
+                        <div className="flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur z-10 py-2">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            <h3 className="font-semibold text-sm">AI Prioritized Tasks</h3>
+                            <Badge variant="secondary" className="text-xs">AI sorted</Badge>
+                        </div>
+                        {aiSuggestions
+                            .map((suggestion) => {
+                                const task = tasks.find((t) => t.id === suggestion.taskId);
+                                return task ? { suggestion, task } : null;
+                            })
+                            .filter(Boolean)
+                            .map((item) => {
+                                const { suggestion, task } = item!;
+                                const priorityColors: Record<string, string> = {
+                                    Urgent: "bg-red-100 text-red-700 border-red-200",
+                                    High: "bg-orange-100 text-orange-700 border-orange-200",
+                                    Medium: "bg-blue-100 text-blue-700 border-blue-200",
+                                    Low: "bg-gray-100 text-gray-700 border-gray-200",
+                                };
+                                return (
+                                <Card
+                                    key={task.id}
+                                    onClick={() => setSelectedTask(task)}
+                                    className="p-3 hover:shadow-md transition-shadow cursor-pointer"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className={`shrink-0 px-2 py-0.5 text-xs font-medium rounded border ${priorityColors[suggestion.suggestedPriority] || priorityColors.Medium}`}>
+                                            {suggestion.suggestedPriority}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <h4 className="font-medium text-sm line-clamp-2">{task.title}</h4>
+                                                <span className={`shrink-0 px-2 py-0.5 text-xs font-medium rounded ${getTypeColor(task.type)}`}>
+                                                    {task.type}
+                                                </span>
+                                            </div>
+                                            {suggestion.reasoning && (
+                                                <p className="text-xs text-muted-foreground mt-0.5">{suggestion.reasoning}</p>
+                                            )}
+                                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                                {getStatusIcon(task.status)}
+                                                <span>{task.status}</span>
+                                                {task.dueDate && safeToDate(task.dueDate) && (
+                                                    <span>• Due {format(safeToDate(task.dueDate)!, "MMM d")}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Card>
+                            );
+                        })}
+                    </div>
                 ) : (
                     <div className={cn(
                         "grid gap-6 pb-6",

@@ -33,26 +33,11 @@ export interface UserPermissions {
   invoices: ModulePermission;
   reports: ModulePermission;
 
-  // Premium / Marketing AI Modules
-  marketingAI: FeatureToggle;
-  competitorAnalysis: FeatureToggle;
-  keywordResearch: FeatureToggle;
-  blogWriter: FeatureToggle;
-  emailCampaigns: FeatureToggle;
-  marketingCalendar: FeatureToggle;
-  seoAnalyzer: FeatureToggle;
-  aiCopilot: FeatureToggle;
+  // AI Assistant Module (Gemini-powered)
+  aiAssistant: FeatureToggle;
 
   // Admin Module
   userManagement: FeatureToggle;
-
-  // HR / Employee Management Module
-  hr: {
-    employees: ModulePermission;   // Directory access
-    attendance: ModulePermission;  // Time tracking
-    leaves: ModulePermission;      // Leave management
-    payroll: ModulePermission;     // Salary info
-  };
 }
 
 // Permission Keys for type-safe access
@@ -73,26 +58,12 @@ export const ROLE_DEFAULTS: Record<UserRole, UserPermissions> = {
     invoices: { read: true, create: true, edit: true, delete: true, editAll: true },
     reports: { read: true, create: true, edit: true, delete: false, editAll: true },
 
-    // Marketing AI - All Enabled
-    marketingAI: { enabled: true },
-    competitorAnalysis: { enabled: true },
-    keywordResearch: { enabled: true },
-    blogWriter: { enabled: true },
-    emailCampaigns: { enabled: true },
-    marketingCalendar: { enabled: true },
-    seoAnalyzer: { enabled: true },
-    aiCopilot: { enabled: true },
+    // AI Assistant
+    aiAssistant: { enabled: true },
 
     // Admin
     userManagement: { enabled: true },
 
-    // HR - Full Access
-    hr: {
-      employees: { read: true, create: true, edit: true, delete: true, editAll: true },
-      attendance: { read: true, create: true, edit: true, delete: true, editAll: true },
-      leaves: { read: true, create: true, edit: true, delete: true, editAll: true },
-      payroll: { read: true, create: true, edit: true, delete: true, editAll: true },
-    },
   },
   manager: {
     // CRM Core - Read All, Edit All, No Create/Delete (RBAC Audit Fix)
@@ -105,26 +76,12 @@ export const ROLE_DEFAULTS: Record<UserRole, UserPermissions> = {
     invoices: { read: true, create: false, edit: true, delete: false, editAll: true },
     reports: { read: true, create: false, edit: false, delete: false, editAll: true },
 
-    // Marketing AI - Enabled
-    marketingAI: { enabled: true },
-    competitorAnalysis: { enabled: true },
-    keywordResearch: { enabled: true },
-    blogWriter: { enabled: true },
-    emailCampaigns: { enabled: true },
-    marketingCalendar: { enabled: true },
-    seoAnalyzer: { enabled: true },
-    aiCopilot: { enabled: true },
+    // AI Assistant
+    aiAssistant: { enabled: true },
 
     // Admin - View Only
     userManagement: { enabled: false },
 
-    // HR - Manager can manage team, view all employees
-    hr: {
-      employees: { read: true, create: false, edit: false, delete: false, editAll: false },
-      attendance: { read: true, create: true, edit: false, delete: false, editAll: false },
-      leaves: { read: true, create: true, edit: true, delete: false, editAll: false },
-      payroll: { read: true, create: false, edit: false, delete: false, editAll: false },
-    },
   },
   team: {
     // CRM Core - Read Only (RBAC Audit Fix)
@@ -137,26 +94,12 @@ export const ROLE_DEFAULTS: Record<UserRole, UserPermissions> = {
     invoices: { read: false, create: false, edit: false, delete: false, editAll: false },
     reports: { read: false, create: false, edit: false, delete: false, editAll: false },
 
-    // Marketing AI - Disabled by Default (toggleable)
-    marketingAI: { enabled: false },
-    competitorAnalysis: { enabled: false },
-    keywordResearch: { enabled: false },
-    blogWriter: { enabled: false },
-    emailCampaigns: { enabled: false },
-    marketingCalendar: { enabled: false },
-    seoAnalyzer: { enabled: false },
-    aiCopilot: { enabled: false },
+    // AI Assistant - Disabled by default (admin can enable per user)
+    aiAssistant: { enabled: false },
 
     // Admin - No Access
     userManagement: { enabled: false },
 
-    // HR - Basic employee access
-    hr: {
-      employees: { read: true, create: false, edit: false, delete: false, editAll: false },
-      attendance: { read: true, create: true, edit: false, delete: false, editAll: false },
-      leaves: { read: true, create: true, edit: false, delete: false, editAll: false },
-      payroll: { read: true, create: false, edit: false, delete: false, editAll: false },
-    },
   },
 };
 
@@ -172,7 +115,8 @@ export type AuditAction =
   | "password_reset"
   | "login_attempt"
   | "login_success"
-  | "login_failed";
+  | "login_failed"
+  | "permission_denied";
 
 export interface AuditLog {
   id: string;
@@ -227,7 +171,6 @@ export interface UserProfile {
   lastName?: string;
   photoURL?: string;
   phone?: string;
-  employeeId?: string;
   role: UserRole;
   isFirstLogin: boolean;
   isActive: boolean;
@@ -696,150 +639,4 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-// ============================================================
-// HR / EMPLOYEE MANAGEMENT TYPES
-// ============================================================
 
-export type EmploymentType = "Full-Time" | "Part-Time" | "Contract" | "Intern";
-export type OnboardingStatus = "Pending" | "In Progress" | "Completed";
-export type AttendanceStatus = "Present" | "Absent" | "Half-Day" | "Late";
-export type LeaveType = "Sick" | "Vacation" | "Personal" | "Unpaid";
-export type LeaveStatus = "Pending" | "Approved" | "Rejected" | "Cancelled";
-export type PayrollStatus = "Draft" | "Processing" | "Paid";
-
-// Employee Profile - Extends base user with HR-specific info
-export interface EmployeeProfile {
-  id: string;                  // Firestore Document ID (primary key)
-  userId?: string | null;      // Links to users/{uid} - null if no CRM access
-  hasCRMAccess?: boolean;      // Whether employee has CRM access
-  email: string;               // Employee email
-  firstName: string;           // First name
-  lastName: string;            // Last name
-  displayName: string;         // Full name for display
-  photoURL?: string;           // Profile photo
-
-  // HR Details
-  department: string;          // e.g., "Sales", "Engineering", "HR"
-  jobTitle: string;            // e.g., "Senior Developer"
-  startDate: Timestamp;        // Date of joining
-  employmentType: EmploymentType;
-  reportsTo?: string;          // UID of the manager
-
-  // Personal Info (Access Restricted)
-  phone?: string;
-  address?: string;
-  emergencyContact?: {
-    name: string;
-    relationship: string;
-    phone: string;
-  };
-  
-  // Documents
-  documents?: {
-    id: string;
-    name: string;
-    url: string;
-    type: string;
-    size: number;
-    uploadedAt: Timestamp;
-  }[];
-
-  // Leave Balance
-  leaveBalance?: {
-    vacation: number;
-    sick: number;
-    personal: number;
-    usedVacation?: number;
-    usedSick?: number;
-    usedPersonal?: number;
-  };
-
-  // Salary Info (Basic)
-  salary?: {
-    baseSalary: number;
-    currency: string;
-    payFrequency: "monthly" | "bi-weekly" | "hourly";
-  };
-
-  // System Metadata
-  onboardingStatus: OnboardingStatus;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-export type EmployeeProfileInput = Omit<EmployeeProfile, "id" | "createdAt" | "updatedAt"> & {
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-};
-
-// Attendance Record
-export interface AttendanceRecord {
-  id: string;
-  userId: string;              // Employee UID
-  userName: string;            // Snapshot for display
-  date: string;                // YYYY-MM-DD (Query index)
-
-  clockIn: Timestamp;
-  clockOut?: Timestamp;
-  breakStart?: Timestamp;
-  breakEnd?: Timestamp;
-
-  totalHours: number;          // Calculated on clock out (hours)
-  status: AttendanceStatus;
-  notes?: string;              // "Forgot to clock out", etc.
-
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-// Leave Request
-export interface LeaveRequest {
-  id: string;
-  userId: string;
-  userName: string;
-  department?: string;         // Snapshot for filtering
-
-  type: LeaveType;
-  startDate: string;           // YYYY-MM-DD
-  endDate: string;             // YYYY-MM-DD
-  daysCount: number;           // 1, 2, 0.5, etc.
-  reason?: string;
-
-  status: LeaveStatus;
-  managerId?: string;          // Who approved/rejected (from reportsTo or Admin)
-  managerName?: string;
-  approvedAt?: Timestamp;
-  rejectionReason?: string;
-
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-// Payroll Record
-export interface PayrollRecord {
-  id: string;
-  userId: string;
-  userName: string;
-
-  periodStart: string;         // YYYY-MM-DD
-  periodEnd: string;           // YYYY-MM-DD
-  payoutDate: string;          // YYYY-MM-DD
-
-  baseSalary: number;          // Monthly/Bi-weekly gross
-  currency: string;            // "USD"
-
-  // Simple structure - No complex tax engine yet
-  additions?: { description: string; amount: number }[]; // Bonuses
-  deductions?: { description: string; amount: number }[]; // Tax/Insurance
-
-  netSalary: number;           // Base + Additions - Deductions
-  status: PayrollStatus;
-
-  payslipUrl?: string;         // Link to generated PDF in Storage
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-}
-
-// Input Types (without Firestore fields)
-
-export type LeaveRequestInput = Omit<LeaveRequest, "id" | "createdAt" | "updatedAt" | "status" | "managerId" | "managerName" | "approvedAt" | "rejectionReason">;
