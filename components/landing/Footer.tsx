@@ -13,6 +13,17 @@ const navLinks = [
   { label: "Sign In", href: "/login" },
 ];
 
+const featureLinks = [
+  { label: "Contacts & Companies", href: "/#features" },
+  { label: "Lead & Deal Pipeline", href: "/#features" },
+  { label: "Projects & Tasks", href: "/#features" },
+  { label: "Quotes & Invoices", href: "/#features" },
+  { label: "Email Campaigns", href: "/#features" },
+  { label: "Analytics & Reports", href: "/#features" },
+  { label: "AI Assistant", href: "/#features" },
+  { label: "Integrations", href: "/#features" },
+];
+
 const legalLinks = [
   { label: "Privacy Policy", href: "#" },
   { label: "Terms of Service", href: "#" },
@@ -32,7 +43,7 @@ export function Footer() {
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Main grid */}
-        <div className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" aria-label="RCRM by ExcelBees — home">
@@ -69,6 +80,25 @@ export function Footer() {
             <ul className="space-y-2">
               {navLinks.map((link) => (
                 <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Features */}
+          <nav aria-label="Features list">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-foreground">
+              Features
+            </p>
+            <ul className="space-y-2">
+              {featureLinks.map((link) => (
+                <li key={link.label}>
                   <Link
                     href={link.href}
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"

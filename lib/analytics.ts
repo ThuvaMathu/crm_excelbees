@@ -1,4 +1,5 @@
 // Analytics logging utility for tracking user events
+import { logger } from "@/lib/logger/client";
 
 type EventType = 
   | "auth_login_success"
@@ -25,10 +26,12 @@ export function logEvent(eventType: EventType, data: Partial<EventData> = {}) {
     timestamp: new Date().toISOString(),
   };
 
-  // Log to console in development
-  if (process.env.NODE_ENV === "development") {
-    console.log(`[Analytics] ${eventType}:`, eventData);
-  }
+  // Log to console in development via the centralized client logger
+  logger.info(`[Analytics] ${eventType}`, {
+    module: "analytics",
+    action: eventType,
+    metadata: eventData,
+  });
 
   // TODO: Send to analytics service (Google Analytics, Mixpanel, etc.)
   // Example:

@@ -37,9 +37,10 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { updateTaskStatus, updateTask, deleteTask, archiveTask } from "@/lib/firestore/tasks";
 import { getUsers, type UserProfile } from "@/lib/firestore/users";
-import { validateTaskPermission } from "@/lib/auth/permission-utils";
+import { usePermission } from "@/hooks/usePermission";
 import type { Task, TaskStatus, TaskPriority } from "@/types/crm";
 import type { User } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -146,6 +147,8 @@ export function TaskDetailSheet({
     onUpdate,
     user,
 }: TaskDetailSheetProps) {
+    const { can, canEditAll, canDelete: hasDeletePermission, hasFeature } = usePermission();
+    const { confirm, ConfirmDialog } = useConfirm();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [editingTitle, setEditingTitle] = useState(false);
@@ -169,26 +172,26 @@ export function TaskDetailSheet({
 
     // Fetch users list when sheet opens
     useEffect(() => {
-        if (open) {
-            getUsers().then(({ users: fetchedUsers }) => {
+        if (open && task?.organizationId) {
+            getUsers(task.organizationId).then(({ users: fetchedUsers }) => {
                 if (fetchedUsers) setUsers(fetchedUsers);
             });
         }
-    }, [open]);
+    }, [open, task?.organizationId]);
 
     // Handle null task case early in JSX
     if (!task) return null;
 
-    // Role-based access control
-    // Note: We use simple role checks for frontend UI, backend will validate permissions
-    const canEdit = user?.role === "admin" ||
-        user?.role === "manager" ||
+    // Permission-based access control, honoring per-user custom permission
+    // overrides (not just role tier) — matches the tasks Firestore rules.
+    const canEdit =
+        canEditAll("tasks") ||
         task?.assigneeId === user?.uid ||
-        task?.ownerId === user?.uid;
+        (task?.ownerId === user?.uid && can("tasks", "edit"));
 
-    const canDelete = user?.role === "admin" || user?.role === "manager";
+    const canDelete = hasDeletePermission("tasks");
 
-    const canUseAI = user?.role === "admin" || user?.role === "manager";
+    const canUseAI = hasFeature("aiAssistant");
 
     const handleStatusChange = async (newStatus: string) => {
         if (!canEdit) {
@@ -199,7 +202,7 @@ export function TaskDetailSheet({
         // Optimistic update
         setLocalStatus(newStatus as TaskStatus);
 
-        const { success } = await updateTaskStatus(task.id, newStatus as TaskStatus);
+        const { success } = await updateTaskStatus(task.id, newStatus as TaskStatus, user?.uid || "");
 
         if (success) {
             toast.success(`Status updated to ${newStatus}`);
@@ -271,7 +274,7 @@ export function TaskDetailSheet({
             toast.error("Only admins and managers can delete tasks");
             return;
         }
-        if (!confirm("Are you sure you want to delete this task?")) return;
+        if (!(await confirm({ title: "Delete Task", message: "Are you sure you want to delete this task?", confirmLabel: "Delete", destructive: true }))) return;
 
         setLoading(true);
         if (!user?.uid) {
@@ -301,7 +304,7 @@ export function TaskDetailSheet({
             toast.error("Only completed tasks (Done) can be archived");
             return;
         }
-        if (!confirm("Archive this task? It will be moved to the archived tasks list.")) return;
+        if (!(await confirm({ title: "Archive Task", message: "Archive this task? It will be moved to the archived tasks list.", confirmLabel: "Archive", destructive: false }))) return;
 
         setLoading(true);
         if (!user?.uid) {
@@ -781,6 +784,7 @@ export function TaskDetailSheet({
                         </Button>
                     </div>
                 </div>
+                <ConfirmDialog />
             </SheetContent>
         </Sheet>
     );

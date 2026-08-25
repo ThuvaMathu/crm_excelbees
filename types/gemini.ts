@@ -69,8 +69,21 @@ export interface MeetingSummary {
   decisions: string[];
 }
 
+export type AITone = "professional" | "casual" | "formal" | "friendly" | "persuasive" | "concise";
+
 export interface RewriteOptions {
-  tone: "professional" | "casual" | "formal" | "creative";
+  tone: AITone;
   goal: "improve" | "simplify" | "expand" | "rephrase";
   length: "shorter" | "same" | "longer";
+}
+
+export type AIPreset = "summary" | "details" | "key_points" | "introduction" | "overview" | "custom";
+
+export interface GenerateOptions {
+  tone: AITone;
+  length: "short" | "medium" | "long";
+  preset: AIPreset;
+  customPrompt?: string;
+  context?: Record<string, string>;
+  existingText?: string;
 }

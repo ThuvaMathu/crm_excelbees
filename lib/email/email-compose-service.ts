@@ -7,10 +7,12 @@ import { getCompany } from "../firestore/companies";
 import { getDeal } from "../firestore/deals";
 import { getInvoice } from "../firestore/invoices";
 import { getAppUrl } from "../environment";
+import { signValue } from "../crypto";
 // Use Admin SDK for all server-side Firestore writes so they are not
 // subject to client-auth rules (this module only runs in API routes).
 import { adminDb } from "../firebase-admin";
 import { Timestamp } from "firebase-admin/firestore";
+import { logger } from "@/lib/logger";
 
 // Send email with merge field resolution
 export async function sendEmailWithMergeFields(
@@ -18,7 +20,7 @@ export async function sendEmailWithMergeFields(
   context?: EmailContext
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("📧 Sending email:", email.subject);
+    logger.info("Sending email", { module: "email", action: "send", organizationId: email.organizationId, metadata: { subject: email.subject, emailId: email.id } });
     
     // Gather merge field data
     const mergeData = await gatherMergeFieldData(email, context);
@@ -67,21 +69,22 @@ export async function sendEmailWithMergeFields(
       undefined,
       undefined,
       replyTo,
-      displayName
+      displayName,
+      email.organizationId
     );
     
     if (result.success) {
       await adminUpdateEmailStatus(email.id, "sent", new Date());
       await logEmailToTimeline(email, context);
-      console.log("✅ Email sent successfully");
+      logger.info("Email sent successfully", { module: "email", action: "send", organizationId: email.organizationId, metadata: { emailId: email.id } });
     } else {
       await adminUpdateEmailStatus(email.id, "failed");
-      console.error("❌ Email send failed:", result.error);
+      logger.error("Email send failed", { module: "email", action: "send", organizationId: email.organizationId, metadata: { emailId: email.id }, error: result.error });
     }
 
     return result;
   } catch (error: any) {
-    console.error("❌ Failed to send email:", error.message);
+    logger.error("Failed to send email", { module: "email", action: "send", organizationId: email.organizationId, metadata: { emailId: email.id }, error });
     await adminUpdateEmailStatus(email.id, "failed");
     return {
       success: false,
@@ -185,7 +188,7 @@ async function gatherMergeFieldData(
     };
     
   } catch (error: any) {
-    console.error("❌ Error gathering merge field data:", error.message);
+    logger.error("Error gathering merge field data", { module: "email", action: "gather-merge-fields", error });
   }
   
   return data;
@@ -221,7 +224,7 @@ async function adminUpdateEmailStatus(
   sentAt?: Date
 ): Promise<void> {
   try {
-    console.log("📝 Updating email status:", id, "to", status);
+    logger.debug("Updating email status", { module: "email", action: "update-status", metadata: { emailId: id, status } });
     const patch: Record<string, unknown> = {
       status,
       updatedAt: Timestamp.now(),
@@ -230,9 +233,9 @@ async function adminUpdateEmailStatus(
       patch.sentAt = Timestamp.fromDate(sentAt);
     }
     await adminDb.collection("emails").doc(id).update(patch);
-    console.log("✅ Email status updated");
+    logger.debug("Email status updated", { module: "email", action: "update-status", metadata: { emailId: id, status } });
   } catch (error: any) {
-    console.error("❌ Failed to update email status:", error.message);
+    logger.error("Failed to update email status", { module: "email", action: "update-status", metadata: { emailId: id }, error });
   }
 }
 
@@ -244,16 +247,16 @@ async function adminCreateActivity(data: {
   relatedTo: { collection: string; id: string };
 }): Promise<void> {
   try {
-    console.log("📝 Creating activity:", data.type);
+    logger.debug("Creating activity", { module: "email", action: "create-activity", metadata: { type: data.type } });
     const payload: Record<string, unknown> = { ...data, createdAt: Timestamp.now() };
     // Remove undefined values — Firestore rejects them
     Object.keys(payload).forEach((k) => {
       if (payload[k] === undefined) delete payload[k];
     });
     await adminDb.collection("activities").add(payload);
-    console.log("✅ Activity created");
+    logger.debug("Activity created", { module: "email", action: "create-activity", metadata: { type: data.type } });
   } catch (error: any) {
-    console.error("❌ Failed to create activity:", error.message);
+    logger.error("Failed to create activity", { module: "email", action: "create-activity", error });
   }
 }
 
@@ -291,9 +294,9 @@ async function logEmailToTimeline(
       relatedTo,
     });
 
-    console.log("✅ Email logged to CRM timeline");
+    logger.debug("Email logged to CRM timeline", { module: "email", action: "log-timeline", metadata: { emailId: email.id } });
   } catch (error: any) {
-    console.error("❌ Failed to log email to timeline:", error.message);
+    logger.error("Failed to log email to timeline", { module: "email", action: "log-timeline", metadata: { emailId: email.id }, error });
   }
 }
 
@@ -356,13 +359,13 @@ export async function scheduleEmail(
     // 2. Or use Firebase Cloud Functions with scheduled triggers
     // 3. Or use a third-party service like SendGrid scheduled sends
     
-    console.log("✅ Email scheduled for:", scheduledFor);
+    logger.info("Email scheduled", { module: "email", action: "schedule", metadata: { emailId: email.id, scheduledFor: scheduledFor.toISOString() } });
     return {
       success: true,
       error: null,
     };
   } catch (error: any) {
-    console.error("❌ Failed to schedule email:", error.message);
+    logger.error("Failed to schedule email", { module: "email", action: "schedule", metadata: { emailId: email.id }, error });
     return {
       success: false,
       error: error.message,
@@ -372,7 +375,8 @@ export async function scheduleEmail(
 // Inject tracking pixel
 function injectTrackingPixel(html: string, emailId: string): string {
   const baseUrl = getAppUrl();
-  const pixelUrl = `${baseUrl}/api/email/track/open/${emailId}`;
+  const sig = signValue(`open:${emailId}`);
+  const pixelUrl = `${baseUrl}/api/email/track/open/${emailId}?sig=${sig}`;
   const pixelHtml = `<img src="${pixelUrl}" alt="" width="1" height="1" style="display:none;width:1px;height:1px;opacity:0;" />`;
   
   // Insert before closing body tag if exists, otherwise append
@@ -402,8 +406,9 @@ function rewriteLinksForTracking(html: string, emailId: string): string {
     }
     
     const encodedUrl = encodeURIComponent(url);
-    const trackingUrl = `${trackingBaseUrl}?id=${emailId}&url=${encodedUrl}`;
-    
+    const sig = signValue(`${emailId}:${url}`);
+    const trackingUrl = `${trackingBaseUrl}?id=${emailId}&url=${encodedUrl}&sig=${sig}`;
+
     return `<a href="${trackingUrl}"${rest}>`;
   });
 }

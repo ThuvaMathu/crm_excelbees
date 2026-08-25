@@ -12,10 +12,12 @@ import { Card } from "@/components/ui/card";
 import { Loader2, Send, X, Paperclip, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgStore } from "@/store/org";
+import { auth } from "@/lib/firebase";
 import { getInvoicePDFBlob } from "@/lib/pdf/invoice-generator";
-import { getUserInvoiceSettings } from "@/lib/firestore/users";
 import { generateInvoiceEmailTemplate } from "@/lib/email/templates/invoice-template";
 import type { Invoice } from "@/types/crm";
+import { logger } from "@/lib/logger/client";
 
 interface InvoiceEmailComposeModalProps {
     invoice: Invoice;
@@ -31,6 +33,7 @@ export function InvoiceEmailComposeModal({
     onSent,
 }: InvoiceEmailComposeModalProps) {
     const { user } = useAuth();
+    const { currentOrg } = useOrgStore();
 
     //Form state
     const [to, setTo] = useState("");
@@ -56,12 +59,17 @@ export function InvoiceEmailComposeModal({
 
         setGeneratingPDF(true);
         try {
-            // Get user settings for company name
-            const { settings } = await getUserInvoiceSettings(user.uid);
-            const companyName = settings?.companyName || "Your Company";
-            const fromName = settings?.fromName;
+            // Company name always comes from the org itself, never a stored
+            // per-user setting — team members can't invoice under a
+            // different company name than their actual org. From-name is
+            // the actual sending user, not a stored setting either.
+            const companyName = currentOrg?.name || "Your Company";
+            const fromName = user.displayName || user.email || undefined;
 
-            // Generate email template
+            // Generate email template — if this throws, PDF generation below
+            // never runs and pdfAttachment stays null (surfaces later as
+            // "PDF attachment is not ready" when Send is clicked, which
+            // looks unrelated but is actually this step failing silently).
             const template = generateInvoiceEmailTemplate(invoice, companyName, fromName);
 
             // Set email fields
@@ -72,13 +80,18 @@ export function InvoiceEmailComposeModal({
             setBcc("");
 
             // Generate PDF attachment
-            const pdfBlob = await getInvoicePDFBlob(invoice, user.uid);
+            const pdfBlob = await getInvoicePDFBlob(
+                invoice,
+                invoice.organizationId,
+                undefined,
+                { name: user.displayName || user.email || "", email: user.email || "" }
+            );
             setPdfAttachment({
                 blob: pdfBlob,
                 name: `${invoice.invoiceNumber}.pdf`,
             });
-        } catch (error) {
-            console.error("Failed to load email data:", error);
+        } catch (error: any) {
+            logger.error("Failed to prepare invoice email", { module: "invoices", action: "send", invoiceId: invoice.id, error });
             toast.error("Failed to prepare email");
         } finally {
             setGeneratingPDF(false);
@@ -109,10 +122,16 @@ export function InvoiceEmailComposeModal({
                 reader.readAsDataURL(pdfAttachment.blob);
             });
 
-            // Send email via API
+            // Send email via API — gated by verifyApiRequest(), which
+            // requires a Bearer token (see the same fix in
+            // EmailComposeModal.tsx's handleSend).
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch("/api/invoices/send", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({
                     invoiceId: invoice.id,
                     to: to.split(",").map(e => e.trim()),
@@ -133,7 +152,7 @@ export function InvoiceEmailComposeModal({
             onOpenChange(false);
             onSent?.();
         } catch (error) {
-            console.error("Failed to send email:", error);
+            logger.error("Failed to send invoice email", { module: "invoices", action: "send", invoiceId: invoice.id, error });
             toast.error("Failed to send email");
         } finally {
             setLoading(false);

@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { EmailTemplate, EmailTemplateInput, EmailTemplateCategory } from "@/types/email";
+import { logger } from "@/lib/logger/client";
 
 const COLLECTION_NAME = "emailTemplates";
 
@@ -22,16 +23,15 @@ const COLLECTION_NAME = "emailTemplates";
 // Create a new email template
 export async function createTemplate(
   data: Partial<EmailTemplateInput>,
-  userId: string
+  userId: string,
+  organizationId?: string
 ): Promise<{
   success: boolean;
   id: string | null;
   error: string | null;
 }> {
   try {
-    console.log("📝 Creating email template:", data.name);
-    
-    const templateData = {
+    const templateData: any = {
       ...data,
       isDefault: data.isDefault || false,
       isShared: data.isShared || false,
@@ -41,9 +41,10 @@ export async function createTemplate(
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     };
+    if (organizationId) templateData.organizationId = organizationId;
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), templateData);
-    console.log("✅ Template created with ID:", docRef.id);
+    logger.info("Template created", { module: "email-templates", action: "create", metadata: { templateId: docRef.id } });
     
     return {
       success: true,
@@ -51,7 +52,7 @@ export async function createTemplate(
       error: null,
     };
   } catch (error: any) {
-    console.error("❌ Failed to create template:", error.message);
+    logger.error("Failed to create template", { module: "email-templates", action: "create", error });
     return {
       success: false,
       id: null,
@@ -61,17 +62,35 @@ export async function createTemplate(
 }
 
 // Get all email templates
-export async function getTemplates(filters?: {
-  category?: EmailTemplateCategory;
-  isActive?: boolean;
-  createdBy?: string;
-}): Promise<{
+export async function getTemplates(
+  organizationIdOrFilters?: string | {
+    category?: EmailTemplateCategory;
+    isActive?: boolean;
+    createdBy?: string;
+  },
+  filters?: {
+    category?: EmailTemplateCategory;
+    isActive?: boolean;
+    createdBy?: string;
+  }
+): Promise<{
   templates: EmailTemplate[];
   error: string | null;
 }> {
+  let organizationId: string | undefined;
+  if (typeof organizationIdOrFilters === "string") {
+    organizationId = organizationIdOrFilters;
+  } else if (organizationIdOrFilters) {
+    filters = organizationIdOrFilters;
+  }
+
   try {
-    console.log("📋 Fetching email templates with filters:", filters);
     let q = query(collection(db, COLLECTION_NAME));
+
+    // Apply org scope
+    if (organizationId) {
+      q = query(q, where("organizationId", "==", organizationId));
+    }
 
     // Apply filters
     if (filters?.category) {
@@ -88,7 +107,6 @@ export async function getTemplates(filters?: {
     // q = query(q, orderBy("name", "asc"));
 
     const querySnapshot = await getDocs(q);
-    console.log("📊 Templates fetched:", querySnapshot.size);
 
     let templates: EmailTemplate[] = [];
     querySnapshot.forEach((doc) => {
@@ -98,13 +116,12 @@ export async function getTemplates(filters?: {
     // Sort client-side
     templates.sort((a, b) => a.name.localeCompare(b.name));
 
-    console.log("✅ Returning", templates.length, "templates");
     return {
       templates,
       error: null,
     };
   } catch (error: any) {
-    console.error("❌ Failed to fetch templates:", error.message);
+    logger.error("Failed to fetch templates", { module: "email-templates", action: "fetch", error });
     return {
       templates: [],
       error: error.message,
@@ -118,25 +135,23 @@ export async function getTemplate(id: string): Promise<{
   error: string | null;
 }> {
   try {
-    console.log("🔍 Fetching template:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      console.log("✅ Template found:", id);
       return {
         template: { id: docSnap.id, ...docSnap.data() } as EmailTemplate,
         error: null,
       };
     } else {
-      console.warn("⚠️ Template not found:", id);
+      logger.warn("Template not found", { module: "email-templates", action: "fetch", metadata: { templateId: id } });
       return {
         template: null,
         error: "Template not found",
       };
     }
   } catch (error: any) {
-    console.error("❌ Failed to fetch template:", error.message);
+    logger.error("Failed to fetch template", { module: "email-templates", action: "fetch", metadata: { templateId: id }, error });
     return {
       template: null,
       error: error.message,
@@ -153,20 +168,19 @@ export async function updateTemplate(
   error: string | null;
 }> {
   try {
-    console.log("📝 Updating template:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, {
       ...data,
       updatedAt: Timestamp.now(),
     } as any);
 
-    console.log("✅ Template updated successfully");
+    logger.info("Template updated", { module: "email-templates", action: "update", metadata: { templateId: id } });
     return {
       success: true,
       error: null,
     };
   } catch (error: any) {
-    console.error("❌ Failed to update template:", error.message);
+    logger.error("Failed to update template", { module: "email-templates", action: "update", metadata: { templateId: id }, error });
     return {
       success: false,
       error: error.message,
@@ -180,17 +194,16 @@ export async function deleteTemplate(id: string): Promise<{
   error: string | null;
 }> {
   try {
-    console.log("🗑️ Deleting template:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
     await deleteDoc(docRef);
 
-    console.log("✅ Template deleted successfully");
+    logger.info("Template deleted", { module: "email-templates", action: "delete", metadata: { templateId: id } });
     return {
       success: true,
       error: null,
     };
   } catch (error: any) {
-    console.error("❌ Failed to delete template:", error.message);
+    logger.error("Failed to delete template", { module: "email-templates", action: "delete", metadata: { templateId: id }, error });
     return {
       success: false,
       error: error.message,
@@ -213,7 +226,7 @@ export async function incrementUsageCount(id: string): Promise<void> {
       updatedAt: Timestamp.now(),
     });
   } catch (error: any) {
-    console.error("❌ Failed to increment usage count:", error.message);
+    logger.error("Failed to increment usage count", { module: "email-templates", action: "increment-usage", metadata: { templateId: id }, error });
   }
 }
 

@@ -1,5 +1,6 @@
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "../firebase";
+import { logger } from "@/lib/logger/client";
 
 export interface UploadedFile {
   name: string;
@@ -52,7 +53,7 @@ export async function uploadFiles(
       error: null,
     };
   } catch (error: any) {
-    console.error("File upload error:", error);
+    logger.error("File upload error", { module: "storage", action: "upload-files", error });
     return {
       success: false,
       files: [],

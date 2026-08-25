@@ -8,10 +8,12 @@ import { Loader2 } from "lucide-react";
 // Routes that don't require authentication
 const PUBLIC_ROUTES = [
     "/login",
+    "/signup",
     "/register",
     "/forgot-password",
-    "/change-password", // First-time password change
-    "/auth/action", // Firebase email action handlers
+    "/change-password",
+    "/onboarding",
+    "/auth/action",
     "/" // Landing page is public
 ];
 
@@ -36,9 +38,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
         // SCENARIO 1: Not Logged In
         if (!user) {
-            // Redirect to login if on protected route OR root path
             if (!isPublicRoute) {
-                console.log("🔒 Route: Not logged in -> Redirecting to Login");
                 router.replace("/login");
             }
             return;
@@ -46,62 +46,37 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
         // SCENARIO 2: Account Deactivated
         if (user.isActive === false) {
-            console.log("🔒 Route: Account deactivated -> Signing out");
-            // Sign out will be handled by AuthProvider
             router.replace("/login?error=account_deactivated");
             return;
         }
 
-        // SCENARIO 3: First Login - Force Password Change
-        if (user.isFirstLogin === true) {
+        // SCENARIO 3: First Login - Force Password Change (email/password accounts only)
+        if (user.isFirstLogin === true && user.provider !== "google.com") {
             if (pathname !== "/change-password") {
-                console.log("🔒 Route: First login -> Redirecting to Change Password");
                 router.replace("/change-password");
             }
             return;
         }
 
+        // SCENARIO 4: Onboarding incomplete — collect profile before accessing CRM
+        if (user.isOnboarded === false && !pathname?.startsWith("/onboarding")) {
+            router.replace("/onboarding");
+            return;
+        }
 
-        // Redirect login or pending page to dashboard
+        // Redirect logged-in users away from auth pages
         if (pathname === "/login" || pathname === "/pending-approval" || pathname === "/change-password") {
-            console.log("🔒 Route: User approved -> Redirecting to Dashboard");
-            router.replace("/dashboard");
+            router.replace("/org");
         }
         return;
     }, [user, loading, hydrated, pathname, router, isMounted]);
 
-    // Debug logging
-    console.log("🔒 AuthGate State:", { isMounted, loading, hydrated, hasUser: !!user, pathname });
-
-    // Loading State
-    // Show loading spinner ONLY if:
-    // 1. Not hydrated/mounted yet
-    // 2. Loading state is true
-    // AND we are not on a public route (optional: public routes can render instantly if we want, but checking auth state first is safer to prevent flashing login form if already logged in)
-
-    // ----------------------------------------------------------------
-    // 1. GLOBAL LOADING STATE (The "Wait for Decision" Phase)
-    // ----------------------------------------------------------------
-    // If not mounted or still loading auth state:
-    // - Public routes (landing page, login, etc.) render immediately — no spinner needed.
-    //   The Navbar handles the logged-in/out toggle once hydration completes.
-    // - Protected routes show a spinner until we know the auth state.
     if (!isMounted || loading || !hydrated) {
         const isPublicNow = PUBLIC_ROUTES.some(route => {
             if (route === "/") return pathname === "/";
             return pathname?.startsWith(route);
         });
-
-        if (isPublicNow) {
-            // Render public content immediately; auth state catches up client-side
-            return <>{children}</>;
-        }
-
-        console.log("⚠️ SHOWING LOADING SCREEN:", {
-            notMounted: !isMounted,
-            stillLoading: loading,
-            notHydrated: !hydrated
-        });
+        if (isPublicNow) return <>{children}</>;
         return (
             <div className="h-screen w-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
                 <div className="flex flex-col items-center gap-3">
@@ -112,48 +87,26 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         );
     }
 
-    console.log("✅ PASSED LOADING CHECK - Rendering content");
-
     const isPublicRoute = PUBLIC_ROUTES.some(route => {
         if (route === "/") return pathname === "/";
         return pathname?.startsWith(route);
     });
 
-    // ----------------------------------------------------------------
-    // 2. FINAL DECISION ROUTING (No Intermediate States)
-    // ----------------------------------------------------------------
-
-    // Scenario 1: NOT LOGGED IN
     if (!user) {
-        console.log("🔴 AuthGate Scenario 1: NOT LOGGED IN");
-        // If trying to access protected route -> Redirect to Login
-        if (!isPublicRoute) {
-            console.log("  → Showing loading spinner (redirecting)");
-            return <LoadingSpinner />; // Block content while redirecting
-        }
-        // Public route -> Allow
-        console.log("  → Rendering children (public route)");
+        if (!isPublicRoute) return <LoadingSpinner />;
         return <>{children}</>;
     }
 
-    // Scenario 2: Account Deactivated
-    if (user.isActive === false) {
-        console.log("🟠 AuthGate Scenario 2: ACCOUNT DEACTIVATED");
-        console.log("  → Showing loading spinner (redirecting to login)");
-        return <LoadingSpinner />;
+    if (user.isActive === false) return <LoadingSpinner />;
+
+    if (user.isFirstLogin === true && user.provider !== "google.com") {
+        if (pathname !== "/change-password") return <LoadingSpinner />;
     }
 
-    // Scenario 3: LOGGED IN and ACTIVE
-    console.log("🟢 AuthGate Scenario 3: LOGGED IN and ACTIVE", { pathname });
-    // If on pending page or login page -> Dashboard
-    if (pathname === "/pending-approval" || pathname === "/login") {
-        console.log("  → Showing loading spinner (redirecting to dashboard)");
-        return <LoadingSpinner />; // Block content while redirecting
-    }
+    if (user.isOnboarded === false && !pathname?.startsWith("/onboarding")) return <LoadingSpinner />;
 
-    // Allow access to everything else (Dashboard, Leads, etc)
-    console.log("  → Rendering children for approved user on", pathname);
-    console.log("  → Children type:", typeof children, children);
+    if (pathname === "/pending-approval" || pathname === "/login") return <LoadingSpinner />;
+
     return <>{children}</>;
 }
 

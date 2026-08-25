@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { auth } from "@/lib/firebase";
 
 interface NavLink {
   label: string;
@@ -34,13 +35,28 @@ function isActive(href: string, pathname: string): boolean {
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [signInLoading, setSignInLoading] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Check Firebase auth state before navigating. authStateReady() resolves as
+  // soon as Firebase has determined the session from its local persistence, so
+  // it never blocks longer than a single async tick for returning users.
+  const handleSignIn = async () => {
+    setSignInLoading(true);
+    try {
+      await auth.authStateReady();
+      router.push(auth.currentUser ? "/org" : "/login");
+    } catch {
+      router.push("/login");
+    }
+  };
 
   return (
     <nav
@@ -95,12 +111,14 @@ export function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-            <Link
-              href="/login"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            <button
+              onClick={handleSignIn}
+              disabled={signInLoading}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
             >
+              {signInLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Sign In
-            </Link>
+            </button>
             <Link href="/contact">
               <Button className="bg-enterprise-amber hover:bg-amber-500 text-black font-semibold shadow-lg shadow-enterprise-amber/20 transition-all hover:shadow-enterprise-amber/40 hover:-translate-y-0.5">
                 Get Your Demo
@@ -150,13 +168,14 @@ export function Navbar() {
                     );
                   })}
                   <div className="mt-4 border-t border-enterprise-border pt-4 flex flex-col gap-3 px-4">
-                    <Link
-                      href="/login"
-                      onClick={() => setIsOpen(false)}
-                      className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    <button
+                      onClick={() => { setIsOpen(false); handleSignIn(); }}
+                      disabled={signInLoading}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
                     >
+                      {signInLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                       Sign In
-                    </Link>
+                    </button>
                     <Link href="/contact" onClick={() => setIsOpen(false)}>
                       <Button className="w-full bg-enterprise-amber hover:bg-amber-500 text-black font-semibold">
                         Get Your Demo

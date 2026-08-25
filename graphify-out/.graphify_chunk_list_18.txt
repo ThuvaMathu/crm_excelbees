@@ -1,0 +1,16 @@
+D:\Excel bees\Projects\crm_excelbees\docs\COMPETITOR_PHASE1_COMPLETE.md
+D:\Excel bees\Projects\crm_excelbees\docs\FIRESTORE_SECURITY_RULES.md
+D:\Excel bees\Projects\crm_excelbees\docs\archive\ENV_FIX_PLAN.md
+D:\Excel bees\Projects\crm_excelbees\docs\archive\EmployeeManagementPlan.md
+D:\Excel bees\Projects\crm_excelbees\docs\archive\PLAN.md
+D:\Excel bees\Projects\crm_excelbees\docs\archive\PLANAI.md
+D:\Excel bees\Projects\crm_excelbees\docs\archive\PROJECT.md
+D:\Excel bees\Projects\crm_excelbees\docs\archive\employee-user-integration-plan.md
+D:\Excel bees\Projects\crm_excelbees\docs\archive\invoice_refactor_plan.md
+D:\Excel bees\Projects\crm_excelbees\docs\archive\model-consolidate.md
+D:\Excel bees\Projects\crm_excelbees\docs\archive\progress.md
+D:\Excel bees\Projects\crm_excelbees\lib\constants\blog\imagelist.md
+D:\Excel bees\Projects\crm_excelbees\multi-tennant-migration-plan.md
+D:\Excel bees\Projects\crm_excelbees\ship-to-prd.md
+D:\Excel bees\Projects\crm_excelbees\so-far-migrated.md
+D:\Excel bees\Projects\crm_excelbees\usermanagement-report.md

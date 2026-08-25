@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
 import { CalendarTemplate } from "@/types/calendar";
+import { logger } from "@/lib/logger";
 
 // Pre-built templates
 const PRE_BUILT_TEMPLATES: CalendarTemplate[] = [
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`📋 Fetching templates for user: ${userId}`);
+    logger.debug("Fetching templates", { module: "calendar", action: "fetch", userId });
 
     // Get pre-built templates
     let preBuiltTemplates = PRE_BUILT_TEMPLATES;
@@ -86,14 +87,14 @@ export async function GET(request: NextRequest) {
       } as CalendarTemplate);
     });
 
-    console.log(`✅ Found ${preBuiltTemplates.length} pre-built and ${customTemplates.length} custom templates`);
+    logger.debug("Found templates", { module: "calendar", action: "fetch", userId, metadata: { preBuilt: preBuiltTemplates.length, custom: customTemplates.length } });
 
     return NextResponse.json({
       preBuilt: preBuiltTemplates,
       custom: customTemplates,
     });
   } catch (error) {
-    console.error("❌ Error fetching templates:", error);
+    logger.error("Error fetching templates", { module: "calendar", action: "fetch", error });
     return NextResponse.json(
       { error: "Failed to fetch templates" },
       { status: 500 }
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`📋 Creating custom template: ${name}`);
+    logger.info("Creating template", { module: "calendar", action: "create", metadata: { name } });
 
     const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -137,7 +138,7 @@ export async function POST(request: NextRequest) {
       .doc(templateId)
       .set(newTemplate);
 
-    console.log(`✅ Template created: ${templateId}`);
+    logger.info("Template created", { module: "calendar", action: "create", metadata: { templateId } });
 
     return NextResponse.json({
       template: {
@@ -146,7 +147,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("❌ Error creating template:", error);
+    logger.error("Error creating template", { module: "calendar", action: "create", error });
     return NextResponse.json(
       { error: "Failed to create template" },
       { status: 500 }

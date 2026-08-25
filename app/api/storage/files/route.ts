@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminStorage } from "@/lib/firebase-admin";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
                     url: publicUrl
                 };
             } catch (err) {
-                console.warn(`Skipping file ${file.name}: failed to get metadata`);
+                logger.warn("Skipping file, failed to get metadata", { module: "storage", action: "list", metadata: { fileName: file.name } });
                 return null;
             }
         })
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, files: images });
 
   } catch (error: any) {
-    console.error("Storage List Error:", error);
+    logger.error("Storage list error", { module: "storage", action: "list", error });
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

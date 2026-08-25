@@ -1,6 +1,79 @@
 import { Timestamp } from "firebase/firestore";
 
 // ============================================================
+// MULTI-TENANT — ORGANIZATION TYPES
+// ============================================================
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string; // URL-safe identifier e.g. "excelbees-inc"
+  ownerId: string; // Firebase UID of the creator
+  logoUrl?: string; // Also used as the invoice/PDF company logo — admin-only, org-wide.
+  website?: string;
+  industry?: string;
+  size?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  smtpConfig?: SMTPConfig;
+  invoiceSettings?: InvoiceOrgSettings;
+}
+
+export interface SMTPConfig {
+  provider: string; // e.g., "gmail", "yahoo", "zoho", "custom"
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  pass?: string; // App password, encrypted in DB
+}
+
+// Org-wide invoice branding/config — admin-only (see
+// app/org/[orgId]/settings/invoices/page.tsx). Deliberately has no
+// companyName (always the org's own `name`, not a separately editable
+// value — team members must not be able to invoice under a different
+// company name), no fromName/fromEmail (always the actual sending user's
+// own name/email, resolved at send time, not a stored value), and no
+// logoUrl (reuses Organization.logoUrl directly instead of duplicating it).
+export interface InvoiceOrgSettings {
+  colorTheme: InvoiceColorTheme; // Hex color, applied to PDF accent color
+  invoicePrefix: string; // e.g., "INV-", "EB-"
+  nextInvoiceNumber: number; // Auto-incrementing counter, shared org-wide
+  accountName?: string;
+  accountNumber?: string;
+  bankName?: string;
+  ifsc?: string;
+  upiId?: string;
+  gstin?: string;
+}
+
+export type OrgMemberStatus = "active" | "invited" | "suspended";
+
+export interface OrganizationMember {
+  id: string; // doc id = `${organizationId}_${userId}`
+  organizationId: string;
+  userId: string;
+  displayName?: string;
+  email?: string;
+  photoURL?: string;
+  role: UserRole;
+  permissions?: UserPermissions;
+  status: OrgMemberStatus;
+  joinedAt: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface Team {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string;
+  memberIds: string[]; // array of userIds
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// ============================================================
 // USER & PERMISSION TYPES
 // ============================================================
 
@@ -66,14 +139,14 @@ export const ROLE_DEFAULTS: Record<UserRole, UserPermissions> = {
 
   },
   manager: {
-    // CRM Core - Read All, Edit All, No Create/Delete (RBAC Audit Fix)
-    leads: { read: true, create: false, edit: true, delete: false, editAll: true },
-    contacts: { read: true, create: false, edit: true, delete: false, editAll: true },
-    companies: { read: true, create: false, edit: true, delete: false, editAll: true },
-    deals: { read: true, create: false, edit: true, delete: false, editAll: true },
-    projects: { read: true, create: false, edit: true, delete: false, editAll: true },
-    tasks: { read: true, create: false, edit: true, delete: false, editAll: true },
-    invoices: { read: true, create: false, edit: true, delete: false, editAll: true },
+    // CRM Core - Full Create/Read/Edit All, No Delete
+    leads: { read: true, create: true, edit: true, delete: false, editAll: true },
+    contacts: { read: true, create: true, edit: true, delete: false, editAll: true },
+    companies: { read: true, create: true, edit: true, delete: false, editAll: true },
+    deals: { read: true, create: true, edit: true, delete: false, editAll: true },
+    projects: { read: true, create: true, edit: true, delete: false, editAll: true },
+    tasks: { read: true, create: true, edit: true, delete: false, editAll: true },
+    invoices: { read: true, create: true, edit: true, delete: false, editAll: true },
     reports: { read: true, create: false, edit: false, delete: false, editAll: true },
 
     // AI Assistant
@@ -84,13 +157,13 @@ export const ROLE_DEFAULTS: Record<UserRole, UserPermissions> = {
 
   },
   team: {
-    // CRM Core - Read Only (RBAC Audit Fix)
-    leads: { read: true, create: false, edit: false, delete: false, editAll: false },
-    contacts: { read: true, create: false, edit: false, delete: false, editAll: false },
-    companies: { read: true, create: false, edit: false, delete: false, editAll: false },
-    deals: { read: true, create: false, edit: false, delete: false, editAll: false },
+    // CRM Core - Create own records, Read all, Edit own only
+    leads: { read: true, create: true, edit: true, delete: false, editAll: false },
+    contacts: { read: true, create: true, edit: true, delete: false, editAll: false },
+    companies: { read: true, create: true, edit: true, delete: false, editAll: false },
+    deals: { read: true, create: true, edit: true, delete: false, editAll: false },
     projects: { read: true, create: false, edit: false, delete: false, editAll: false },
-    tasks: { read: true, create: false, edit: false, delete: false, editAll: false },
+    tasks: { read: true, create: true, edit: true, delete: false, editAll: false },
     invoices: { read: false, create: false, edit: false, delete: false, editAll: false },
     reports: { read: false, create: false, edit: false, delete: false, editAll: false },
 
@@ -150,7 +223,6 @@ export interface User {
   photoURL: string | null;
   role?: UserRole;
   permissions?: UserPermissions; // NEW: Granular permissions
-  invoiceSettings?: InvoiceUserSettings;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   isFirstLogin?: boolean;
@@ -171,9 +243,11 @@ export interface UserProfile {
   lastName?: string;
   photoURL?: string;
   phone?: string;
+  position?: string;      // Job title / role within company
   role: UserRole;
   isFirstLogin: boolean;
   isActive: boolean;
+  isOnboarded?: boolean;  // false until user completes the onboarding wizard
   status: UserStatus;
   createdAt: Timestamp;
   createdBy: string;
@@ -182,11 +256,14 @@ export interface UserProfile {
   updatedAt?: Timestamp;
   provider?: "password" | "google.com";
   permissions?: UserPermissions;
-  invoiceSettings?: InvoiceUserSettings;
   documents?: any[];
   settings?: {
     theme?: "light" | "dark" | "system";
-    notifications?: boolean;
+    notifications?: boolean | {
+      emailNotifications?: boolean;
+      taskReminders?: boolean;
+      weeklySummary?: boolean;
+    };
     defaultCurrency?: string;
   };
 }
@@ -197,6 +274,7 @@ export type LeadSource = "Website" | "Referral" | "Ads" | "Cold Call" | "Other";
 
 export interface Lead {
   id: string;
+  organizationId: string; // multi-tenant scope
   firstName: string;
   lastName: string;
   email: string;
@@ -228,6 +306,7 @@ export interface Lead {
 // Contact Types
 export interface Contact {
   id: string;
+  organizationId: string; // multi-tenant scope
   firstName: string;
   lastName: string;
   email: string;
@@ -256,6 +335,7 @@ export interface Address {
 
 export interface Company {
   id: string;
+  organizationId: string; // multi-tenant scope
   name: string;
   domain?: string;
   email?: string;
@@ -286,6 +366,7 @@ export type ActivityType =
 
 export interface Activity {
   id: string;
+  organizationId?: string; // multi-tenant scope
   type: ActivityType;
   content: string; // Can be plain text or HTML
   performedBy: string;
@@ -321,6 +402,7 @@ export type DealStage =
 
 export interface Deal {
   id: string;
+  organizationId: string; // multi-tenant scope
   title: string;
   stage: DealStage;
   value: number;
@@ -341,7 +423,16 @@ export interface Deal {
 // Project Types
 export type ProjectStatus = "Planning" | "Development" | "Active" | "On Hold" | "Completed" | "Management" | "Cancelled";
 export type ProjectPriority = "Low" | "Medium" | "High" | "Critical";
+export type ProjectLifecycle = "active" | "maintenance";
 export type ManagementBillingCycle = "Quarterly" | "Semi-Annual" | "None";
+
+export interface ProjectPhase {
+  id: string;
+  name: string;
+  description?: string;
+  progress: number; // 0–100
+  order: number;
+}
 
 export interface ProjectFinancials {
   initialCost?: number;
@@ -359,10 +450,14 @@ export interface ProjectNotificationSettings {
 
 export interface Project {
   id: string;
+  organizationId: string; // multi-tenant scope
   name: string;
   description?: string;
   status: ProjectStatus;
   priority: ProjectPriority;
+  lifecycle: ProjectLifecycle; // "active" | "maintenance"
+  scope?: string; // Project scope defined at creation
+  phases: ProjectPhase[]; // Project phases with individual progress
   startDate: Timestamp;
   endDate?: Timestamp;
   
@@ -392,6 +487,7 @@ export type TaskType = "To Do" | "Call" | "Email" | "Meeting";
 
 export interface Task {
   id: string;
+  organizationId: string; // multi-tenant scope
   title: string;
   description?: string;
   type: TaskType;
@@ -413,7 +509,6 @@ export interface Task {
     id: string;
     name: string;
   };
-  // New fields for filtering and archiving
   associates?: string[];
   isArchived?: boolean;
   createdAt: Timestamp;
@@ -427,25 +522,6 @@ export type PaymentTerms = "Net 15" | "Net 30" | "Net 60" | "Due on Receipt" | "
 export type InvoiceTemplate = "standard" | "professional" | "creative";
 export type InvoiceColorTheme = string; // Hex color code (e.g., "#3B82F6")
 
-export interface InvoiceUserSettings {
-  template: InvoiceTemplate;
-  companyName: string;
-  fromName: string;
-  fromEmail: string;
-  logoUrl?: string;
-  colorTheme: InvoiceColorTheme; // Hex color
-  invoicePrefix: string; // e.g., "INV-", "EB-"
-  nextInvoiceNumber: number; // Auto-incrementing counter
-
-  // Payment Details for Invoice
-  accountName?: string; // Bank account holder name
-  accountNumber?: string; // Bank account number
-  bankName?: string; // Bank name
-  ifsc?: string; // IFSC code for Indian banks
-  upiId?: string; // UPI ID for payments
-  gstin?: string; // GSTIN number
-}
-
 export interface InvoiceLineItem {
   id: string;
   description: string;
@@ -458,6 +534,7 @@ export interface InvoiceLineItem {
 
 export interface Invoice {
   id: string;
+  organizationId: string; // multi-tenant scope
   invoiceNumber: string;
   status: InvoiceStatus;
   template: InvoiceTemplate;
@@ -500,7 +577,7 @@ export interface Invoice {
   isRecurring?: boolean;
   recurring?: {
     frequency: "weekly" | "monthly" | "quarterly" | "yearly";
-    interval: number; // e.g. every 2 weeks
+    interval: number;
     startDate: Timestamp;
     endDate?: Timestamp;
     lastGenerated?: Timestamp;
@@ -509,8 +586,8 @@ export interface Invoice {
   };
 
   // Compliance & Audit
-  taxProfileId?: string; // For linking to global tax configurations
-  clientTaxId?: string; // VAT/GST
+  taxProfileId?: string;
+  clientTaxId?: string;
   auditTrail?: {
     action: string;
     userId: string;
@@ -542,6 +619,7 @@ export type NotificationType =
 
 export interface Notification {
   id: string;
+  organizationId: string; // multi-tenant scope
   userId: string;
   type: NotificationType;
   title: string;
@@ -552,14 +630,70 @@ export interface Notification {
   createdAt: Timestamp;
 }
 
+// ============================================================
+// NEW ENTITY TYPES — Notes & Quotes
+// ============================================================
+
+export interface Note {
+  id: string;
+  organizationId: string;
+  content: string; // rich text / markdown
+  ownerId: string;
+  ownerName?: string;
+  relatedTo?: {
+    type: "lead" | "contact" | "deal" | "company" | "project";
+    id: string;
+    name: string;
+  };
+  isPinned?: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export type QuoteStatus = "Draft" | "Sent" | "Accepted" | "Rejected" | "Expired";
+
+export interface QuoteLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  price: number;
+  taxRate: number;
+  total: number;
+}
+
+export interface Quote {
+  id: string;
+  organizationId: string;
+  quoteNumber: string;
+  status: QuoteStatus;
+  companyId?: string;
+  companyName?: string;
+  contactId?: string;
+  contactName?: string;
+  dealId?: string;
+  issueDate: Timestamp;
+  expiryDate?: Timestamp;
+  lineItems: QuoteLineItem[];
+  subtotal: number;
+  taxAmount: number;
+  discount: number;
+  total: number;
+  notes?: string;
+  terms?: string;
+  ownerId: string;
+  ownerName?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
 // Form Input Types (without Firestore-specific fields)
-export type LeadInput = Omit<Lead, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
-export type ContactInput = Omit<Contact, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
-export type CompanyInput = Omit<Company, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
-export type DealInput = Omit<Deal, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
-export type ProjectInput = Omit<Project, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
-export type TaskInput = Omit<Task, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName" | "completedAt">;
-export type InvoiceInput = Omit<Invoice, "id" | "createdAt" | "updatedAt" | "ownerId" | "ownerName" | "paidDate">;
+export type LeadInput = Omit<Lead, "id" | "organizationId" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type ContactInput = Omit<Contact, "id" | "organizationId" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type CompanyInput = Omit<Company, "id" | "organizationId" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type DealInput = Omit<Deal, "id" | "organizationId" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type ProjectInput = Omit<Project, "id" | "organizationId" | "createdAt" | "updatedAt" | "ownerId" | "ownerName">;
+export type TaskInput = Omit<Task, "id" | "organizationId" | "createdAt" | "updatedAt" | "ownerId" | "ownerName" | "completedAt">;
+export type InvoiceInput = Omit<Invoice, "id" | "organizationId" | "createdAt" | "updatedAt" | "ownerId" | "ownerName" | "paidDate">;
 
 
 // Filter Types

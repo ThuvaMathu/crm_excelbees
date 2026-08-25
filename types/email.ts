@@ -47,6 +47,7 @@ export interface EmailTracking {
 // Email
 export interface Email {
   id: string;
+  organizationId?: string; // multi-tenant scope
   from: string;
   fromName?: string;
   to: EmailRecipient[];
@@ -93,6 +94,7 @@ export interface Email {
 // Email Template
 export interface EmailTemplate {
   id: string;
+  organizationId?: string; // multi-tenant scope
   name: string;
   description?: string;
   category: EmailTemplateCategory;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { sendEmail } from "@/lib/email/email-service";
 import { Timestamp } from "firebase-admin/firestore";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
     try {
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
 
                 processed++;
             } catch (error: any) {
-                console.error(`Failed to send scheduled email ${doc.id}:`, error);
+                logger.error("Failed to send scheduled email", { module: "cron", action: "process-scheduled", metadata: { emailId: doc.id }, error });
                 await doc.ref.update({
                     status: "failed",
                     error: error.message
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error("Cron Job Error:", error);
+        logger.error("Cron job error", { module: "cron", action: "process-scheduled", error });
         return NextResponse.json(
             { success: false, error: error.message },
             { status: 500 }

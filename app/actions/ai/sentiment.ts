@@ -3,7 +3,7 @@
 import { generateText, extractJSON } from "@/lib/gemini/parse";
 import { GEMINI_CONFIG } from "@/lib/gemini/config";
 import { PROMPTS } from "@/lib/gemini/prompts";
-import { aiUnavailable } from "@/lib/gemini/guard";
+import { aiUnavailable, aiAccessDenied } from "@/lib/gemini/guard";
 import { logAI } from "@/lib/logger";
 import type { AIResult, SentimentAnalysis } from "@/types/gemini";
 import { adminDb } from "@/lib/firebase-admin";
@@ -14,6 +14,8 @@ export async function analyzeCommunication(
 ): Promise<AIResult<SentimentAnalysis>> {
   const guard = aiUnavailable<SentimentAnalysis>({} as SentimentAnalysis);
   if (guard) return guard;
+  const accessDenied = await aiAccessDenied<SentimentAnalysis>({} as SentimentAnalysis);
+  if (accessDenied) return accessDenied;
 
   const start = Date.now();
 

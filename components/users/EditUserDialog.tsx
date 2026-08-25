@@ -30,6 +30,7 @@ import { Loader2, UserCog, Shield, ShieldCheck, AlertCircle } from "lucide-react
 import { toast } from "sonner";
 import type { UserRole, UserPermissions } from "@/types/crm";
 import { ROLE_DEFAULTS } from "@/types/crm";
+import { logger } from "@/lib/logger/client";
 
 interface EditUserDialogProps {
     user: {
@@ -112,7 +113,7 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
                 toast.error(result.error || "Failed to update user");
             }
         } catch (error: any) {
-            console.error("Error updating user:", error);
+            logger.error("Error updating user", { module: "users", action: "update", userId: currentUser?.uid, error });
             toast.error("Failed to update user");
         } finally {
             setLoading(false);

@@ -1,133 +1,86 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  QueryConstraint,
+  collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
+  query, where, Timestamp, QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { redis } from "../redis";
+import { invoiceSchema } from "../validations/invoice";
 import { generateNextInvoiceNumber } from "./invoice-number-generator";
+import { hasPermission, canEditRecord } from "../auth/permission-utils";
+import { sanitizeData } from "./utils";
 import type { Invoice, InvoiceInput, InvoiceStatus } from "@/types/crm";
 import { createNotification } from "./notifications";
+import { logger } from "@/lib/logger/client";
 
 const COLLECTION_NAME = "invoices";
 
-// Generate invoice number
-function generateInvoiceNumber(): string {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const random = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-  return `INV-${year}${month}-${random}`;
+function orgCacheKey(orgId: string, suffix: string) { return `invoices:${orgId}:${suffix}`; }
+function cacheKey(orgId: string | undefined, suffix: string) {
+  return orgId ? orgCacheKey(orgId, suffix) : "invoices:list:all";
 }
 
-// Create a new invoice
-export async function createInvoice(data: InvoiceInput, userId: string): Promise<{
-  success: boolean;
-  id: string | null;
-  error: string | null;
+export async function createInvoice(data: InvoiceInput, userId: string, organizationId: string): Promise<{
+  success: boolean; id: string | null; invoiceNumber: string | null; error: string | null;
 }> {
   try {
-    console.log("📝 Creating invoice:", data.invoiceNumber);
+    if (!organizationId) {
+      return { success: false, id: null, invoiceNumber: null, error: "organizationId is required to create an invoice" };
+    }
+    const permCheck = await hasPermission(userId, organizationId, "invoices", "create");
+    if (!permCheck.allowed) {
+      return { success: false, id: null, invoiceNumber: null, error: permCheck.reason || "You do not have permission to create invoices" };
+    }
+    const parsed = invoiceSchema.safeParse(data);
+    if (!parsed.success) {
+      return { success: false, id: null, invoiceNumber: null, error: parsed.error.issues.map((i) => i.message).join(", ") };
+    }
 
-    // Generate invoice number only if not provided
     let invoiceNumber = data.invoiceNumber;
     if (!invoiceNumber) {
       try {
-        invoiceNumber = await generateNextInvoiceNumber(userId);
-      } catch (invoiceNumberError: any) {
-        console.error("❌ Failed to generate invoice number:", invoiceNumberError);
-        return {
-          success: false,
-          id: null,
-          error: `Failed to generate invoice number: ${invoiceNumberError.message}. Please initialize your invoice settings first.`,
-        };
+        invoiceNumber = await generateNextInvoiceNumber(organizationId);
+      } catch (e: any) {
+        // Fall back to a timestamp-based number so a settings/network
+        // hiccup in the sequential generator doesn't block invoice creation.
+        logger.error("Invoice number generation failed, using fallback", { module: "invoices", action: "create", error: e });
+        invoiceNumber = `INV-${Date.now()}`;
       }
     }
-
-    const invoiceData = {
-      ...data,
-      invoiceNumber,
-      ownerId: userId,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    };
-
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), invoiceData);
-    console.log("✅ Invoice created with ID:", docRef.id);
-
-    // Invalidate cache
-    await redis.del("invoices:list:all");
-    if (userId) {
-      await redis.del(`dashboard:stats:${userId}`);
-    }
-
-    return {
-      success: true,
-      id: docRef.id,
-      error: null,
-    };
+    const invoiceData: any = { ...parsed.data, invoiceNumber, organizationId, ownerId: userId, createdAt: Timestamp.now(), updatedAt: Timestamp.now() };
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), sanitizeData(invoiceData));
+    await redis.del(orgCacheKey(organizationId, "list:all"));
+    if (userId) await redis.del(`dashboard:stats:${organizationId}:${userId}`);
+    logger.info("Invoice created", { module: "invoices", action: "create", metadata: { invoiceId: docRef.id, invoiceNumber } });
+    // The caller's pre-creation form data never has invoiceNumber set when
+    // it's auto-generated here — callers that build a PDF/email right after
+    // creating (see app/org/[orgId]/invoices/create/page.tsx) need the real
+    // assigned number, not just the doc id, or jsPDF.text(undefined, ...)
+    // throws "Invalid arguments passed to jsPDF.text".
+    return { success: true, id: docRef.id, invoiceNumber, error: null };
   } catch (error: any) {
-    console.error("❌ Failed to create invoice:", error.message);
-    return {
-      success: false,
-      id: null,
-      error: error.message,
-    };
+    logger.error("Failed to create invoice", { module: "invoices", action: "create", error });
+    return { success: false, id: null, invoiceNumber: null, error: error.message };
   }
 }
 
-// Get all invoices with optional filters
-export async function getInvoices(filters?: {
-  status?: InvoiceStatus;
-  companyId?: string;
-  ownerId?: string;
-  search?: string;
-}): Promise<{
-  invoices: Invoice[];
-  error: string | null;
-}> {
+export async function getInvoices(organizationId?: string | { status?: InvoiceStatus; companyId?: string; ownerId?: string; search?: string }, filters?: {
+  status?: InvoiceStatus; companyId?: string; ownerId?: string; search?: string;
+}): Promise<{ invoices: Invoice[]; error: string | null }> {
+  if (typeof organizationId === "object") { filters = organizationId as any; organizationId = undefined; }
   try {
-    console.log("📋 Fetching invoices with filters:", filters);
     const constraints: QueryConstraint[] = [];
-
-    // Apply filters
-    if (filters?.status) {
-      constraints.push(where("status", "==", filters.status));
-    }
-    if (filters?.companyId) {
-      constraints.push(where("companyId", "==", filters.companyId));
-    }
-    if (filters?.ownerId) {
-      constraints.push(where("ownerId", "==", filters.ownerId));
-    }
-
-    // Only add ordering if we have filters
-    if (constraints.length > 0) {
-      constraints.push(orderBy("createdAt", "desc"));
-    }
-
-    const q = constraints.length > 0
-      ? query(collection(db, COLLECTION_NAME), ...constraints)
-      : collection(db, COLLECTION_NAME);
-
-    // Try Cache for unfiltered requests
+    if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+    if (filters?.status) constraints.push(where("status", "==", filters.status));
+    if (filters?.companyId) constraints.push(where("companyId", "==", filters.companyId));
+    if (filters?.ownerId) constraints.push(where("ownerId", "==", filters.ownerId));
+    // No orderBy — multiple where+orderBy requires composite index. Sort client-side below.
+    const q = constraints.length > 0 ? query(collection(db, COLLECTION_NAME), ...constraints) : query(collection(db, COLLECTION_NAME));
     const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.search === "");
-    const cacheKey = "invoices:list:all";
+    const key = cacheKey(organizationId, "list:all");
 
     if (isUnfiltered) {
-      const cached = await redis.get<Invoice[]>(cacheKey);
+      const cached = await redis.get<Invoice[]>(key);
       if (cached) {
-        console.log("⚡ HIT: Invoices list from Redis");
-        // Rehydrate Timestamps
         const hydrated = cached.map((inv: any) => ({
           ...inv,
           createdAt: inv.createdAt ? new Timestamp(inv.createdAt.seconds || 0, inv.createdAt.nanoseconds || 0) : null,
@@ -140,245 +93,105 @@ export async function getInvoices(filters?: {
     }
 
     const querySnapshot = await getDocs(q);
-    console.log("📊 Invoices fetched:", querySnapshot.size);
-
     const invoices: Invoice[] = [];
-    querySnapshot.forEach((doc) => {
-      invoices.push({ id: doc.id, ...doc.data() } as Invoice);
-    });
+    querySnapshot.forEach((doc) => { invoices.push({ id: doc.id, ...doc.data() } as Invoice); });
+    if (invoices.length > 0 && isUnfiltered) await redis.set(key, invoices, { ex: 300 });
 
-    if (invoices.length > 0 && isUnfiltered) {
-      await redis.set(cacheKey, invoices, { ex: 300 });
-    }
+    invoices.sort((a, b) => { const aT = a.createdAt?.toMillis?.() || 0; const bT = b.createdAt?.toMillis?.() || 0; return bT - aT; });
 
-    // Sort by createdAt on client side
-    invoices.sort((a, b) => {
-      const aTime = a.createdAt?.toMillis?.() || 0;
-      const bTime = b.createdAt?.toMillis?.() || 0;
-      return bTime - aTime;
-    });
-
-    // Apply client-side search filter
-    let filteredInvoices = invoices;
+    let filtered = invoices;
     if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredInvoices = invoices.filter(
-        (invoice) =>
-          invoice.invoiceNumber?.toLowerCase().includes(searchLower) ||
-          invoice.companyName?.toLowerCase().includes(searchLower) ||
-          invoice.contactName?.toLowerCase().includes(searchLower) ||
-          invoice.clientEmail?.toLowerCase().includes(searchLower) ||
-          invoice.status?.toLowerCase().includes(searchLower)
-      );
+      const s = filters.search.toLowerCase();
+      filtered = invoices.filter((i) => i.invoiceNumber?.toLowerCase().includes(s) || i.companyName?.toLowerCase().includes(s) ||
+        i.contactName?.toLowerCase().includes(s) || i.clientEmail?.toLowerCase().includes(s) || i.status?.toLowerCase().includes(s));
     }
-
-    console.log("✅ Returning", filteredInvoices.length, "invoices");
-    return {
-      invoices: filteredInvoices,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to fetch invoices:", error.message);
-    return {
-      invoices: [],
-      error: error.message,
-    };
-  }
+    return { invoices: filtered, error: null };
+  } catch (error: any) { return { invoices: [], error: error.message }; }
 }
 
-// Get a single invoice by ID
-export async function getInvoice(id: string): Promise<{
-  invoice: Invoice | null;
-  error: string | null;
-}> {
+export async function getInvoice(id: string): Promise<{ invoice: Invoice | null; error: string | null }> {
   try {
-    console.log("🔍 Fetching invoice:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      console.log("✅ Invoice found:", id);
-      return {
-        invoice: { id: docSnap.id, ...docSnap.data() } as Invoice,
-        error: null,
-      };
-    } else {
-      console.warn("⚠️ Invoice not found:", id);
-      return {
-        invoice: null,
-        error: "Invoice not found",
-      };
-    }
-  } catch (error: any) {
-    console.error("❌ Failed to fetch invoice:", error.message);
-    return {
-      invoice: null,
-      error: error.message,
-    };
-  }
+    if (docSnap.exists()) return { invoice: { id: docSnap.id, ...docSnap.data() } as Invoice, error: null };
+    return { invoice: null, error: "Invoice not found" };
+  } catch (error: any) { return { invoice: null, error: error.message }; }
 }
 
-// Update an invoice
-export async function updateInvoice(id: string, data: Partial<InvoiceInput>): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function updateInvoice(id: string, data: Partial<InvoiceInput>, userId: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("📝 Updating invoice:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, {
-      ...data,
-      updatedAt: Timestamp.now(),
-    } as any);
-
-    console.log("✅ Invoice updated successfully");
-
-    // Invalidate cache
-    await redis.del("invoices:list:all");
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to update invoice:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Invoice not found" };
+    const existing = docSnap.data();
+    const permCheck = await canEditRecord(userId, existing.organizationId, "invoices", existing.ownerId);
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to edit this invoice" };
+    }
+    await updateDoc(docRef, sanitizeData({ ...data, updatedAt: Timestamp.now() }) as any);
+    if (existing.organizationId) await redis.del(orgCacheKey(existing.organizationId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Update invoice status
-export async function updateInvoiceStatus(id: string, status: InvoiceStatus, paidDate?: Date): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function updateInvoiceStatus(id: string, status: InvoiceStatus, userId: string, paidDate?: Date): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("📝 Updating invoice status:", id, "to", status);
     const docRef = doc(db, COLLECTION_NAME, id);
+    const currentSnap = await getDoc(docRef);
+    if (!currentSnap.exists()) throw new Error("Invoice not found");
+    const current = currentSnap.data() as Invoice;
 
-    // Fetch current invoice to get owner and check previous status
-    const currentInvoiceSnap = await getDoc(docRef);
-    if (!currentInvoiceSnap.exists()) throw new Error("Invoice not found");
-    const currentInvoice = currentInvoiceSnap.data() as Invoice;
-
-    const updateData: any = {
-      status,
-      updatedAt: Timestamp.now(),
-    };
-
-    // If marking as paid, set paid date
-    if (status === "Paid" && paidDate) {
-      updateData.paidDate = Timestamp.fromDate(paidDate);
+    const permCheck = await canEditRecord(userId, current.organizationId, "invoices", current.ownerId);
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to update this invoice" };
     }
 
+    const updateData: any = { status, updatedAt: Timestamp.now() };
+    if (status === "Paid" && paidDate) updateData.paidDate = Timestamp.fromDate(paidDate);
     await updateDoc(docRef, updateData);
 
-    // Notify owner if invoice is paid
-    if (status === "Paid" && currentInvoice.status !== "Paid") {
-      if (currentInvoice.ownerId) {
-        console.log("🔔 Creating invoice paid notification for owner:", currentInvoice.ownerId);
-        try {
-          const notifResult = await createNotification(
-            currentInvoice.ownerId,
-            "invoice_paid",
-            "Invoice Paid",
-            `Invoice ${currentInvoice.invoiceNumber} has been marked as paid.`,
-            "invoice",
-            id
-          );
-          console.log("🔔 Invoice notification result:", notifResult);
-        } catch (notifError) {
-          console.error("❌ Failed to create invoice notification:", notifError);
-        }
-      } else {
-        console.warn("⚠️ Invoice has no ownerId, skipping notification");
+    if (status === "Paid" && current.status !== "Paid" && current.ownerId) {
+      try {
+        await createNotification(current.ownerId, "invoice_paid", "Invoice Paid", `Invoice ${current.invoiceNumber} has been marked as paid.`, "invoice", id, current.organizationId);
+      } catch (err) {
+        logger.error("Failed to create invoice_paid notification", { module: "invoices", action: "notify", metadata: { invoiceId: id }, error: err });
       }
     }
 
-    console.log("✅ Invoice status updated");
-
-    // Invalidate cache
-    await redis.del("invoices:list:all");
-    if (currentInvoice.ownerId) {
-      await redis.del(`dashboard:stats:${currentInvoice.ownerId}`);
-    }
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to update invoice status:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    if (current.organizationId) { await redis.del(orgCacheKey(current.organizationId, "list:all")); if (current.ownerId) await redis.del(`dashboard:stats:${current.organizationId}:${current.ownerId}`); }
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Delete an invoice
-export async function deleteInvoice(id: string): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function deleteInvoice(id: string, userId: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("🗑️ Deleting invoice:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Invoice not found" };
+    const existing = docSnap.data();
+    const permCheck = await hasPermission(userId, existing.organizationId, "invoices", "delete");
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to delete this invoice" };
+    }
+    const orgId = existing.organizationId;
     await deleteDoc(docRef);
-
-    console.log("✅ Invoice deleted successfully");
-
-    // Invalidate cache
-    await redis.del("invoices:list:all");
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to delete invoice:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    if (orgId) await redis.del(orgCacheKey(orgId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Get invoice statistics
-export async function getInvoiceStats(): Promise<{
-  stats: {
-    totalRevenue: number;
-    outstanding: number;
-    overdueCount: number;
-    draftCount: number;
-  } | null;
+export async function getInvoiceStats(organizationId?: string): Promise<{
+  stats: { totalRevenue: number; outstanding: number; overdueCount: number; draftCount: number } | null;
   error: string | null;
 }> {
   try {
-    const { invoices } = await getInvoices();
-
+    const { invoices } = await getInvoices(organizationId);
     const stats = {
-      totalRevenue: invoices
-        .filter((inv) => inv.status === "Paid")
-        .reduce((sum, inv) => sum + inv.total, 0),
-      outstanding: invoices
-        .filter((inv) => inv.status === "Sent" || inv.status === "Overdue")
-        .reduce((sum, inv) => sum + inv.total, 0),
-      overdueCount: invoices.filter((inv) => inv.status === "Overdue").length,
-      draftCount: invoices.filter((inv) => inv.status === "Draft").length,
+      totalRevenue: invoices.filter((i) => i.status === "Paid").reduce((s, i) => s + i.total, 0),
+      outstanding: invoices.filter((i) => i.status === "Sent" || i.status === "Overdue").reduce((s, i) => s + i.total, 0),
+      overdueCount: invoices.filter((i) => i.status === "Overdue").length,
+      draftCount: invoices.filter((i) => i.status === "Draft").length,
     };
-
-    return {
-      stats,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to get invoice stats:", error.message);
-    return {
-      stats: null,
-      error: error.message,
-    };
-  }
+    return { stats, error: null };
+  } catch (error: any) { return { stats: null, error: error.message }; }
 }

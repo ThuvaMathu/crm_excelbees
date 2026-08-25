@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X, Mail, User } from "lucide-react";
 import { getContacts } from "@/lib/firestore/contacts";
+import { useOrgStore } from "@/store/org";
 import type { EmailRecipient } from "@/types/email";
 import type { Contact } from "@/types/crm";
 import { isValidEmail, parseEmailString } from "@/lib/email/merge-fields";
@@ -25,6 +26,8 @@ export function RecipientInput({
     label,
     disabled = false,
 }: RecipientInputProps) {
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [inputValue, setInputValue] = useState("");
     const [suggestions, setSuggestions] = useState<Contact[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -37,7 +40,7 @@ export function RecipientInput({
     }, []);
 
     const fetchContacts = async () => {
-        const { contacts: fetchedContacts } = await getContacts();
+        const { contacts: fetchedContacts } = await getContacts(organizationId);
         setContacts(fetchedContacts);
     };
 

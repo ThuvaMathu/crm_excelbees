@@ -6,13 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { auth } from "@/lib/firebase";
+import { logger } from "@/lib/logger/client";
 
 interface LogoUploaderProps {
     value?: string;
     onChange: (url: string) => void;
+    /** Required to scope the upload to an org and authorize it server-side. */
+    orgId: string;
 }
 
-export function LogoUploader({ value, onChange }: LogoUploaderProps) {
+// Matches the PDF generator's addImage() box (40mm x 20mm = 2:1 ratio, see
+// lib/pdf/invoice-generator.ts) scaled up to a print-quality pixel size, so
+// a logo uploaded at this size renders crisp and undistorted on invoices.
+const RECOMMENDED_SIZE_TEXT = "Recommended: 480 × 240px (2:1 ratio), PNG with transparent background, max 2MB";
+
+export function LogoUploader({ value, onChange, orgId }: LogoUploaderProps) {
     const [uploading, setUploading] = useState(false);
     const [preview, setPreview] = useState<string | undefined>(value);
 
@@ -32,28 +41,52 @@ export function LogoUploader({ value, onChange }: LogoUploaderProps) {
             return;
         }
 
+        // Soft aspect-ratio check — logo renders in a fixed 2:1 box on the
+        // PDF, so a very different ratio will look stretched. This warns
+        // but never blocks the upload, since minor deviations are fine.
+        try {
+            const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve({ w: img.width, h: img.height });
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+            const ratio = dims.w / dims.h;
+            if (ratio < 1.3 || ratio > 3) {
+                toast.warning("This logo isn't close to the recommended 2:1 ratio — it may look stretched on invoices.");
+            }
+        } catch {
+            // Non-critical — proceed with upload even if dimension probing fails.
+        }
+
         setUploading(true);
 
         try {
-            // Create FormData
+            const token = await auth.currentUser?.getIdToken();
+            if (!token) throw new Error("Not authenticated");
+
             const formData = new FormData();
             formData.append("file", file);
+            formData.append("orgId", orgId);
 
-            // Upload to your storage endpoint
             const response = await fetch("/api/upload/logo", {
                 method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
                 body: formData,
             });
 
-            if (!response.ok) throw new Error("Upload failed");
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({}));
+                throw new Error(body.error || "Upload failed");
+            }
 
             const { url } = await response.json();
             setPreview(url);
             onChange(url);
             toast.success("Logo uploaded successfully");
-        } catch (error) {
-            console.error("Upload error:", error);
-            toast.error("Failed to upload logo");
+        } catch (error: any) {
+            logger.error("Logo upload error", { module: "settings", action: "upload", error });
+            toast.error(error.message || "Failed to upload logo");
         } finally {
             setUploading(false);
         }
@@ -118,7 +151,7 @@ export function LogoUploader({ value, onChange }: LogoUploaderProps) {
                 )}
                 <div className="flex-1 text-sm text-muted-foreground">
                     <p>Upload your company logo</p>
-                    <p className="text-xs">PNG, JPG up to 2MB</p>
+                    <p className="text-xs">{RECOMMENDED_SIZE_TEXT}</p>
                 </div>
             </div>
         </div>

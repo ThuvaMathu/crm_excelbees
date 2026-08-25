@@ -6,6 +6,7 @@
  */
 
 import { useAuth } from "@/hooks/useAuth";
+import { logger } from "@/lib/logger/client";
 
 type ApiRequestInit = Omit<RequestInit, "headers"> & {
   headers?: {
@@ -75,11 +76,17 @@ export async function apiFetch<T = any>(
       success: true,
       data,
     };
-  } catch (error: any) {
-    console.error("API fetch error:", error);
+  } catch (error) {
+    logger.error("API fetch error", {
+      module: "api",
+      action: "fetch",
+      userId: user.uid,
+      metadata: { endpoint },
+      error,
+    });
     return {
       success: false,
-      error: error.message || "Network error",
+      error: error instanceof Error ? error.message : "Network error",
     };
   }
 }

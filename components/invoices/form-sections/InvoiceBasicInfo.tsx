@@ -12,11 +12,15 @@ import { Label } from "@/components/ui/label";
 import { DealProjectLinker } from "../DealProjectLinker";
 import { getCompanies } from "@/lib/firestore/companies";
 import { getContacts } from "@/lib/firestore/contacts";
+import { useOrgStore } from "@/store/org";
 import { Company, Contact } from "@/types/crm";
 import { Building2, User, Search } from "lucide-react";
+import { logger } from "@/lib/logger/client";
 
 export function InvoiceBasicInfo() {
     const form = useFormContext();
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [companies, setCompanies] = useState<Company[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [companySearch, setCompanySearch] = useState("");
@@ -32,13 +36,13 @@ export function InvoiceBasicInfo() {
             try {
                 // Fetch all for now (optimize later for large datasets)
                 const [companiesData, contactsData] = await Promise.all([
-                    getCompanies(),
-                    getContacts()
+                    getCompanies(organizationId),
+                    getContacts(organizationId)
                 ]);
                 setCompanies(companiesData.companies);
                 setContacts(contactsData.contacts);
             } catch (error) {
-                console.error("Failed to fetch client data", error);
+                logger.error("Failed to fetch client data", { module: "invoices", action: "fetch", organizationId, error });
             } finally {
                 setIsLoading(false);
             }

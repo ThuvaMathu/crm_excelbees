@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger/client";
 
 export default function ChangePasswordPage() {
     const router = useRouter();
@@ -77,15 +78,18 @@ export default function ChangePasswordPage() {
 
             toast.success("Password changed successfully!");
 
-            // Redirect to dashboard
-            router.push("/dashboard");
+            router.push("/org");
         } catch (error: any) {
-            console.error("Password change error:", error);
+            logger.error("Password change error", { module: "auth", action: "change-password", userId: user.uid, error });
 
-            if (error.code === "auth/wrong-password") {
+            if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
                 toast.error("Current password is incorrect");
             } else if (error.code === "auth/weak-password") {
                 toast.error("New password is too weak");
+            } else if (error.code === "auth/too-many-requests") {
+                toast.error("Too many attempts. Please try again later.");
+            } else if (error.code === "auth/requires-recent-login") {
+                toast.error("Session expired. Please log in again and retry.");
             } else {
                 toast.error("Failed to change password. Please try again.");
             }
@@ -97,7 +101,7 @@ export default function ChangePasswordPage() {
     // Redirect if not first login
     useEffect(() => {
         if (user && !user.isFirstLogin && !loading) {
-            router.push("/dashboard");
+            router.push("/org");
         }
     }, [user, loading, router]);
 
@@ -107,6 +111,19 @@ export default function ChangePasswordPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12 sm:px-6 lg:px-8">
+            {/*
+                Password managers / browser autofill can set an input's DOM
+                value directly without firing a React-visible "input" event,
+                leaving component state (and therefore the match/strength
+                checks below) out of sync with what's actually on screen.
+                This keyframe fires `onAnimationStart` the instant WebKit/
+                Blink/Gecko flags an input as autofilled, which we use above
+                to resync state to the real DOM value.
+            */}
+            <style jsx global>{`
+                @keyframes onAutoFillStart { from {} to {} }
+                .autofill-detect:-webkit-autofill { animation-name: onAutoFillStart; animation-duration: 0.001s; }
+            `}</style>
             <div className="w-full space-y-8">
                 <div className="text-center">
                     <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
@@ -131,12 +148,17 @@ export default function ChangePasswordPage() {
                                 <div className="relative">
                                     <Input
                                         id="currentPassword"
+                                        name="current-password"
+                                        autoComplete="current-password"
                                         type={showCurrentPassword ? "text" : "password"}
                                         value={currentPassword}
                                         onChange={(e) => setCurrentPassword(e.target.value)}
+                                        onAnimationStart={(e) => {
+                                            if (e.animationName === "onAutoFillStart") setCurrentPassword(e.currentTarget.value);
+                                        }}
                                         required
                                         disabled={loading}
-                                        className="pr-10"
+                                        className="pr-10 autofill-detect"
                                         placeholder="••••••••"
                                     />
                                     <button
@@ -159,12 +181,17 @@ export default function ChangePasswordPage() {
                                 <div className="relative">
                                     <Input
                                         id="newPassword"
+                                        name="new-password"
+                                        autoComplete="new-password"
                                         type={showNewPassword ? "text" : "password"}
                                         value={newPassword}
                                         onChange={(e) => setNewPassword(e.target.value)}
+                                        onAnimationStart={(e) => {
+                                            if (e.animationName === "onAutoFillStart") setNewPassword(e.currentTarget.value);
+                                        }}
                                         required
                                         disabled={loading}
-                                        className="pr-10"
+                                        className="pr-10 autofill-detect"
                                         placeholder="Min. 8 chars, 1 uppercase, 1 special"
                                     />
                                     <button
@@ -197,12 +224,17 @@ export default function ChangePasswordPage() {
                                 <div className="relative">
                                     <Input
                                         id="confirmPassword"
+                                        name="confirm-new-password"
+                                        autoComplete="new-password"
                                         type={showConfirmPassword ? "text" : "password"}
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
+                                        onAnimationStart={(e) => {
+                                            if (e.animationName === "onAutoFillStart") setConfirmPassword(e.currentTarget.value);
+                                        }}
                                         required
                                         disabled={loading}
-                                        className="pr-10"
+                                        className="pr-10 autofill-detect"
                                         placeholder="Re-enter new password"
                                     />
                                     <button
@@ -217,7 +249,12 @@ export default function ChangePasswordPage() {
                                         )}
                                     </button>
                                 </div>
-                                {confirmPassword && !passwordsMatch && (
+                                {confirmPassword && !newPassword && (
+                                    <p className="text-xs text-amber-500 flex items-center gap-1 mt-1">
+                                        <XCircle className="h-3 w-3" /> Enter your new password above first
+                                    </p>
+                                )}
+                                {confirmPassword && newPassword && !passwordsMatch && (
                                     <p className="text-xs text-red-500 flex items-center gap-1 mt-1">
                                         <XCircle className="h-3 w-3" /> Passwords do not match
                                     </p>

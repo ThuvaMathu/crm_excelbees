@@ -77,6 +77,23 @@ Requirements:
 
 Return ONLY the rewritten text, no JSON, no markdown, no explanation.`,
 
+  contentGenerate: (instruction: string, tone: string, length: string, context?: Record<string, string>, existingText?: string) => {
+    const lengthGuide = length === "short" ? "50-100 words" : length === "medium" ? "150-250 words" : "300-500 words";
+    const contextBlock = context && Object.keys(context).length > 0
+      ? `\n\nContext from the form (use this to personalise the content):\n${Object.entries(context).filter(([, v]) => v).map(([k, v]) => `- ${k}: ${v}`).join("\n")}`
+      : "";
+    const existingBlock = existingText
+      ? `\n\nExisting text to reference or build on:\n"${existingText}"`
+      : "";
+    return `You are a professional CRM writing assistant. Write content based on the following instruction.
+
+Instruction: ${instruction}
+Tone: ${tone}
+Target length: approximately ${lengthGuide}${contextBlock}${existingBlock}
+
+Return ONLY the generated text. No JSON, no markdown, no explanation, no preamble.`;
+  },
+
   taskPriority: (tasksJson: string) => `You are a productivity analyst. Rank these tasks by priority based on urgency, due dates, and business impact.
 
 Tasks:

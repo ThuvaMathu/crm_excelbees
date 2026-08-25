@@ -3,6 +3,7 @@ import { adminDb as db } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { Plan } from "@/types/calendar";
 import { generatePlanId, cleanObject, filterPlansByDateRange } from "@/lib/calendar/utils";
+import { logger } from "@/lib/logger";
 
 // GET /api/calendar/[calendarId]/plans - Fetch all plans for a calendar
 export async function GET(
@@ -28,7 +29,7 @@ export async function GET(
       );
     }
 
-    console.log(`📋 Fetching plans for calendar: ${calendarId}`);
+    logger.debug("Fetching plans", { module: "calendar", action: "fetch", metadata: { calendarId } });
 
     let query = db
       .collection(`marketing/calendar/users/${userId}/plans`)
@@ -72,11 +73,11 @@ export async function GET(
       );
     }
 
-    console.log(`✅ Found ${plans.length} plans`);
+    logger.debug("Found plans", { module: "calendar", action: "fetch", metadata: { calendarId, count: plans.length } });
 
     return NextResponse.json({ plans });
   } catch (error) {
-    console.error("❌ Error fetching plans:", error);
+    logger.error("Error fetching plans", { module: "calendar", action: "fetch", error });
     return NextResponse.json(
       { error: "Failed to fetch plans" },
       { status: 500 }
@@ -108,7 +109,7 @@ export async function POST(
       );
     }
 
-    console.log(`📋 Creating plan: ${planData.title}`);
+    logger.info("Creating plan", { module: "calendar", action: "create", metadata: { calendarId, title: planData.title } });
 
     const planId = generatePlanId();
 
@@ -160,7 +161,7 @@ export async function POST(
       updatedAt: new Date(),
     });
 
-    console.log(`✅ Plan created: ${planId}`);
+    logger.info("Plan created", { module: "calendar", action: "create", metadata: { calendarId, planId } });
 
     return NextResponse.json({
       plan: {
@@ -169,7 +170,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error("❌ Error creating plan:", error);
+    logger.error("Error creating plan", { module: "calendar", action: "create", error });
     return NextResponse.json(
       { 
         error: "Failed to create plan",

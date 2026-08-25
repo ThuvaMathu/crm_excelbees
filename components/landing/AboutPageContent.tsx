@@ -67,7 +67,13 @@ const milestones = [
     year: "2025",
     title: "AI Integration & Growth",
     description:
-      "We integrated a purpose-built AI assistant that saves teams 2+ hours daily. RCRM is now helping businesses across Queensland and Australia manage thousands of relationships.",
+      "We integrated a purpose-built AI assistant that saves teams 2+ hours daily. RCRM expanded to serve businesses across Queensland and Australia managing thousands of relationships.",
+  },
+  {
+    year: "2026",
+    title: "The Complete Platform",
+    description:
+      "Projects, Tasks, Quotes, Email Campaigns, and Analytics ship. RCRM is now a full end-to-end business platform — from first contact to closed invoice, everything in one place.",
   },
 ];
 

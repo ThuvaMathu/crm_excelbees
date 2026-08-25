@@ -43,9 +43,19 @@ export function getRedis(): Redis {
     return redisInstance;
 }
 
-// Backward compatibility: Export direct accessor
-// This will initialize Redis on first access
-export const redis = getRedis();
+// Backward compatibility: Export direct accessor.
+// This is a lazy proxy rather than `getRedis()` called eagerly — the old
+// eager call ran `new Redis(...)` (and threw if env vars were missing) the
+// moment this module was first imported, even in code paths that never
+// actually touch Redis. Deferring until a method is actually invoked means
+// importing this module is always safe.
+export const redis = new Proxy({} as Redis, {
+    get(_target, prop, receiver) {
+        const instance = getRedis();
+        const value = Reflect.get(instance, prop, receiver);
+        return typeof value === "function" ? value.bind(instance) : value;
+    },
+});
 
 export const CACHE_TTL = {
   SEO_METRICS: 60 * 60 * 24 * 1000, // 24 hours

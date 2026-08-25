@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { UserRole } from "@/types/crm";
+import { logger } from "@/lib/logger/client";
 
 /**
  * Admin-only function to create a new user
@@ -25,15 +26,14 @@ export async function createUserByAdmin(data: {
     // This function only creates the Firestore profile
     // You'll need to implement the Firebase Admin SDK part separately
     
-    console.log("⚠️ This function requires Firebase Admin SDK implementation");
-    console.log("📝 User data prepared:", data);
-    
+    logger.warn("Function requires Firebase Admin SDK implementation", { module: "admin-users", action: "create-user" });
+
     return {
       success: false,
       error: "Firebase Admin SDK required - implement in server action",
     };
   } catch (error: any) {
-    console.error("❌ Failed to create user:", error);
+    logger.error("Failed to create user", { module: "admin-users", action: "create-user", error });
     return { success: false, error: error.message };
   }
 }
@@ -77,15 +77,14 @@ export async function resetUserPasswordByAdmin(
 ): Promise<{ success: boolean; tempPassword?: string; error?: string }> {
   try {
     // This requires Firebase Admin SDK
-    console.log("⚠️ Password reset requires Firebase Admin SDK");
-    console.log("📝 Reset requested for UID:", uid);
-    
+    logger.warn("Password reset requires Firebase Admin SDK", { module: "admin-users", action: "reset-password" });
+
     return {
       success: false,
       error: "Firebase Admin SDK required - implement in server action",
     };
   } catch (error: any) {
-    console.error("❌ Failed to reset password:", error);
+    logger.error("Failed to reset password", { module: "admin-users", action: "reset-password", metadata: { uid }, error });
     return { success: false, error: error.message };
   }
 }
@@ -101,10 +100,10 @@ export async function deactivateUser(uid: string): Promise<{ success: boolean; e
       updatedAt: serverTimestamp(),
     });
     
-    console.log("✅ User deactivated:", uid);
+    logger.info("User deactivated", { module: "admin-users", action: "deactivate", metadata: { uid } });
     return { success: true };
   } catch (error: any) {
-    console.error("❌ Failed to deactivate user:", error);
+    logger.error("Failed to deactivate user", { module: "admin-users", action: "deactivate", metadata: { uid }, error });
     return { success: false, error: error.message };
   }
 }
@@ -120,10 +119,10 @@ export async function reactivateUser(uid: string): Promise<{ success: boolean; e
       updatedAt: serverTimestamp(),
     });
     
-    console.log("✅ User reactivated:", uid);
+    logger.info("User reactivated", { module: "admin-users", action: "reactivate", metadata: { uid } });
     return { success: true };
   } catch (error: any) {
-    console.error("❌ Failed to reactivate user:", error);
+    logger.error("Failed to reactivate user", { module: "admin-users", action: "reactivate", metadata: { uid }, error });
     return { success: false, error: error.message };
   }
 }
@@ -139,12 +138,12 @@ export async function deleteUserByAdmin(uid: string): Promise<{ success: boolean
     await deleteDoc(userRef);
     
     // Note: Also need to delete from Firebase Auth using Admin SDK
-    console.log("⚠️ User deleted from Firestore, but Auth deletion requires Admin SDK");
-    console.log("✅ User deleted from Firestore:", uid);
-    
+    logger.warn("User deleted from Firestore, but Auth deletion requires Admin SDK", { module: "admin-users", action: "delete", metadata: { uid } });
+    logger.info("User deleted from Firestore", { module: "admin-users", action: "delete", metadata: { uid } });
+
     return { success: true };
   } catch (error: any) {
-    console.error("❌ Failed to delete user:", error);
+    logger.error("Failed to delete user", { module: "admin-users", action: "delete", metadata: { uid }, error });
     return { success: false, error: error.message };
   }
 }
@@ -163,10 +162,10 @@ export async function updateUserRole(
       updatedAt: serverTimestamp(),
     });
     
-    console.log(`✅ User role updated: ${uid} -> ${newRole}`);
+    logger.info("User role updated", { module: "admin-users", action: "update-role", metadata: { uid, role: newRole } });
     return { success: true };
   } catch (error: any) {
-    console.error("❌ Failed to update user role:", error);
+    logger.error("Failed to update user role", { module: "admin-users", action: "update-role", metadata: { uid }, error });
     return { success: false, error: error.message };
   }
 }

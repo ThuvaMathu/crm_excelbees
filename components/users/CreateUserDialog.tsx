@@ -27,6 +27,7 @@ import {
 import { Loader2, UserPlus, Copy, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "../ui/alert";
+import { logger } from "@/lib/logger/client";
 
 interface CreateUserDialogProps {
     open?: boolean;
@@ -117,7 +118,7 @@ export function CreateUserDialog({ onUserCreated, open: controlledOpen, onOpenCh
                 toast.error(result.error || "Failed to create user");
             }
         } catch (error: any) {
-            console.error("Error creating user:", error);
+            logger.error("Error creating user", { module: "users", action: "create", userId: user?.uid, error });
             toast.error("Failed to create user");
         } finally {
             setLoading(false);

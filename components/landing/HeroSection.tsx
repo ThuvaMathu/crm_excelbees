@@ -9,13 +9,13 @@ const stats = [
   { value: "60%", label: "Less than Salesforce" },
   { value: "2hrs", label: "Saved daily with AI" },
   { value: "< 1 day", label: "Setup time" },
-  { value: "100%", label: "Your data, your control" },
+  { value: "14+", label: "Modules, one platform" },
 ];
 
 const chips = [
-  "Advanced User Role Management",
-  "Integrated Custom AI",
-  "Affordable Pricing",
+  "Contacts, Deals & Projects",
+  "Quotes & Invoicing (AUD)",
+  "AI Assistant Built-In",
 ];
 
 export function HeroSection() {
@@ -171,7 +171,7 @@ export function HeroSection() {
                   <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/70" />
                   <div className="h-2.5 w-2.5 rounded-full bg-green-500/70" />
                   <div className="ml-3 flex-1 rounded bg-enterprise-border/50 px-3 py-1 text-xs text-muted-foreground/50">
-                    app.rcrm.excelbees.com/dashboard
+                    rcrm.excelbees.com.au/dashboard
                   </div>
                 </div>
 
@@ -181,8 +181,8 @@ export function HeroSection() {
                   <div className="grid grid-cols-3 gap-3">
                     {[
                       { label: "Active Leads", value: "248", delta: "+12%", icon: TrendingUp, color: "text-emerald-400" },
-                      { label: "Deals Won", value: "$84K", delta: "+8%", icon: Zap, color: "text-enterprise-amber" },
-                      { label: "Team Members", value: "14", delta: "Active", icon: Users, color: "text-blue-400" },
+                      { label: "Open Quotes", value: "$62K", delta: "11 pending", icon: Zap, color: "text-enterprise-amber" },
+                      { label: "Active Projects", value: "9", delta: "On track", icon: Users, color: "text-blue-400" },
                     ].map((stat) => (
                       <div
                         key={stat.label}
@@ -203,10 +203,10 @@ export function HeroSection() {
                     <p className="text-xs font-medium text-muted-foreground mb-3">Sales Pipeline</p>
                     <div className="space-y-2">
                       {[
-                        { stage: "Prospecting", count: 42, pct: 85, color: "bg-blue-500" },
-                        { stage: "Proposal", count: 18, pct: 60, color: "bg-enterprise-amber" },
-                        { stage: "Negotiation", count: 9, pct: 35, color: "bg-emerald-500" },
-                        { stage: "Closed Won", count: 5, pct: 20, color: "bg-purple-500" },
+                        { stage: "New Lead", count: 58, pct: 90, color: "bg-blue-500" },
+                        { stage: "Quoted", count: 24, pct: 65, color: "bg-enterprise-amber" },
+                        { stage: "Negotiation", count: 11, pct: 38, color: "bg-emerald-500" },
+                        { stage: "Closed Won", count: 7, pct: 22, color: "bg-purple-500" },
                       ].map((row) => (
                         <div key={row.stage} className="flex items-center gap-3">
                           <p className="w-24 text-[10px] text-muted-foreground shrink-0">{row.stage}</p>
@@ -227,9 +227,9 @@ export function HeroSection() {
                     <p className="text-xs font-medium text-muted-foreground mb-3">Recent Activity</p>
                     <div className="space-y-2">
                       {[
-                        { name: "James M.", action: "Deal closed — $12,400", time: "2m ago", dot: "bg-emerald-400" },
-                        { name: "AI Assistant", action: "Enriched 8 contacts", time: "5m ago", dot: "bg-enterprise-amber" },
-                        { name: "Sarah C.", action: "Follow-up scheduled", time: "11m ago", dot: "bg-blue-400" },
+                        { name: "James M.", action: "Quote accepted — $14,200", time: "1m ago", dot: "bg-emerald-400" },
+                        { name: "AI Assistant", action: "Enriched 12 contacts", time: "4m ago", dot: "bg-enterprise-amber" },
+                        { name: "Sarah C.", action: "Project milestone marked done", time: "9m ago", dot: "bg-blue-400" },
                       ].map((item) => (
                         <div key={item.name} className="flex items-center gap-2">
                           <div className={`h-1.5 w-1.5 rounded-full ${item.dot} shrink-0`} />
@@ -255,8 +255,8 @@ export function HeroSection() {
                       <Zap className="h-3.5 w-3.5 text-enterprise-amber" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-white">AI Auto-fill</p>
-                      <p className="text-[10px] text-emerald-400">Saved 2h today</p>
+                      <p className="text-xs font-semibold text-white">Quote sent in 28s</p>
+                      <p className="text-[10px] text-emerald-400">AI-drafted & branded</p>
                     </div>
                   </div>
                 </div>
@@ -269,8 +269,8 @@ export function HeroSection() {
                 className="absolute -left-4 bottom-16 z-10 hidden sm:block"
               >
                 <div className="rounded-xl border border-emerald-500/30 bg-enterprise-slate/95 backdrop-blur px-4 py-3 shadow-xl">
-                  <p className="text-xs font-semibold text-white">Save $400/mo</p>
-                  <p className="text-[10px] text-emerald-400">vs. Salesforce</p>
+                  <p className="text-xs font-semibold text-white">14 modules. One price.</p>
+                  <p className="text-[10px] text-emerald-400">No per-feature add-ons</p>
                 </div>
               </motion.div>
             </motion.div>

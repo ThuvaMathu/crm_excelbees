@@ -1,11 +1,12 @@
 import { z } from "zod";
 
-export const invoiceUserSettingsSchema = z.object({
-  template: z.enum(["standard", "professional", "creative"]),
-  companyName: z.string().min(1, "Company name is required"),
-  fromName: z.string().min(1, "From name is required"),
-  fromEmail: z.string().email("Invalid email address"),
-  logoUrl: z.string().url().optional().or(z.literal("")),
+// Org-level invoice settings (admin-only — see
+// app/org/[orgId]/settings/invoices/page.tsx). Deliberately excludes
+// template (the picker was inert — only one PDF design exists),
+// companyName (always the org's own name, not separately editable),
+// fromName/fromEmail (always the actual sending user, resolved at send
+// time), and logoUrl (managed separately via Organization.logoUrl).
+export const invoiceOrgSettingsSchema = z.object({
   colorTheme: z.string().regex(/^#[0-9A-F]{6}$/i, "Invalid hex color"),
   invoicePrefix: z.string().max(10, "Prefix too long").default("INV-"),
   nextInvoiceNumber: z.number().int().min(0).optional().default(1),
@@ -19,4 +20,4 @@ export const invoiceUserSettingsSchema = z.object({
   gstin: z.string().optional(),
 });
 
-export type InvoiceUserSettingsFormData = z.infer<typeof invoiceUserSettingsSchema>;
+export type InvoiceOrgSettingsFormData = z.infer<typeof invoiceOrgSettingsSchema>;

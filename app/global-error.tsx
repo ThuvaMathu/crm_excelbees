@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger/client";
 
 export default function GlobalError({
     error,
@@ -11,7 +12,7 @@ export default function GlobalError({
     reset: () => void;
 }) {
     useEffect(() => {
-        console.error("Global Error Boundary Caught:", error);
+        logger.error("Global error boundary caught error", { module: "error-boundary", error });
     }, [error]);
 
     return (

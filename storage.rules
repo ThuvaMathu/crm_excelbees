@@ -19,32 +19,51 @@ service firebase.storage {
       return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Mirrors the Firestore isApproved() logic:
-    // Admins and managers are always considered approved.
-    function isApproved() {
-      let data = getUserData();
-      return isAuthenticated() && (
-        data.role == 'admin' ||
-        data.role == 'manager' ||
-        (data.isApproved == true && data.isActive != false)
-      );
+    // Checks org membership AND active status (mirrors Firestore rules)
+    function isMemberOfOrg(orgId) {
+      let memberDoc = firestore.get(/databases/(default)/documents/organization_members/$(orgId + "_" + request.auth.uid));
+      return firestore.exists(/databases/(default)/documents/organization_members/$(orgId + "_" + request.auth.uid))
+          && memberDoc.data.status == "active";
     }
 
-    function isAdmin() {
-      return isAuthenticated() && getUserData().role == 'admin';
+    function getOrgRole(orgId) {
+      return firestore.get(/databases/(default)/documents/organization_members/$(orgId + "_" + request.auth.uid)).data.role;
     }
 
-    function isManager() {
-      return isAuthenticated() && (getUserData().role == 'admin' || getUserData().role == 'manager');
+    function isOrgAdmin(orgId) {
+      return isMemberOfOrg(orgId) && getOrgRole(orgId) == "admin";
     }
 
+    function isOrgManager(orgId) {
+      return isMemberOfOrg(orgId) && (getOrgRole(orgId) == "admin" || getOrgRole(orgId) == "manager");
+    }
+
+    // Legacy global-role helpers (used for user-scoped paths that predate multi-tenant)
+    function getUserRole() {
+      return getUserData().role;
+    }
+
+    function isGlobalAdmin() {
+      return isAuthenticated() && getUserRole() == "admin";
+    }
+
+    function isGlobalManager() {
+      return isAuthenticated() && (getUserRole() == "admin" || getUserRole() == "manager");
+    }
+
+    // File validation helpers
     function isValidImage() {
       return request.resource.size < 5 * 1024 * 1024
-          && request.resource.contentType.matches('image/.*');
+          && request.resource.contentType.matches("image/.*");
     }
 
     function isValidAttachment() {
       return request.resource.size < 20 * 1024 * 1024;
+    }
+
+    function isValidLogo() {
+      return request.resource.size < 2 * 1024 * 1024
+          && request.resource.contentType.matches("image/.*");
     }
 
     // ============================================================================
@@ -53,9 +72,9 @@ service firebase.storage {
     // ============================================================================
 
     match /users/{userId}/profile/{fileName} {
-      allow read: if true;
-      allow write: if isOwner(userId) && isValidImage();
-      allow delete: if isOwner(userId) || isAdmin();
+      allow read:   if true;
+      allow write:  if isAuthenticated() && isOwner(userId) && isValidImage();
+      allow delete: if isAuthenticated() && (isOwner(userId) || isGlobalAdmin());
     }
 
     // ============================================================================
@@ -64,64 +83,127 @@ service firebase.storage {
     // ============================================================================
 
     match /users/{userId}/documents/{documentType}/{fileName} {
-      allow read: if isOwner(userId) || isManager();
-      allow write: if (isOwner(userId) || isManager()) && isValidAttachment();
-      allow delete: if isOwner(userId) || isAdmin();
+      allow read:   if isAuthenticated() && (isOwner(userId) || isGlobalManager());
+      allow write:  if isAuthenticated() && (isOwner(userId) || isGlobalManager()) && isValidAttachment();
+      allow delete: if isAuthenticated() && (isOwner(userId) || isGlobalAdmin());
+    }
+
+    // ============================================================================
+    // ORGANIZATION LOGOS
+    // Path: /organizations/{orgId}/logo/{fileName}
+    // ============================================================================
+
+    match /organizations/{orgId}/logo/{fileName} {
+      allow read:   if true;
+      allow write:  if isAuthenticated() && isOrgAdmin(orgId) && isValidLogo();
+      allow delete: if isAuthenticated() && isOrgAdmin(orgId);
+    }
+
+    // ============================================================================
+    // COMPANY LOGOS (org-scoped)
+    // Path: /companies/{orgId}/{companyId}/logo/{fileName}
+    // ============================================================================
+
+    match /companies/{orgId}/{companyId}/logo/{fileName} {
+      allow read:   if true;
+      allow write:  if isAuthenticated() && isOrgManager(orgId) && isValidLogo();
+      allow delete: if isAuthenticated() && isOrgManager(orgId);
+    }
+
+    // Legacy company logo path (without orgId) — read-only going forward
+    match /companies/{companyId}/logo/{fileName} {
+      allow read:   if true;
+      allow write:  if isAuthenticated() && isGlobalManager() && isValidImage();
+      allow delete: if isAuthenticated() && isGlobalAdmin();
+    }
+
+    // ============================================================================
+    // INVOICE PDFs (org-scoped)
+    // Path: /invoices/{orgId}/{invoiceId}/{fileName}
+    // ============================================================================
+
+    match /invoices/{orgId}/{invoiceId}/{fileName} {
+      // Team role has no invoice access (mirrors firestore.rules /invoices
+      // and ROLE_DEFAULTS in types/crm.ts) — invoice PDFs are manager+ only.
+      allow read:   if isAuthenticated() && isOrgManager(orgId);
+      allow write:  if isAuthenticated() && isOrgManager(orgId) && isValidAttachment();
+      allow delete: if isAuthenticated() && isOrgAdmin(orgId);
+    }
+
+    // Legacy invoice path (without orgId)
+    match /invoices/{invoiceId}/{fileName} {
+      allow read:   if isAuthenticated();
+      allow write:  if isAuthenticated() && isGlobalManager() && isValidAttachment();
+      allow delete: if isAuthenticated() && isGlobalAdmin();
+    }
+
+    // ============================================================================
+    // QUOTE PDFs (org-scoped)
+    // Path: /quotes/{orgId}/{quoteId}/{fileName}
+    // ============================================================================
+
+    match /quotes/{orgId}/{quoteId}/{fileName} {
+      allow read:   if isAuthenticated() && isMemberOfOrg(orgId);
+      allow write:  if isAuthenticated() && isOrgManager(orgId) && isValidAttachment();
+      allow delete: if isAuthenticated() && isOrgAdmin(orgId);
+    }
+
+    // ============================================================================
+    // PROJECT ATTACHMENTS (org-scoped)
+    // Path: /projects/{orgId}/{projectId}/{fileName}
+    // ============================================================================
+
+    match /projects/{orgId}/{projectId}/{fileName} {
+      allow read:   if isAuthenticated() && isMemberOfOrg(orgId);
+      allow write:  if isAuthenticated() && isMemberOfOrg(orgId) && isValidAttachment();
+      allow delete: if isAuthenticated() && isOrgManager(orgId);
+    }
+
+    // Legacy project path (without orgId)
+    match /projects/{projectId}/{fileName} {
+      allow read:   if isAuthenticated();
+      allow write:  if isAuthenticated() && isGlobalManager() && isValidAttachment();
+      allow delete: if isAuthenticated() && isGlobalAdmin();
     }
 
     // ============================================================================
     // ACTIVITY ATTACHMENTS (notes, call logs, meeting files)
-    // Path: /activities/attachments/{fileName}
+    // Path: /activities/{orgId}/{activityId}/{fileName}
     // ============================================================================
 
+    match /activities/{orgId}/{activityId}/{fileName} {
+      allow read:   if isAuthenticated() && isMemberOfOrg(orgId);
+      allow write:  if isAuthenticated() && isMemberOfOrg(orgId) && isValidAttachment();
+      allow delete: if isAuthenticated() && isOrgManager(orgId);
+    }
+
+    // Legacy activity attachments path
     match /activities/attachments/{fileName} {
-      allow read: if isApproved();
-      allow write: if isApproved() && isValidAttachment();
-      allow delete: if isAdmin();
+      allow read:   if isAuthenticated();
+      allow write:  if isAuthenticated() && isValidAttachment();
+      allow delete: if isAuthenticated() && isGlobalAdmin();
     }
 
     // ============================================================================
     // EMAIL ATTACHMENTS
-    // Path: /attachments/{userId}/{fileId}-{fileName}
+    // Path: /attachments/{userId}/{allPaths=**}
     // ============================================================================
 
     match /attachments/{userId}/{allPaths=**} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId) && isValidAttachment();
-      allow delete: if isOwner(userId) || isAdmin();
+      allow read:   if isAuthenticated();
+      allow write:  if isAuthenticated() && isOwner(userId) && isValidAttachment();
+      allow delete: if isAuthenticated() && (isOwner(userId) || isGlobalAdmin());
     }
 
     // ============================================================================
-    // COMPANY LOGOS
-    // Path: /companies/{companyId}/logo/{fileName}
+    // UPLOADED LOGO (from API route /api/upload/logo)
+    // Path: /logos/{fileName}
     // ============================================================================
 
-    match /companies/{companyId}/logo/{fileName} {
-      allow read: if true;
-      allow write: if isManager() && isValidImage();
-      allow delete: if isManager();
-    }
-
-    // ============================================================================
-    // INVOICE PDFs
-    // Path: /invoices/{invoiceId}/{fileName}
-    // ============================================================================
-
-    match /invoices/{invoiceId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isApproved() && isValidAttachment();
-      allow delete: if isAdmin() || isManager();
-    }
-
-    // ============================================================================
-    // PROJECT ATTACHMENTS
-    // Path: /projects/{projectId}/{fileName}
-    // ============================================================================
-
-    match /projects/{projectId}/{fileName} {
-      allow read: if isApproved();
-      allow write: if isApproved() && isValidAttachment();
-      allow delete: if isAdmin();
+    match /logos/{fileName} {
+      allow read:   if true;
+      allow write:  if isAuthenticated() && isValidLogo();
+      allow delete: if isAuthenticated() && isGlobalAdmin();
     }
 
     // ============================================================================
@@ -131,5 +213,6 @@ service firebase.storage {
     match /{allPaths=**} {
       allow read, write: if false;
     }
+
   }
 }

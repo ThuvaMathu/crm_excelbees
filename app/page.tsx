@@ -19,16 +19,20 @@ const BlogSection = dynamic(
 import { Footer } from "@/components/landing/Footer";
 
 export const metadata: Metadata = {
-  title: "RCRM by ExcelBees — Custom CRM for Australian Businesses",
+  title: "RCRM by ExcelBees — Complete CRM Platform for Australian Businesses",
   description:
-    "Affordable, modular CRM built for Australian SMBs. Role-based access, integrated AI assistant, invoice management, and transparent pricing. Save up to 60% vs Salesforce.",
+    "Contacts, deals, projects, quotes, invoices, email campaigns & analytics — all in one platform. Affordable, modular CRM built for Australian SMBs. Role-based access, integrated AI, and transparent AUD pricing. Save up to 60% vs Salesforce.",
   keywords: [
     "CRM software Australia",
     "custom CRM Brisbane",
     "affordable CRM for small business",
     "AI CRM Australia",
     "CRM for trades business",
-    "CRM for retail",
+    "CRM with project management",
+    "CRM with quoting",
+    "CRM with invoicing Australia",
+    "email campaign CRM Australia",
+    "CRM analytics Australia",
     "RCRM ExcelBees",
     "role-based CRM",
     "modular CRM",
@@ -53,23 +57,23 @@ export const metadata: Metadata = {
     locale: "en_AU",
     url: "https://excelbees.com.au",
     siteName: "RCRM by ExcelBees",
-    title: "RCRM — Custom CRM for Australian Businesses",
+    title: "RCRM — Complete CRM Platform for Australian Businesses",
     description:
-      "Stop paying for features you don't use. RCRM is the affordable, modular CRM built for Australian SMBs. Integrated AI, role-based access, and transparent pricing.",
+      "Contacts, deals, projects, quotes, invoices, email campaigns & analytics in one modular platform. Built for Australian SMBs. Integrated AI, role-based access, transparent AUD pricing.",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "RCRM by ExcelBees — Custom CRM for Australian Businesses",
+        alt: "RCRM by ExcelBees — Complete CRM Platform for Australian Businesses",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "RCRM — Custom CRM for Australian Businesses",
+    title: "RCRM — Complete CRM Platform for Australian Businesses",
     description:
-      "Affordable, modular CRM with integrated AI. Save up to 60% vs Salesforce. Built for Australian SMBs.",
+      "Contacts, projects, quotes, invoices & AI — one modular platform for Australian SMBs. Save up to 60% vs Salesforce.",
     images: ["/og-image.png"],
     creator: "@excelbees",
   },
@@ -122,17 +126,25 @@ export default function Home() {
                   availability: "https://schema.org/InStock",
                 },
                 description:
-                  "Affordable, modular CRM with integrated AI assistant, role-based access control, invoice management, and visual pipeline tracking. Built for Australian SMBs.",
+                  "Affordable, modular CRM with integrated AI assistant, role-based access control, contact & company management, project & task tracking, quote & invoice management, email campaign tools, and analytics dashboards. Built for Australian SMBs.",
                 publisher: {
                   "@id": "https://excelbees.com.au/#organization",
                 },
                 featureList: [
-                  "Role-Based Access Control",
-                  "AI Data Entry Automation",
+                  "Role-Based Access Control (Admin / Manager / Team / Scanner)",
+                  "AI-Powered Data Entry & Automation",
+                  "Contact & Company Management",
+                  "Lead & Deal Pipeline (Kanban)",
+                  "Project & Task Management",
+                  "Notes & Activity Log",
+                  "Quote Builder (AUD, GST-inclusive)",
+                  "Invoice & Billing Management",
+                  "Email Campaign Tracking",
+                  "Analytics Dashboards & Reports",
+                  "SMTP & Calendar Integrations",
                   "Modular Feature Selection",
-                  "Lead & Deal Pipeline Tracking",
-                  "Invoice & Billing",
-                  "Affordable Transparent Pricing",
+                  "Australian Privacy Act Compliant",
+                  "Transparent AUD Pricing",
                 ],
                 aggregateRating: {
                   "@type": "AggregateRating",
@@ -165,7 +177,7 @@ export default function Home() {
                     name: "How much does RCRM cost?",
                     acceptedAnswer: {
                       "@type": "Answer",
-                      text: "RCRM uses modular, transparent pricing. You pay only for the features you activate. Pricing is significantly lower than enterprise CRMs like Salesforce — businesses typically save 40–60% monthly.",
+                      text: "RCRM uses modular, transparent AUD pricing. You pay only for the features you activate. Pricing is significantly lower than enterprise CRMs like Salesforce — businesses typically save 40–60% monthly.",
                     },
                   },
                   {
@@ -181,7 +193,23 @@ export default function Home() {
                     name: "Does RCRM have AI features?",
                     acceptedAnswer: {
                       "@type": "Answer",
-                      text: "Yes. RCRM includes an integrated AI assistant that automates data entry, enriches contacts, generates insights, and saves teams an average of 2+ hours per day.",
+                      text: "Yes. RCRM includes an integrated AI assistant that auto-fills contact data, enriches leads, drafts follow-up emails, and generates insights — saving teams an average of 2+ hours per day.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Does RCRM manage projects and tasks?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes. RCRM includes a full Projects & Tasks module — create projects linked to deals, assign tasks to team members, track milestones, and attach notes. Everything connected to the right client record.",
+                    },
+                  },
+                  {
+                    "@type": "Question",
+                    name: "Can I send quotes and invoices from RCRM?",
+                    acceptedAnswer: {
+                      "@type": "Answer",
+                      text: "Yes. RCRM has native Quote and Invoice modules with AUD pricing and GST support. Create a quote, send it as a branded PDF, and convert it to an invoice in one click.",
                     },
                   },
                   {
@@ -189,7 +217,7 @@ export default function Home() {
                     name: "Is RCRM suitable for small Australian businesses?",
                     acceptedAnswer: {
                       "@type": "Answer",
-                      text: "Absolutely. RCRM was built specifically for Australian SMBs in trades, retail, professional services, and technology — businesses that need a powerful CRM without enterprise complexity or pricing.",
+                      text: "Absolutely. RCRM was built specifically for Australian SMBs in trades, retail, professional services, and technology — businesses that need a powerful, complete CRM without enterprise complexity or pricing.",
                     },
                   },
                 ],

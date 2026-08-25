@@ -4,6 +4,7 @@ import { adminDb as db } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { Plan } from "@/types/calendar";
 import { cleanObject } from "@/lib/calendar/utils";
+import { logger } from "@/lib/logger";
 
 // GET /api/calendar/[calendarId]/plans/[planId] - Fetch single plan
 export async function GET(
@@ -22,7 +23,7 @@ export async function GET(
       );
     }
 
-    console.log(`📋 Fetching plan: ${planId}`);
+    logger.debug("Fetching plan", { module: "calendar", action: "fetch", metadata: { planId } });
 
     const planDoc = await db
       .collection(`marketing/calendar/users/${userId}/plans`)
@@ -46,11 +47,11 @@ export async function GET(
       updatedAt: data?.updatedAt?.toDate() || new Date(),
     } as Plan;
 
-    console.log(`✅ Plan fetched: ${plan.title}`);
+    logger.debug("Plan fetched", { module: "calendar", action: "fetch", metadata: { planId } });
 
     return NextResponse.json({ plan });
   } catch (error) {
-    console.error("❌ Error fetching plan:", error);
+    logger.error("Error fetching plan", { module: "calendar", action: "fetch", error });
     return NextResponse.json(
       { error: "Failed to fetch plan" },
       { status: 500 }
@@ -75,7 +76,7 @@ export async function PUT(
       );
     }
 
-    console.log(`📋 Updating plan: ${planId}`);
+    logger.info("Updating plan", { module: "calendar", action: "update", metadata: { planId } });
 
     // Verify plan exists
     const planDoc = await db
@@ -113,7 +114,7 @@ export async function PUT(
       .doc(planId)
       .update(updatedData);
 
-    console.log(`✅ Plan updated: ${planId}`);
+    logger.info("Plan updated", { module: "calendar", action: "update", metadata: { planId } });
 
     // Fetch updated plan
     const updated = await db
@@ -133,7 +134,7 @@ export async function PUT(
 
     return NextResponse.json({ plan });
   } catch (error) {
-    console.error("❌ Error updating plan:", error);
+    logger.error("Error updating plan", { module: "calendar", action: "update", error });
     return NextResponse.json(
       { error: "Failed to update plan" },
       { status: 500 }
@@ -158,7 +159,7 @@ export async function DELETE(
       );
     }
 
-    console.log(`📋 Deleting plan: ${planId}`);
+    logger.info("Deleting plan", { module: "calendar", action: "delete", metadata: { planId } });
 
     // Verify plan exists
     const planDoc = await db
@@ -189,11 +190,11 @@ export async function DELETE(
       updatedAt: new Date(),
     });
 
-    console.log(`✅ Plan deleted: ${planId}`);
+    logger.info("Plan deleted", { module: "calendar", action: "delete", metadata: { planId } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("❌ Error deleting plan:", error);
+    logger.error("Error deleting plan", { module: "calendar", action: "delete", error });
     return NextResponse.json(
       { error: "Failed to delete plan" },
       { status: 500 }

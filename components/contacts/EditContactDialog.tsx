@@ -65,7 +65,7 @@ export function EditContactDialog({
 
         setIsSubmitting(true);
 
-        const { success, error } = await updateContact(contact.id, data);
+        const { success, error } = await updateContact(contact.id, data, user.uid);
 
         setIsSubmitting(false);
 

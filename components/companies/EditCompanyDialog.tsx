@@ -99,7 +99,7 @@ export function EditCompanyDialog({
             },
         };
 
-        const { success, error } = await updateCompany(company.id, companyData);
+        const { success, error } = await updateCompany(company.id, companyData, user!.uid);
 
         setIsSubmitting(false);
 
@@ -150,7 +150,7 @@ export function EditCompanyDialog({
                                     <FormItem>
                                         <FormLabel>Company Email</FormLabel>
                                         <FormControl>
-                                            <Input type="email" placeholder="contact@acme.com" {...field} />
+                                            <Input type="email" placeholder="contact@acme.com" {...field} value={field.value ?? ""} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -165,7 +165,7 @@ export function EditCompanyDialog({
                                         <FormItem>
                                             <FormLabel>Website</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="acme.com" {...field} />
+                                                <Input placeholder="acme.com" {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -179,7 +179,7 @@ export function EditCompanyDialog({
                                         <FormItem>
                                             <FormLabel>Industry</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Technology" {...field} />
+                                                <Input placeholder="Technology" {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -195,7 +195,7 @@ export function EditCompanyDialog({
                                         <FormItem>
                                             <FormLabel>Phone</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="+1 (555) 000-0000" {...field} />
+                                                <Input placeholder="+1 (555) 000-0000" {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -240,6 +240,7 @@ export function EditCompanyDialog({
                                                 type="number"
                                                 placeholder="1000000"
                                                 {...field}
+                                                value={field.value ?? ""}
                                                 onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : "")}
                                             />
                                         </FormControl>
@@ -258,7 +259,7 @@ export function EditCompanyDialog({
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormControl>
-                                                <Input placeholder="Street Address" {...field} />
+                                                <Input placeholder="Street Address" {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -272,7 +273,7 @@ export function EditCompanyDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="City" {...field} />
+                                                    <Input placeholder="City" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -285,7 +286,7 @@ export function EditCompanyDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="State/Province" {...field} />
+                                                    <Input placeholder="State/Province" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -300,7 +301,7 @@ export function EditCompanyDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="ZIP/Postal Code" {...field} />
+                                                    <Input placeholder="ZIP/Postal Code" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -313,7 +314,7 @@ export function EditCompanyDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="Country" {...field} />
+                                                    <Input placeholder="Country" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -337,6 +338,7 @@ export function EditCompanyDialog({
                                                 className="resize-none"
                                                 rows={3}
                                                 {...field}
+                                                value={field.value ?? ""}
                                                 minWords={5}
                                             />
                                         </FormControl>
@@ -357,6 +359,7 @@ export function EditCompanyDialog({
                                                 className="resize-none"
                                                 rows={2}
                                                 {...field}
+                                                value={field.value ?? ""}
                                                 minWords={5}
                                             />
                                         </FormControl>

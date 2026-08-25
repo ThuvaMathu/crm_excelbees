@@ -19,6 +19,7 @@ interface ImportCSVDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    organizationId: string;
 }
 
 interface ParsedContact {
@@ -34,6 +35,7 @@ export function ImportCSVDialog({
     open,
     onOpenChange,
     onSuccess,
+    organizationId,
 }: ImportCSVDialogProps) {
     const { user } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,7 +124,7 @@ export function ImportCSVDialog({
             const { createContact } = await import("@/lib/firestore/contacts");
 
             for (const contact of parsedContacts) {
-                const result = await createContact(contact, user.uid);
+                const result = await createContact(contact, user.uid, organizationId);
                 if (result.success) {
                     successCount++;
                 } else {

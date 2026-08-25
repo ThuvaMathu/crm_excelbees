@@ -33,10 +33,12 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { updateDeal } from "@/lib/firestore/deals";
 import { getCompanies } from "@/lib/firestore/companies";
 import { getContacts } from "@/lib/firestore/contacts";
-import { dealSchema, type DealFormData } from "@/lib/validations/deal";
+import { useAuthStore } from "@/store/auth";
+import { dealSchema, type DealFormData, type DealFormInput } from "@/lib/validations/deal";
 import type { Company, Contact, Deal, DealStage } from "@/types/crm";
 import { toast } from "sonner";
 import { Timestamp } from "firebase/firestore";
+import { useOrgStore } from "@/store/org";
 
 interface EditDealDialogProps {
     open: boolean;
@@ -54,6 +56,13 @@ const DEAL_STAGES: DealStage[] = [
     "Lost",
 ];
 
+// Form field values may hold a native Date or (when seeded from an existing
+// record) a Firestore Timestamp — both are valid pre-validation input for
+// the coerceTimestamp* schema helpers.
+function toDate(value: Date | { toDate: () => Date }): Date {
+    return value instanceof Date ? value : value.toDate();
+}
+
 export function EditDealDialog({
     open,
     onOpenChange,
@@ -61,10 +70,13 @@ export function EditDealDialog({
     onSuccess,
 }: EditDealDialogProps) {
     const [loading, setLoading] = useState(false);
+    const { currentOrg } = useOrgStore();
+    const { user } = useAuthStore();
+    const organizationId = currentOrg?.id;
     const [companies, setCompanies] = useState<Company[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
 
-    const form = useForm<DealFormData>({
+    const form = useForm<DealFormInput, any, DealFormData>({
         resolver: zodResolver(dealSchema),
         defaultValues: {
             title: "",
@@ -91,6 +103,7 @@ export function EditDealDialog({
                 stage: deal.stage,
                 value: deal.value,
                 probability: deal.probability,
+                closeDate: deal.closeDate,
                 contactIds: deal.contactIds || [],
                 companyId: deal.companyId,
                 description: deal.description || "",
@@ -101,8 +114,8 @@ export function EditDealDialog({
 
     const fetchCompaniesAndContacts = async () => {
         const [companiesResult, contactsResult] = await Promise.all([
-            getCompanies(),
-            getContacts(),
+            getCompanies(organizationId),
+            getContacts(organizationId),
         ]);
 
         if (companiesResult.companies) {
@@ -138,7 +151,7 @@ export function EditDealDialog({
             notes: data.notes,
         };
 
-        const { success, error } = await updateDeal(deal.id, dealData);
+        const { success, error } = await updateDeal(deal.id, dealData, user!.uid);
 
         setLoading(false);
 
@@ -263,7 +276,7 @@ export function EditDealDialog({
                                                 {...field}
                                                 value={
                                                     field.value
-                                                        ? new Date(field.value).toISOString().split("T")[0]
+                                                        ? toDate(field.value).toISOString().split("T")[0]
                                                         : ""
                                                 }
                                                 onChange={(e) =>

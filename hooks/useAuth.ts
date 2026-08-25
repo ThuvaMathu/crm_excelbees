@@ -11,13 +11,15 @@ import { doc, onSnapshot } from "firebase/firestore";
 // Custom User Interface
 export interface User extends FirebaseUser {
   role?: UserRole;
-  permissions?: UserPermissions; // NEW: Granular permissions
-  isFirstLogin?: boolean; // Force password change on first login
-  isActive?: boolean; // Account activation status
-  createdBy?: string; // Admin UID who created this user
-  passwordChangedAt?: Date; // Last password change timestamp
-  updatedAt?: Date; // Last profile update
-  provider?: "password" | "google.com"; // Auth provider
+  permissions?: UserPermissions;
+  isFirstLogin?: boolean;
+  isActive?: boolean;
+  isOnboarded?: boolean;
+  position?: string;
+  createdBy?: string;
+  passwordChangedAt?: Date;
+  updatedAt?: Date;
+  provider?: "password" | "google.com";
 }
 
 export function useAuth() {

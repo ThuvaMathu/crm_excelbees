@@ -26,6 +26,8 @@ import { getTasks } from "@/lib/firestore/tasks";
 import { getInvoices } from "@/lib/firestore/invoices";
 import { smartSearch } from "@/app/actions/ai/smart-search";
 import { useUIStore } from "@/store/ui";
+import { useOrgStore } from "@/store/org";
+import { logger } from "@/lib/logger/client";
 
 interface SearchResult {
     id: string;
@@ -58,6 +60,8 @@ const TYPE_LABELS: Record<string, string> = {
 export function CommandPalette() {
     const router = useRouter();
     const { isSearchOpen, setSearchOpen, toggleSearch } = useUIStore();
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [search, setSearch] = useState("");
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -93,19 +97,20 @@ export function CommandPalette() {
             return;
         }
 
+        if (!organizationId) return;
+
         setLoading(true);
         const searchResults: SearchResult[] = [];
 
         try {
-            // Search all collections in parallel
             const [leads, contacts, companies, deals, projects, tasks, invoices] = await Promise.all([
-                getLeads({ search: query }).catch(() => ({ leads: [] })),
-                getContacts({ search: query }).catch(() => ({ contacts: [] })),
-                getCompanies({ search: query }).catch(() => ({ companies: [] })),
-                getDeals({ search: query }).catch(() => ({ deals: [] })),
-                getProjects({ search: query }).catch(() => ({ projects: [] })),
-                getTasks({ search: query }).catch(() => ({ tasks: [] })),
-                getInvoices({ search: query }).catch(() => ({ invoices: [] })),
+                getLeads(organizationId, { search: query }).catch(() => ({ leads: [] })),
+                getContacts(organizationId, { search: query }).catch(() => ({ contacts: [] })),
+                getCompanies(organizationId, { search: query }).catch(() => ({ companies: [] })),
+                getDeals(organizationId, { search: query }).catch(() => ({ deals: [] })),
+                getProjects(organizationId, { search: query }).catch(() => ({ projects: [] })),
+                getTasks(organizationId, { search: query }).catch(() => ({ tasks: [] })),
+                getInvoices(organizationId, { search: query }).catch(() => ({ invoices: [] })),
             ]);
 
             // Add leads
@@ -187,7 +192,7 @@ export function CommandPalette() {
 
             setResults(searchResults);
         } catch (error) {
-            console.error("Search error:", error);
+            logger.error("Search error", { module: "search", action: "search", organizationId, error });
         } finally {
             setLoading(false);
         }
@@ -217,7 +222,7 @@ export function CommandPalette() {
         setAiSearching(true);
         setResults([]);
         try {
-            const result = await smartSearch(search);
+            const result = await smartSearch(search, organizationId || "");
             if (result.success && result.data) {
                 const aiResults: SearchResult[] = result.data.map((r) => ({
                     id: r.id,

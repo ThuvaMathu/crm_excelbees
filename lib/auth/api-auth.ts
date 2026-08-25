@@ -8,6 +8,7 @@
 import { NextRequest } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { getAuth } from "firebase-admin/auth";
+import { logger } from "@/lib/logger";
 import { UserRole, UserPermissions, ROLE_DEFAULTS } from "@/types/crm";
 
 export interface AuthenticatedUser {
@@ -114,8 +115,8 @@ export async function verifyApiRequest(request: NextRequest): Promise<ApiAuthRes
     };
 
     return { success: true, user };
-  } catch (error: any) {
-    console.error("API Auth Error:", error);
+  } catch (error) {
+    logger.warn("API auth failed", { module: "auth", action: "api-auth", error });
     return {
       success: false,
       error: "Authentication failed",

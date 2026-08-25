@@ -8,19 +8,20 @@ import { Invoice } from "@/types/crm";
 import { format } from "date-fns";
 import { Download, Mail, Edit, CheckCircle, Smartphone, Lock } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn, toJsDate } from "@/lib/utils";
 
 interface InvoiceDetailProps {
     invoice: Invoice;
     onSendEmail: () => void;
     onDownloadPDF: () => void;
     onMarkPaid: () => void;
+    onEdit?: () => void;
     sending?: boolean;
     canModify?: boolean;
     canViewFinancials?: boolean;
 }
 
-export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid, sending, canModify = true, canViewFinancials = true }: InvoiceDetailProps) {
+export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid, onEdit, sending, canModify = true, canViewFinancials = true }: InvoiceDetailProps) {
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
             Draft: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
@@ -43,7 +44,7 @@ export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid,
                             {invoice.status}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
-                            Created on {format(invoice.createdAt.toDate(), "MMM d, yyyy")}
+                            Created on {(() => { const d = toJsDate(invoice.createdAt); return d ? format(d, "MMM d, yyyy") : "-"; })()}
                         </span>
                     </div>
                 </div>
@@ -68,11 +69,15 @@ export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid,
                         </Button>
                     )}
                     {canModify ? (
-                        <Button asChild>
-                            <Link href={`/invoices/${invoice.id}/edit`}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                            </Link>
+                        <Button onClick={onEdit ?? undefined} asChild={!onEdit}>
+                            {onEdit ? (
+                                <><Edit className="mr-2 h-4 w-4" />Edit</>
+                            ) : (
+                                <Link href={`/invoices/${invoice.id}/edit`}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                </Link>
+                            )}
                         </Button>
                     ) : (
                         <Button variant="outline" disabled title="Only admins and managers can edit invoices">
@@ -95,11 +100,11 @@ export function InvoiceDetail({ invoice, onSendEmail, onDownloadPDF, onMarkPaid,
                             <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <p className="text-muted-foreground">Issue Date</p>
-                                    <p className="font-medium">{format(invoice.issueDate.toDate(), "MMM d, yyyy")}</p>
+                                    <p className="font-medium">{(() => { const d = toJsDate(invoice.issueDate); return d ? format(d, "MMM d, yyyy") : "-"; })()}</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Due Date</p>
-                                    <p className="font-medium">{format(invoice.dueDate.toDate(), "MMM d, yyyy")}</p>
+                                    <p className="font-medium">{(() => { const d = toJsDate(invoice.dueDate); return d ? format(d, "MMM d, yyyy") : "-"; })()}</p>
                                 </div>
                                 <div>
                                     <p className="text-muted-foreground">Payment Terms</p>

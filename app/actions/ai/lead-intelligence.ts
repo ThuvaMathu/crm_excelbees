@@ -3,7 +3,8 @@
 import { generateText, extractJSON } from "@/lib/gemini/parse";
 import { GEMINI_CONFIG } from "@/lib/gemini/config";
 import { PROMPTS } from "@/lib/gemini/prompts";
-import { aiUnavailable } from "@/lib/gemini/guard";
+import { aiUnavailable, aiAccessDenied } from "@/lib/gemini/guard";
+import { auth } from "@/lib/auth/server-auth";
 import { logAI } from "@/lib/logger";
 import type { AIResult, LeadScore } from "@/types/gemini";
 import { getLead } from "@/lib/firestore/leads";
@@ -29,6 +30,8 @@ function serializeLead(lead: any): string {
 export async function scoreLead(leadId: string): Promise<AIResult<LeadScore>> {
   const guard = aiUnavailable<LeadScore>({} as LeadScore);
   if (guard) return guard;
+  const accessDenied = await aiAccessDenied<LeadScore>({} as LeadScore);
+  if (accessDenied) return accessDenied;
 
   const start = Date.now();
 
@@ -54,11 +57,14 @@ export async function scoreLead(leadId: string): Promise<AIResult<LeadScore>> {
       return { success: false, error: "Invalid AI response", data: null };
     }
 
-    await updateLead(leadId, {
-      aiScore: parsed.score,
-      aiReasoning: parsed.reasoning,
-      aiLastUpdated: new Date() as any,
-    } as any).catch(() => {});
+    const session = await auth();
+    if (session) {
+      await updateLead(leadId, {
+        aiScore: parsed.score,
+        aiReasoning: parsed.reasoning,
+        aiLastUpdated: new Date() as any,
+      } as any, session.user.uid).catch(() => {});
+    }
 
     logAI("leadScore", { success: true, latencyMs: Date.now() - start });
     return { success: true, data: parsed, error: null };

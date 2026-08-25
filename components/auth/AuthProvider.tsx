@@ -4,16 +4,22 @@ import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/store/auth";
 import { onAuthStateChanged, Unsubscribe } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
+import { syncTokenToCookie } from "@/lib/auth/token-sync";
 import { updateLastLogin } from "@/lib/firestore/users";
 import { doc, onSnapshot } from "firebase/firestore";
 import { User as CustomUser } from "@/hooks/useAuth";
 import type { UserPermissions } from "@/types/crm";
+import { logger } from "@/lib/logger/client";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { setUser, setLoading, setHydrated } = useAuthStore();
     const unsubscribeDoc = useRef<Unsubscribe | null>(null);
 
     useEffect(() => {
+        // Sync Firebase ID token to a cookie so server actions (AI features)
+        // can verify the caller.
+        syncTokenToCookie();
+
         // STRICT ASYNC FLOW:
         //1. Start Loading
         setLoading(true);
@@ -33,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                     // Safety timeout: If server never responds (offline), force load after 5s
                     const serverWaitTimeout = setTimeout(() => {
-                        console.warn("⚠️ Server data timeout - forcing render with current state");
+                        logger.warn("Server data timeout - forcing render with current state", { module: "auth" });
                         setLoading(false);
                         setHydrated(true);
                     }, 5000);
@@ -41,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     unsubscribeDoc.current = onSnapshot(userRef, { includeMetadataChanges: true }, async (docSnap) => {
 
                         const source = docSnap.metadata.fromCache ? "local cache" : "server";
-                        console.log(`🔥 Firestore Update (${source}):`, docSnap.exists() ? "Exists" : "Missing");
+                        logger.debug("Firestore user doc update", { module: "auth", userId: firebaseUser.uid, metadata: { source, exists: docSnap.exists() } });
 
                         if (docSnap.exists()) {
                             const userData = docSnap.data();
@@ -55,12 +61,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 const tokenResult = await firebaseUser.getIdTokenResult(false);
                                 if (tokenResult.claims.role) {
                                     resolvedRole = tokenResult.claims.role as string;
-                                    console.log(`🔑 Role resolved from Custom Claims: ${resolvedRole}`);
+                                    logger.debug("Role resolved from custom claims", { module: "auth", userId: firebaseUser.uid, metadata: { resolvedRole, source: "claims" } });
                                 } else {
-                                    console.log(`📄 Role resolved from Firestore: ${resolvedRole}`);
+                                    logger.debug("Role resolved from Firestore", { module: "auth", userId: firebaseUser.uid, metadata: { resolvedRole, source: "firestore" } });
                                 }
                             } catch {
-                                console.warn("⚠️ Could not read token claims, falling back to Firestore role.");
+                                logger.warn("Could not read token claims, falling back to Firestore role", { module: "auth", userId: firebaseUser.uid });
                             }
 
                             const extendedUser: CustomUser = {
@@ -68,11 +74,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                                 role: resolvedRole as CustomUser["role"],
                                 permissions: userData.permissions as UserPermissions | undefined,
                                 isFirstLogin: userData.isFirstLogin === true,
+                                // Treat missing/undefined as true so legacy users (created before
+                                // the onboarding feature) are not forced through the wizard again.
+                                // Only an explicit false means onboarding is incomplete.
+                                isOnboarded: userData.isOnboarded !== false,
+                                position: userData.position || "",
                                 createdBy: userData.createdBy,
                                 passwordChangedAt: userData.passwordChangedAt?.toDate(),
                                 updatedAt: userData.updatedAt?.toDate(),
                                 provider: userData.provider || "password",
-                                isActive: userData.isActive,
+                                isActive: userData.isActive !== false,
                             };
 
                             setUser(extendedUser);
@@ -80,19 +91,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             // VITAL FIX: Avoid "Flash of Stale Cache".
                             // Only stop loading if data is from SERVER, or if we already stopped previously.
                             if (!docSnap.metadata.fromCache) {
-                                console.log("✅ Server data received. Finalizing auth state.");
+                                logger.info("Server data received. Finalizing auth state", { module: "auth", userId: firebaseUser.uid, metadata: { source } });
                                 clearTimeout(serverWaitTimeout);
                                 setLoading(false);
                                 setHydrated(true);
                             } else {
-                                console.log("⏳ Cached data loaded. Waiting for server confirmation...");
+                                logger.debug("Cached data loaded. Waiting for server confirmation", { module: "auth", userId: firebaseUser.uid, metadata: { source } });
                                 // We purposefully leave loading=true here to keep the spinner visible
                                 // until server version arrives (preventing the "Pending -> Dashboard" glitch).
                             }
 
                         } else {
                             // Doc missing -> Unapproved / not yet provisioned
-                            console.warn("⚠️ User document missing - defaulting to unapproved");
+                            logger.warn("User document missing - defaulting to unapproved", { module: "auth", userId: firebaseUser.uid });
                             const extendedUser: CustomUser = {
                                 ...firebaseUser,
                                 role: "team",
@@ -109,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                             }
                         }
                     }, (error) => {
-                        console.error("Error fetching user profile:", error);
+                        logger.error("Error fetching user profile", { module: "auth", action: "fetch", userId: firebaseUser.uid, error });
                         clearTimeout(serverWaitTimeout);
                         // Fallback on error
                         setUser(null);
@@ -118,7 +129,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     });
 
                     // Update last login in background
-                    updateLastLogin(firebaseUser.uid).catch(console.error);
+                    updateLastLogin(firebaseUser.uid).catch((err) =>
+                        logger.error("Error updating last login", { module: "auth", action: "update", userId: firebaseUser.uid, error: err })
+                    );
 
                 } else {
                     //2. No Auth -> Cleanup and Reset
@@ -126,13 +139,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         unsubscribeDoc.current();
                         unsubscribeDoc.current = null;
                     }
-                    console.log("❌ No user logged in");
+                    logger.info("No user logged in", { module: "auth" });
                     setUser(null);
                     setLoading(false);
                     setHydrated(true);
                 }
             } catch (error) {
-                console.error("Auth state change error:", error);
+                logger.error("Auth state change error", { module: "auth", action: "init", error });
                 setUser(null);
                 setLoading(false);
                 setHydrated(true);

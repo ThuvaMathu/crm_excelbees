@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
 import { ExportOptions, Plan } from "@/types/calendar";
 import { exportToICS, exportToCSV } from "@/lib/calendar/utils";
+import { logger } from "@/lib/logger";
 
 // POST /api/calendar/export - Export calendar in various formats
 export async function POST(request: NextRequest) {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`📤 Exporting calendar ${calendarId} as ${format}`);
+    logger.info("Exporting calendar", { module: "calendar", action: "export", metadata: { calendarId, format } });
 
     // Fetch calendar
     const calendarDoc = await db
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     // Sort by start date in memory
     plans.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
-    console.log(`📤 Exporting ${plans.length} plans`);
+    logger.debug("Exporting plans", { module: "calendar", action: "export", metadata: { calendarId, count: plans.length } });
 
     let content: string;
     let filename: string;
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    console.log(`✅ Export complete: ${filename}`);
+    logger.info("Export complete", { module: "calendar", action: "export", metadata: { calendarId, format, filename } });
 
     return NextResponse.json({
       content,
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
       contentType,
     });
   } catch (error) {
-    console.error("❌ Error exporting calendar:", error);
+    logger.error("Error exporting calendar", { module: "calendar", action: "export", error });
     return NextResponse.json(
       { error: "Failed to export calendar" },
       { status: 500 }

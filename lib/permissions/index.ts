@@ -19,7 +19,7 @@ export * from "@/lib/api/protected-route";
 export * from "@/lib/api/api-fetch";
 
 // Firestore Functions
-export { getUserProfile, getUsers, createUserProfile, updateUserProfile, approveUser, deleteUser, updateUserRole, updateUserPermissions, resetUserPermissions, getUserInvoiceSettings, setUserInvoiceSettings } from "@/lib/firestore/users";
+export { getUserProfile, getUsers, createUserProfile, updateUserProfile, approveUser, deleteUser, updateUserRole, updateUserPermissions, resetUserPermissions } from "@/lib/firestore/users";
 
 // Audit Logs
 export { createAuditLog, getAuditLogsForUser, getAllAuditLogs, AuditActions } from "@/lib/firestore/audit-logs";

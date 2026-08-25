@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Dialog,
@@ -28,15 +28,19 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AITextarea } from "@/components/ui/ai-textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { createProject } from "@/lib/firestore/projects";
 import { getCompanies } from "@/lib/firestore/companies";
-import { projectSchema, type ProjectFormData } from "@/lib/validations/project";
+import { projectSchema, type ProjectFormData, type ProjectFormInput } from "@/lib/validations/project";
 import { useAuth } from "@/hooks/useAuth";
-import type { ProjectInput, ProjectPriority, Company, ManagementBillingCycle, ProjectStatus } from "@/types/crm";
+import { useOrgStore } from "@/store/org";
+import type { ProjectInput, ProjectPriority, Company, ProjectStatus } from "@/types/crm";
 import { toast } from "sonner";
 import { Timestamp } from "firebase/firestore";
+import { Plus, Trash2 } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 interface CreateProjectDialogProps {
     open: boolean;
@@ -59,48 +63,86 @@ const PROJECT_PRIORITIES: ProjectPriority[] = [
     "Critical",
 ];
 
+// Form field values may hold a native Date or (when seeded from an existing
+// record) a Firestore Timestamp — both are valid pre-validation input for
+// the coerceTimestamp* schema helpers.
+function toDate(value: Date | { toDate: () => Date }): Date {
+    return value instanceof Date ? value : value.toDate();
+}
+
 export function CreateProjectDialog({
     open,
     onOpenChange,
     onSuccess,
 }: CreateProjectDialogProps) {
     const { user } = useAuth();
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [loading, setLoading] = useState(false);
     const [companies, setCompanies] = useState<Company[]>([]);
 
-    const form = useForm({
+    const form = useForm<ProjectFormInput, any, ProjectFormData>({
         resolver: zodResolver(projectSchema),
         defaultValues: {
             name: "",
             description: "",
+            scope: "",
+            phases: [{ id: uuidv4(), name: "", description: "", progress: 0, order: 0 }],
             status: "Planning" as ProjectStatus,
             priority: "Medium" as ProjectPriority,
             startDate: new Date(),
+            lifecycle: "active",
             teamMembers: [],
             endDate: undefined,
             budget: undefined,
             companyId: undefined,
-            dealId: undefined,
             initialCost: undefined,
             annualRecurringCost: undefined,
-            managementBillingCycle: "None" as ManagementBillingCycle,
             isRecurringEnabled: false,
             notificationsEnabled: true,
             emailNotificationsEnabled: true,
-        } as ProjectFormData,
+        },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "phases",
     });
 
     useEffect(() => {
         if (open) {
             fetchCompanies();
+            form.reset({
+                name: "",
+                description: "",
+                scope: "",
+                phases: [{ id: uuidv4(), name: "", description: "", progress: 0, order: 0 }],
+                status: "Planning",
+                priority: "Medium",
+                startDate: new Date(),
+                lifecycle: "active",
+                teamMembers: [],
+                endDate: undefined,
+                budget: undefined,
+                companyId: undefined,
+                initialCost: undefined,
+                annualRecurringCost: undefined,
+                isRecurringEnabled: false,
+                notificationsEnabled: true,
+                emailNotificationsEnabled: true,
+            });
         }
     }, [open]);
 
     const fetchCompanies = async () => {
-        const { companies } = await getCompanies();
+        const { companies } = await getCompanies(organizationId);
         if (companies) {
             setCompanies(companies);
         }
+    };
+
+    const addPhase = () => {
+        append({ id: uuidv4(), name: "", description: "", progress: 0, order: fields.length });
     };
 
     const onSubmit = async (data: ProjectFormData) => {
@@ -108,29 +150,34 @@ export function CreateProjectDialog({
             toast.error("You must be logged in to create a project");
             return;
         }
+        if (!organizationId) {
+            toast.error("No organization selected");
+            return;
+        }
 
         setLoading(true);
 
-        // Get company name if companyId is provided
         let companyName: string | undefined;
         if (data.companyId) {
             const company = companies.find((c) => c.id === data.companyId);
             companyName = company?.name;
         }
 
+        const phasesWithOrder = data.phases.map((p, i) => ({ ...p, order: i }));
+
         const projectData = {
             ...data,
+            phases: phasesWithOrder,
             startDate: Timestamp.fromDate(data.startDate),
             endDate: data.endDate ? Timestamp.fromDate(data.endDate) : undefined,
             companyName,
             progress: 0,
             tags: [],
-            teamMembers: data.teamMembers.length > 0 ? data.teamMembers : [user.uid], // Default to creator if empty
-            // Transform flat form data to nested objects
+            teamMembers: data.teamMembers.length > 0 ? data.teamMembers : [user.uid],
             financials: {
                 initialCost: data.initialCost || 0,
                 annualRecurringCost: data.annualRecurringCost || 0,
-                managementBillingCycle: "None" as ManagementBillingCycle,
+                managementBillingCycle: "None" as const,
                 isRecurringEnabled: false,
             },
             notificationSettings: {
@@ -139,31 +186,31 @@ export function CreateProjectDialog({
             },
         };
 
-        // Remove undefined fields to prevent Firestore errors
         const cleanProjectData = Object.fromEntries(
             Object.entries(projectData).filter(([_, v]) => v !== undefined)
-        ) as any; // Type assertion needed after filtering
+        ) as any;
 
-        const { success, error, id } = await createProject(cleanProjectData, user.uid);
+        const { success, error, id } = await createProject(cleanProjectData, user.uid, organizationId);
 
         setLoading(false);
 
         if (success) {
             toast.success("Project created successfully!");
             form.reset();
-            // Pass created project data to parent for optimistic update
             const now = Timestamp.now();
             const createdProject = {
                 id,
                 name: data.name,
                 description: data.description,
+                scope: data.scope,
+                phases: phasesWithOrder,
+                lifecycle: "active" as const,
                 status: data.status,
                 priority: data.priority,
                 startDate: Timestamp.fromDate(data.startDate),
                 endDate: data.endDate ? Timestamp.fromDate(data.endDate) : undefined,
                 budget: data.budget,
                 companyId: data.companyId,
-                dealId: data.dealId,
                 companyName,
                 progress: 0,
                 tags: [],
@@ -171,7 +218,7 @@ export function CreateProjectDialog({
                 financials: {
                     initialCost: data.initialCost || 0,
                     annualRecurringCost: data.annualRecurringCost || 0,
-                    managementBillingCycle: "None" as ManagementBillingCycle,
+                    managementBillingCycle: "None" as const,
                     isRecurringEnabled: false,
                 },
                 notificationSettings: {
@@ -196,7 +243,7 @@ export function CreateProjectDialog({
                 <DialogHeader>
                     <DialogTitle>Create New Project</DialogTitle>
                     <DialogDescription>
-                        Start a new project and track its progress
+                        Define the project scope and initial phases to get started
                     </DialogDescription>
                 </DialogHeader>
 
@@ -209,10 +256,7 @@ export function CreateProjectDialog({
                                 <FormItem>
                                     <FormLabel>Project Name *</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            placeholder="e.g., Q1 Marketing Campaign"
-                                            {...field}
-                                        />
+                                        <Input placeholder="e.g., Q1 Marketing Campaign" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -226,10 +270,7 @@ export function CreateProjectDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Status *</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                        >
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select status" />
@@ -237,9 +278,7 @@ export function CreateProjectDialog({
                                             </FormControl>
                                             <SelectContent>
                                                 {PROJECT_STATUSES.map((status) => (
-                                                    <SelectItem key={status} value={status}>
-                                                        {status}
-                                                    </SelectItem>
+                                                    <SelectItem key={status} value={status}>{status}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -247,17 +286,13 @@ export function CreateProjectDialog({
                                     </FormItem>
                                 )}
                             />
-
                             <FormField
                                 control={form.control}
                                 name="priority"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Priority *</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                        >
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Select priority" />
@@ -265,9 +300,7 @@ export function CreateProjectDialog({
                                             </FormControl>
                                             <SelectContent>
                                                 {PROJECT_PRIORITIES.map((priority) => (
-                                                    <SelectItem key={priority} value={priority}>
-                                                        {priority}
-                                                    </SelectItem>
+                                                    <SelectItem key={priority} value={priority}>{priority}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -289,56 +322,97 @@ export function CreateProjectDialog({
                                                 type="date"
                                                 min={new Date().toISOString().split("T")[0]}
                                                 {...field}
-                                                value={
-                                                    field.value
-                                                        ? new Date(field.value).toISOString().split("T")[0]
-                                                        : ""
-                                                }
-                                                onChange={(e) =>
-                                                    field.onChange(
-                                                        e.target.value ? new Date(e.target.value) : undefined
-                                                    )
-                                                }
+                                                value={field.value ? toDate(field.value).toISOString().split("T")[0] : ""}
+                                                onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
                                             />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
-
                             <FormField
                                 control={form.control}
                                 name="endDate"
-                                render={({ field }) => {
-                                    const startDate = form.watch("startDate");
-                                    const minEndDate = startDate
-                                        ? new Date(startDate).toISOString().split("T")[0]
-                                        : new Date().toISOString().split("T")[0];
-                                    return (
-                                        <FormItem>
-                                            <FormLabel>End Date</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="date"
-                                                    min={minEndDate}
-                                                    {...field}
-                                                    value={
-                                                        field.value
-                                                            ? new Date(field.value).toISOString().split("T")[0]
-                                                            : ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        field.onChange(
-                                                            e.target.value ? new Date(e.target.value) : undefined
-                                                        )
-                                                    }
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    );
-                                }}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>End Date</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="date"
+                                                min={new Date().toISOString().split("T")[0]}
+                                                {...field}
+                                                value={field.value ? toDate(field.value).toISOString().split("T")[0] : ""}
+                                                onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
+                        </div>
+
+                        <FormField
+                            control={form.control}
+                            name="scope"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Project Scope *</FormLabel>
+                                    <FormControl>
+                                        <AITextarea
+                                            placeholder="Define what this project aims to achieve, key deliverables, and boundaries..."
+                                            rows={3}
+                                            {...field}
+                                            minWords={5}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium">Project Phases *</Label>
+                                <Button type="button" variant="outline" size="sm" onClick={addPhase} className="gap-1">
+                                    <Plus className="h-3.5 w-3.5" /> Add Phase
+                                </Button>
+                            </div>
+                            {fields.map((field, index) => (
+                                <div key={field.id} className="border rounded-lg p-3 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-medium text-muted-foreground">Phase {index + 1}</span>
+                                        {fields.length > 1 && (
+                                            <Button type="button" variant="ghost" size="sm" onClick={() => remove(index)} className="h-6 w-6 p-0 text-destructive">
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <FormField
+                                        control={form.control}
+                                        name={`phases.${index}.name`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <Input placeholder="Phase name (e.g., Research, Design, Development)" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name={`phases.${index}.description`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <Input placeholder="Brief description (optional)" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            ))}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -349,10 +423,7 @@ export function CreateProjectDialog({
                                     <FormItem>
                                         <FormLabel>Total Budget ($)</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                type="number"
-                                                placeholder="0.00"
-                                                {...field}
+                                            <Input type="number" placeholder="0.00" {...field}
                                                 onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                 value={field.value || ""}
                                             />
@@ -361,49 +432,6 @@ export function CreateProjectDialog({
                                     </FormItem>
                                 )}
                             />
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="initialCost"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Initial Cost ($)</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    {...field}
-                                                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                                                    value={field.value || ""}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="annualRecurringCost"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Annual Recurring ($)</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    {...field}
-                                                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                                                    value={field.value || ""}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
                             <FormField
                                 control={form.control}
                                 name="companyId"
@@ -418,9 +446,7 @@ export function CreateProjectDialog({
                                             </FormControl>
                                             <SelectContent>
                                                 {companies.map((company) => (
-                                                    <SelectItem key={company.id} value={company.id}>
-                                                        {company.name}
-                                                    </SelectItem>
+                                                    <SelectItem key={company.id} value={company.id}>{company.name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -437,12 +463,7 @@ export function CreateProjectDialog({
                                 <FormItem>
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
-                                        <AITextarea
-                                            placeholder="Project description and goals..."
-                                            rows={3}
-                                            {...field}
-                                            minWords={5}
-                                        />
+                                        <AITextarea placeholder="Additional project details and goals..." rows={3} {...field} minWords={5} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -450,24 +471,12 @@ export function CreateProjectDialog({
                         />
 
                         <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => onOpenChange(false)}
-                                disabled={loading}
-                            >
+                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
                                 Cancel
                             </Button>
-                            <Button
-                                type="submit"
-                                className="bg-primary hover:bg-primary/90"
-                                disabled={loading}
-                            >
+                            <Button type="submit" className="bg-primary hover:bg-primary/90" disabled={loading}>
                                 {loading ? (
-                                    <>
-                                        <LoadingSpinner size="sm" className="mr-2" />
-                                        Creating...
-                                    </>
+                                    <><LoadingSpinner size="sm" className="mr-2" /> Creating...</>
                                 ) : (
                                     "Create Project"
                                 )}

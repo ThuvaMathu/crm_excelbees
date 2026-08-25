@@ -1,5 +1,7 @@
 import type { Invoice } from "@/types/crm";
 import { format } from "date-fns";
+import { toJsDate } from "@/lib/utils";
+import { logger } from "@/lib/logger/client";
 
 export interface InvoiceEmailTemplate {
   subject: string;
@@ -20,14 +22,25 @@ export function generateInvoiceEmailTemplate(
 ): InvoiceEmailTemplate {
   const subject = `Invoice #${invoice.invoiceNumber} from ${companyName}`;
 
+  // Same fix as InvoiceDetail.tsx: invoice.issueDate/dueDate isn't always a
+  // live Firestore Timestamp with a .toDate() method (e.g. after a cache
+  // round-trip it becomes a plain {seconds,nanoseconds} object) — calling
+  // .toDate() directly crashed this template's generation outright,
+  // preventing the invoice email from ever being composed.
+  const issueDate = toJsDate(invoice.issueDate);
+  const dueDate = toJsDate(invoice.dueDate);
+  if (!issueDate || !dueDate) {
+    logger.warn("Invoice has unparseable issueDate/dueDate", { module: "email", action: "compose-invoice-template", metadata: { invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber } });
+  }
+
   const body = `Dear ${invoice.contactName || "Valued Customer"},
 
 Please find attached invoice #${invoice.invoiceNumber} for your review.
 
 Invoice Details:
 • Invoice Number: ${invoice.invoiceNumber}
-• Invoice Date: ${format(invoice.issueDate.toDate(), "MMMM dd, yyyy")}
-• Due Date: ${format(invoice.dueDate.toDate(), "MMMM dd, yyyy")}
+• Invoice Date: ${issueDate ? format(issueDate, "MMMM dd, yyyy") : "-"}
+• Due Date: ${dueDate ? format(dueDate, "MMMM dd, yyyy") : "-"}
 • Amount Due: ${invoice.currency} ${invoice.total.toFixed(2)}
 • Payment Terms: ${invoice.paymentTerms}
 

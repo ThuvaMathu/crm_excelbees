@@ -3,7 +3,7 @@
 import { generateText, extractJSON } from "@/lib/gemini/parse";
 import { GEMINI_CONFIG } from "@/lib/gemini/config";
 import { PROMPTS } from "@/lib/gemini/prompts";
-import { aiUnavailable } from "@/lib/gemini/guard";
+import { aiUnavailable, aiAccessDenied } from "@/lib/gemini/guard";
 import { logAI } from "@/lib/logger";
 import type { AIResult, EmailDraft } from "@/types/gemini";
 
@@ -16,6 +16,8 @@ export async function draftEmail(params: {
 }): Promise<AIResult<EmailDraft>> {
   const guard = aiUnavailable<EmailDraft>({} as EmailDraft);
   if (guard) return guard;
+  const accessDenied = await aiAccessDenied<EmailDraft>({} as EmailDraft);
+  if (accessDenied) return accessDenied;
 
   const start = Date.now();
   const contextStr = [
@@ -56,6 +58,8 @@ export async function suggestSubjectLines(params: {
 }): Promise<AIResult<string[]>> {
   const guard = aiUnavailable<string[]>([]);
   if (guard) return guard;
+  const accessDenied = await aiAccessDenied<string[]>([]);
+  if (accessDenied) return accessDenied;
 
   const start = Date.now();
 

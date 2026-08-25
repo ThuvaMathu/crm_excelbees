@@ -26,15 +26,15 @@ export function FeaturesSection() {
           className="mb-16 max-w-2xl"
         >
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-enterprise-amber">
-            Why RCRM
+            The Full Platform
           </p>
           <h2 className="mb-4 text-4xl font-bold leading-tight text-white sm:text-5xl">
-            Everything You Need.{" "}
-            <span className="text-muted-foreground font-normal">Nothing You Don't.</span>
+            Everything Your Business{" "}
+            <span className="text-muted-foreground font-normal">Runs On.</span>
           </h2>
           <p className="text-base text-muted-foreground">
-            Don't waste money on unwanted features. Pay only for what you need.
-            Every module is optional — build the CRM your business actually uses.
+            Contacts, deals, projects, quotes, invoices, email campaigns, and analytics —
+            all in one place. Activate only the modules you need today and add more as you grow.
           </p>
         </motion.div>
 

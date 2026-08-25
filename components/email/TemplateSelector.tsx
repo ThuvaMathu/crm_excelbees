@@ -23,6 +23,7 @@ import { FileText, Eye, Sparkles } from "lucide-react";
 import { getTemplates } from "@/lib/firestore/email-templates";
 import type { EmailTemplate, EmailTemplateCategory } from "@/types/email";
 import { toast } from "sonner";
+import { logger } from "@/lib/logger/client";
 
 interface TemplateSelectorProps {
     onSelectTemplate: (template: EmailTemplate) => void;
@@ -92,9 +93,7 @@ export function TemplateSelector({
         });
 
         if (error) {
-            console.error("Error fetching templates:", error);
-            // Silent fail for templates is often better than aggressive toasts, 
-            // but we can log it.
+            logger.error("Error fetching templates", { module: "email", action: "fetch", error });
         }
 
         setTemplates(fetchedTemplates);

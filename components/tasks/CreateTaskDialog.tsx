@@ -45,11 +45,13 @@ import { createTask } from "@/lib/firestore/tasks";
 import { getProjects } from "@/lib/firestore/projects";
 import { getUsers, type UserProfile } from "@/lib/firestore/users";
 import { getDeals } from "@/lib/firestore/deals";
-import { taskSchema, type TaskFormData } from "@/lib/validations/task";
+import { taskSchema, type TaskFormData, type TaskFormInput } from "@/lib/validations/task";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgStore } from "@/store/org";
 import type { Project, User, Deal, TaskStatus, TaskPriority, TaskType } from "@/types/crm";
 import { toast } from "sonner";
 import { Timestamp } from "firebase/firestore";
+import { logger } from "@/lib/logger/client";
 
 interface CreateTaskDialogProps {
     open: boolean;
@@ -63,6 +65,13 @@ const TASK_STATUSES: TaskStatus[] = ["To Do", "In Progress", "Review", "Done"];
 const TASK_PRIORITIES: TaskPriority[] = ["Low", "Medium", "High", "Urgent"];
 const TASK_TYPES: TaskType[] = ["To Do", "Call", "Email", "Meeting"];
 
+// Form field values may hold a native Date or (when seeded from an existing
+// record) a Firestore Timestamp — both are valid pre-validation input for
+// the coerceTimestamp* schema helpers.
+function toDate(value: Date | { toDate: () => Date }): Date {
+    return value instanceof Date ? value : value.toDate();
+}
+
 export function CreateTaskDialog({
     open,
     onOpenChange,
@@ -71,12 +80,14 @@ export function CreateTaskDialog({
     defaultDealId,
 }: CreateTaskDialogProps) {
     const { user } = useAuth();
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [loading, setLoading] = useState(false);
     const [projects, setProjects] = useState<Project[]>([]);
     const [deals, setDeals] = useState<Deal[]>([]);
     const [users, setUsers] = useState<User[]>([]);
 
-    const form = useForm({
+    const form = useForm<TaskFormInput, any, TaskFormData>({
         resolver: zodResolver(taskSchema),
         defaultValues: {
             title: "",
@@ -110,21 +121,25 @@ export function CreateTaskDialog({
 
     const fetchOptions = async () => {
         try {
-            const projectsRes = await getProjects();
-            const dealsRes = await getDeals();
-            const usersRes: any = await getUsers();
+            const projectsRes = await getProjects(organizationId);
+            const dealsRes = await getDeals(organizationId);
+            const usersRes: any = await getUsers(organizationId);
 
             if (projectsRes.projects) setProjects(projectsRes.projects);
             if (dealsRes.deals) setDeals(dealsRes.deals);
             if (usersRes.users) setUsers(usersRes.users);
         } catch (error) {
-            console.error("Failed to fetch options:", error);
+            logger.error("Failed to fetch form options", { module: "tasks", action: "fetch", organizationId, error });
             toast.error("Failed to load form options");
         }
     };
 
     const onSubmit = async (data: TaskFormData) => {
         if (!user) return;
+        if (!organizationId) {
+            toast.error("No organization selected");
+            return;
+        }
         setLoading(true);
 
         try {
@@ -145,7 +160,7 @@ export function CreateTaskDialog({
             // Remove undefined fields
             Object.keys(taskData).forEach(key => taskData[key] === undefined && delete taskData[key]);
 
-            const { success, error } = await createTask(taskData, user.uid);
+            const { success, error } = await createTask(taskData, user.uid, organizationId);
 
             if (success) {
                 toast.success("Task created successfully");
@@ -283,7 +298,7 @@ export function CreateTaskDialog({
                                                         )}
                                                     >
                                                         {field.value ? (
-                                                            format(field.value, "PPP")
+                                                            format(toDate(field.value), "PPP")
                                                         ) : (
                                                             <span>Pick a date</span>
                                                         )}
@@ -294,7 +309,7 @@ export function CreateTaskDialog({
                                             <PopoverContent className="w-auto p-0" align="start">
                                                 <Calendar
                                                     mode="single"
-                                                    selected={field.value}
+                                                    selected={field.value ? toDate(field.value) : undefined}
                                                     onSelect={field.onChange}
                                                     disabled={(date) =>
                                                         date < new Date(new Date().setHours(0, 0, 0, 0))

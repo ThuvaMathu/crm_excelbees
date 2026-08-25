@@ -1,263 +1,92 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  limit,
+  collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
+  query, where, orderBy, Timestamp, limit,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Notification, NotificationType } from "@/types/crm";
 
 const COLLECTION_NAME = "notifications";
 
-// Create a new notification
 export async function createNotification(
-  userId: string,
-  type: NotificationType,
-  title: string,
-  message: string,
+  userId: string, type: NotificationType, title: string, message: string,
   entityType: "lead" | "contact" | "deal" | "company" | "project" | "task" | "invoice",
-  entityId: string
-): Promise<{
-  success: boolean;
-  id: string | null;
-  error: string | null;
-}> {
+  entityId: string, organizationId?: string
+): Promise<{ success: boolean; id: string | null; error: string | null }> {
   try {
-    console.log("🔔 Creating notification for user:", userId);
-
-    const notificationData = {
-      userId,
-      type,
-      title,
-      message,
-      entityType,
-      entityId,
-      read: false,
-      createdAt: Timestamp.now(),
-    };
-
+    const notificationData: Record<string, any> = { userId, type, title, message, entityType, entityId, read: false, createdAt: Timestamp.now() };
+    if (organizationId) notificationData.organizationId = organizationId;
+    Object.keys(notificationData).forEach((key) => { if (notificationData[key] === undefined) delete notificationData[key]; });
     const docRef = await addDoc(collection(db, COLLECTION_NAME), notificationData);
-    console.log("✅ Notification created with ID:", docRef.id);
-
-    return {
-      success: true,
-      id: docRef.id,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to create notification:", error.message);
-    return {
-      success: false,
-      id: null,
-      error: error.message,
-    };
-  }
+    return { success: true, id: docRef.id, error: null };
+  } catch (error: any) { return { success: false, id: null, error: error.message }; }
 }
 
-// Get notifications for a user
-export async function getNotifications(userId: string, unreadOnly: boolean = false): Promise<{
-  notifications: Notification[];
-  error: string | null;
-}> {
+export async function getNotifications(userId: string, organizationId?: string, unreadOnly: boolean = false): Promise<{ notifications: Notification[]; error: string | null }> {
   try {
-    console.log("📋 Fetching notifications for user:", userId);
-
     let notifications: Notification[] = [];
-
     try {
-      // Try with orderBy (requires composite index)
-      const constraints = [
-        where("userId", "==", userId),
-        orderBy("createdAt", "desc"),
-        limit(50),
-      ];
-
-      if (unreadOnly) {
-        constraints.splice(1, 0, where("read", "==", false));
-      }
-
+      const constraints: any[] = [where("userId", "==", userId)];
+      if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+      constraints.push(orderBy("createdAt", "desc"), limit(50));
+      if (unreadOnly) constraints.splice(1, 0, where("read", "==", false));
       const q = query(collection(db, COLLECTION_NAME), ...constraints);
       const querySnapshot = await getDocs(q);
-
-      querySnapshot.forEach((doc) => {
-        notifications.push({ id: doc.id, ...doc.data() } as Notification);
-      });
+      querySnapshot.forEach((doc) => { notifications.push({ id: doc.id, ...doc.data() } as Notification); });
     } catch (indexError: any) {
-      // Fallback: query without orderBy (no composite index needed), sort client-side
-      console.warn("⚠️ Notification query with orderBy failed (missing index?), falling back to client-side sort:", indexError.message);
-
-      const constraints: any[] = [
-        where("userId", "==", userId),
-      ];
-
-      if (unreadOnly) {
-        constraints.push(where("read", "==", false));
-      }
-
+      const constraints: any[] = [where("userId", "==", userId)];
+      if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+      if (unreadOnly) constraints.push(where("read", "==", false));
       const q = query(collection(db, COLLECTION_NAME), ...constraints);
       const querySnapshot = await getDocs(q);
-
-      querySnapshot.forEach((doc) => {
-        notifications.push({ id: doc.id, ...doc.data() } as Notification);
-      });
-
-      // Sort client-side (newest first)
-      notifications.sort((a, b) => {
-        const aTime = a.createdAt?.toMillis?.() || 0;
-        const bTime = b.createdAt?.toMillis?.() || 0;
-        return bTime - aTime;
-      });
-
-      // Limit to 50
+      querySnapshot.forEach((doc) => { notifications.push({ id: doc.id, ...doc.data() } as Notification); });
+      notifications.sort((a, b) => { const aT = a.createdAt?.toMillis?.() || 0; const bT = b.createdAt?.toMillis?.() || 0; return bT - aT; });
       notifications = notifications.slice(0, 50);
     }
-
-    console.log("✅ Found", notifications.length, "notifications");
-    return {
-      notifications,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to fetch notifications:", error.message);
-    return {
-      notifications: [],
-      error: error.message,
-    };
-  }
+    return { notifications, error: null };
+  } catch (error: any) { return { notifications: [], error: error.message }; }
 }
 
-// Get unread count
-export async function getUnreadCount(userId: string): Promise<{
-  count: number;
-  error: string | null;
-}> {
+export async function getUnreadCount(userId: string, organizationId?: string): Promise<{ count: number; error: string | null }> {
   try {
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where("userId", "==", userId),
-      where("read", "==", false)
-    );
-
+    const constraints: any[] = [where("userId", "==", userId), where("read", "==", false)];
+    if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+    const q = query(collection(db, COLLECTION_NAME), ...constraints);
     const querySnapshot = await getDocs(q);
-
-    return {
-      count: querySnapshot.size,
-      error: null,
-    };
+    return { count: querySnapshot.size, error: null };
   } catch (error: any) {
-    console.error("❌ Failed to get unread count:", error.message);
-
-    // Fallback: get all user notifications and count unread client-side
     try {
-      const fallbackQ = query(
-        collection(db, COLLECTION_NAME),
-        where("userId", "==", userId)
-      );
-      const fallbackSnapshot = await getDocs(fallbackQ);
+      const fallback: any[] = [where("userId", "==", userId)];
+      if (organizationId) fallback.push(where("organizationId", "==", organizationId));
+      const snap = await getDocs(query(collection(db, COLLECTION_NAME), ...fallback));
       let count = 0;
-      fallbackSnapshot.forEach((doc) => {
-        if (doc.data().read === false) count++;
-      });
+      snap.forEach((doc) => { if (doc.data().read === false) count++; });
       return { count, error: null };
-    } catch (fallbackError: any) {
-      return {
-        count: 0,
-        error: fallbackError.message,
-      };
-    }
+    } catch (fallbackError: any) { return { count: 0, error: fallbackError.message }; }
   }
 }
 
-// Mark notification as read
-export async function markAsRead(notificationId: string): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function markAsRead(notificationId: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("✓ Marking notification as read:", notificationId);
-    const docRef = doc(db, COLLECTION_NAME, notificationId);
-    await updateDoc(docRef, {
-      read: true,
-    });
-
-    console.log("✅ Notification marked as read");
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to mark as read:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    await updateDoc(doc(db, COLLECTION_NAME, notificationId), { read: true });
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Mark all notifications as read for a user
-export async function markAllAsRead(userId: string): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function markAllAsRead(userId: string, organizationId?: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("✓ Marking all notifications as read for user:", userId);
-
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where("userId", "==", userId),
-      where("read", "==", false)
-    );
-
+    const constraints: any[] = [where("userId", "==", userId), where("read", "==", false)];
+    if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+    const q = query(collection(db, COLLECTION_NAME), ...constraints);
     const querySnapshot = await getDocs(q);
-
-    const updatePromises = querySnapshot.docs.map((document) =>
-      updateDoc(doc(db, COLLECTION_NAME, document.id), { read: true })
-    );
-
-    await Promise.all(updatePromises);
-
-    console.log("✅ All notifications marked as read");
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to mark all as read:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    const promises = querySnapshot.docs.map((d) => updateDoc(doc(db, COLLECTION_NAME, d.id), { read: true }));
+    await Promise.all(promises);
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Delete a notification
-export async function deleteNotification(notificationId: string): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function deleteNotification(notificationId: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("🗑️ Deleting notification:", notificationId);
-    const docRef = doc(db, COLLECTION_NAME, notificationId);
-    await deleteDoc(docRef);
-
-    console.log("✅ Notification deleted");
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to delete notification:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    await deleteDoc(doc(db, COLLECTION_NAME, notificationId));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }

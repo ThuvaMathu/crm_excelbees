@@ -1,80 +1,61 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  startAfter,
-  Timestamp,
-  QueryConstraint,
+  collection, doc, getDoc, getDocs, addDoc, updateDoc,
+  query, where, orderBy, limit, Timestamp, QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { redis } from "../redis";
+import { hasPermission, canEditRecord } from "../auth/permission-utils";
+import { leadSchema } from "../validations/lead";
+import { sanitizeData } from "./utils";
 import type { Lead, LeadInput, LeadFilters, PaginationParams } from "@/types/crm";
 
 const COLLECTION_NAME = "leads";
 
+function orgCacheKey(orgId: string, suffix: string) { return `leads:${orgId}:${suffix}`; }
+function cacheKey(orgId: string | undefined, suffix: string) {
+  return orgId ? orgCacheKey(orgId, suffix) : "leads:list:all";
+}
+
 // Create a new lead
-export async function createLead(data: LeadInput, userId: string) {
-  console.log("📝 Creating lead:", data.email, "for user:", userId);
+export async function createLead(data: LeadInput, userId: string, organizationId: string) {
   try {
-    const leadData = {
-      ...data,
-      ownerId: userId,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    };
-
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), leadData);
-    console.log("✅ Lead created with ID:", docRef.id);
-
-    // Invalidate cache
-    await redis.del("leads:list:all");
-    if (userId) {
-      await redis.del(`dashboard:stats:${userId}`);
+    if (!organizationId) {
+      return { success: false, id: null, error: "organizationId is required to create a lead" };
+    }
+    const permCheck = await hasPermission(userId, organizationId, "leads", "create");
+    if (!permCheck.allowed) {
+      return { success: false, id: null, error: permCheck.reason || "You do not have permission to create leads" };
+    }
+    const parsed = leadSchema.safeParse(data);
+    if (!parsed.success) {
+      return { success: false, id: null, error: parsed.error.issues.map((i) => i.message).join(", ") };
     }
 
-    return {
-      success: true,
-      id: docRef.id,
-      error: null,
-    };
+    const leadData: any = { ...data, organizationId, ownerId: userId, createdAt: Timestamp.now(), updatedAt: Timestamp.now() };
+    // Normalize the empty-string form value (allowed by the schema for a
+    // blank input) to `undefined` so Firestore never stores a string in a
+    // numeric field.
+    if (leadData.value === "") delete leadData.value;
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), sanitizeData(leadData));
+    await redis.del(orgCacheKey(organizationId, "list:all"));
+    if (userId) await redis.del(`dashboard:stats:${organizationId}:${userId}`);
+    return { success: true, id: docRef.id, error: null };
   } catch (error: any) {
-    console.error("❌ Failed to create lead:", error.message);
-    return {
-      success: false,
-      id: null,
-      error: error.message,
-    };
+    return { success: false, id: null, error: error.message };
   }
 }
 
 // Get all leads with optional filters
-export async function getLeads(
-  filters?: LeadFilters,
-  pagination?: PaginationParams
-) {
-  console.log("📋 Fetching leads with filters:", filters);
+export async function getLeads(organizationId?: string | LeadFilters, filters?: LeadFilters, pagination?: PaginationParams) {
+  if (typeof organizationId === "object") { filters = organizationId as any; organizationId = undefined; }
   try {
-    // Check if we only have client-side filters (search, status, source)
-    // If so, fetch all leads and filter client-side to avoid composite index issues
     const hasOnlyClientFilters = !filters?.ownerId;
-
-    const cacheKey = "leads:list:all";
-
+    const key = cacheKey(organizationId, "list:all");
     let leads: Lead[] = [];
 
-    // Try cache first for all requests (we filter client-side anyway)
     if (hasOnlyClientFilters) {
-      const cached = await redis.get<Lead[]>(cacheKey);
+      const cached = await redis.get<Lead[]>(key);
       if (cached) {
-        console.log("⚡ HIT: Leads list from Redis");
         leads = cached.map((l: any) => ({
           ...l,
           createdAt: l.createdAt ? new Timestamp(l.createdAt.seconds || 0, l.createdAt.nanoseconds || 0) : null,
@@ -85,469 +66,245 @@ export async function getLeads(
       }
     }
 
-    // If no cached data, fetch from Firestore
     if (leads.length === 0) {
       const constraints: QueryConstraint[] = [];
+      if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+      if (filters?.ownerId) constraints.push(where("ownerId", "==", filters.ownerId));
+      // No orderBy here — requires composite index that may not exist.
+      // Client-side sort runs below instead.
 
-      // Only add ownerId filter at Firestore level (simple single-field query)
-      if (filters?.ownerId) {
-        constraints.push(where("ownerId", "==", filters.ownerId));
-      }
-
-      // Add ordering
-      constraints.push(orderBy("createdAt", "desc"));
-
-      const q = query(collection(db, COLLECTION_NAME), ...constraints);
+      const q = constraints.length > 0 ? query(collection(db, COLLECTION_NAME), ...constraints) : collection(db, COLLECTION_NAME);
       const querySnapshot = await getDocs(q);
-      console.log("📊 Leads fetched from Firestore:", querySnapshot.size);
-
       querySnapshot.forEach((doc) => {
-        leads.push({ id: doc.id, ...doc.data() } as Lead);
+        const data = doc.data();
+        if (data.isDeleted) return;
+        leads.push({ id: doc.id, ...data } as Lead);
       });
-
-      // Cache the full unfiltered result
-      if (leads.length > 0 && hasOnlyClientFilters) {
-        await redis.set(cacheKey, leads, { ex: 300 });
-      }
+      // The comment above claimed "client-side sort runs below instead" of
+      // a Firestore orderBy, but no such sort ever existed — leads came
+      // back in whatever arbitrary order Firestore's query returned them
+      // in, so newest-first assumptions elsewhere (e.g. "the lead I just
+      // created is the first row") didn't actually hold.
+      leads.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+      if (leads.length > 0 && hasOnlyClientFilters) await redis.set(key, leads, { ex: 300 });
     }
 
-    // Apply all filters client-side
-    let filteredLeads = leads;
-
-    // Status filter
-    if (filters?.status) {
-      filteredLeads = filteredLeads.filter(
-        (lead) => lead.status === filters.status
-      );
-      console.log("🔍 After status filter:", filteredLeads.length, "leads");
-    }
-
-    // Source filter
-    if (filters?.source) {
-      filteredLeads = filteredLeads.filter(
-        (lead) => lead.source === filters.source
-      );
-      console.log("🔍 After source filter:", filteredLeads.length, "leads");
-    }
-
-    // Search filter
+    let filtered = leads;
+    if (filters?.status) filtered = filtered.filter((l) => l.status === filters.status);
+    if (filters?.source) filtered = filtered.filter((l) => l.source === filters.source);
     if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredLeads = filteredLeads.filter(
-        (lead) =>
-          lead.firstName?.toLowerCase().includes(searchLower) ||
-          lead.lastName?.toLowerCase().includes(searchLower) ||
-          `${lead.firstName ?? ""} ${lead.lastName ?? ""}`.toLowerCase().includes(searchLower) ||
-          lead.email?.toLowerCase().includes(searchLower) ||
-          lead.companyName?.toLowerCase().includes(searchLower) ||
-          lead.phone?.toLowerCase().includes(searchLower) ||
-          lead.jobTitle?.toLowerCase().includes(searchLower)
+      const s = filters.search.toLowerCase();
+      filtered = filtered.filter((l) =>
+        l.firstName?.toLowerCase().includes(s) || l.lastName?.toLowerCase().includes(s) ||
+        `${l.firstName ?? ""} ${l.lastName ?? ""}`.toLowerCase().includes(s) ||
+        l.email?.toLowerCase().includes(s) || l.companyName?.toLowerCase().includes(s) ||
+        l.phone?.toLowerCase().includes(s) || l.jobTitle?.toLowerCase().includes(s)
       );
-      console.log("🔍 After search filter:", filteredLeads.length, "leads");
     }
-
-    // Apply pagination AFTER all filters
-    const totalCount = filteredLeads.length;
+    const totalCount = filtered.length;
     if (pagination) {
       const start = (pagination.page - 1) * pagination.pageSize;
-      filteredLeads = filteredLeads.slice(start, start + pagination.pageSize);
+      filtered = filtered.slice(start, start + pagination.pageSize);
     }
-
-    console.log("✅ Returning", filteredLeads.length, "of", totalCount, "leads");
-    return {
-      leads: filteredLeads,
-      total: totalCount,
-      error: null,
-    };
+    return { leads: filtered, total: totalCount, error: null };
   } catch (error: any) {
-    console.error("❌ Failed to fetch leads:", error.message);
-    return {
-      leads: [],
-      total: 0,
-      error: error.message,
-    };
+    return { leads: [], total: 0, error: error.message };
   }
 }
 
-// Get a single lead by ID
 export async function getLead(id: string) {
-  console.log("🔍 Fetching lead:", id);
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
+    if (docSnap.exists() && !docSnap.data().isDeleted) return { lead: { id: docSnap.id, ...docSnap.data() } as Lead, error: null };
+    return { lead: null, error: "Lead not found" };
+  } catch (error: any) { return { lead: null, error: error.message }; }
+}
 
-    if (docSnap.exists()) {
-      console.log("✅ Lead found:", id);
-      return {
-        lead: { id: docSnap.id, ...docSnap.data() } as Lead,
-        error: null,
-      };
-    } else {
-      console.warn("⚠️ Lead not found:", id);
-      return {
-        lead: null,
-        error: "Lead not found",
-      };
+export async function updateLead(id: string, data: Partial<LeadInput>, userId: string) {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Lead not found" };
+    const existing = docSnap.data();
+    const permCheck = await canEditRecord(userId, existing.organizationId, "leads", existing.ownerId);
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to edit this lead" };
     }
-  } catch (error: any) {
-    console.error("❌ Failed to fetch lead:", error.message);
-    return {
-      lead: null,
-      error: error.message,
-    };
-  }
+    await updateDoc(docRef, sanitizeData({ ...data, updatedAt: Timestamp.now() }));
+    if (existing.organizationId) await redis.del(orgCacheKey(existing.organizationId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Update a lead
-export async function updateLead(id: string, data: Partial<LeadInput>) {
+// Soft delete: marks the lead as deleted rather than removing the
+// document, preserving referential integrity and allowing recovery.
+export async function deleteLead(id: string, userId: string) {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, {
-      ...data,
-      updatedAt: Timestamp.now(),
-    });
-
-    // Invalidate cache
-    await redis.del("leads:list:all");
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Lead not found" };
+    const existing = docSnap.data();
+    const permCheck = await hasPermission(userId, existing.organizationId, "leads", "delete");
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to delete this lead" };
+    }
+    const orgId = existing.organizationId;
+    await updateDoc(docRef, { isDeleted: true, deletedAt: Timestamp.now(), updatedAt: Timestamp.now() });
+    if (orgId) await redis.del(orgCacheKey(orgId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Delete a lead
-export async function deleteLead(id: string) {
+export async function getLeadsByOwner(organizationId: string | undefined, ownerId: string) {
   try {
-    const docRef = doc(db, COLLECTION_NAME, id);
-    await deleteDoc(docRef);
-
-    // Invalidate cache
-    await redis.del("leads:list:all");
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
-}
-
-// Get leads by owner
-export async function getLeadsByOwner(ownerId: string) {
-  try {
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where("ownerId", "==", ownerId),
-      orderBy("createdAt", "desc")
-    );
-
+    const constraints: QueryConstraint[] = [where("ownerId", "==", ownerId)];
+    if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+    constraints.push(orderBy("createdAt", "desc"));
+    const q = query(collection(db, COLLECTION_NAME), ...constraints);
     const querySnapshot = await getDocs(q);
     const leads: Lead[] = [];
-
     querySnapshot.forEach((doc) => {
-      leads.push({ id: doc.id, ...doc.data() } as Lead);
+      const data = doc.data();
+      if (data.isDeleted) return;
+      leads.push({ id: doc.id, ...data } as Lead);
     });
-
-    return {
-      leads,
-      error: null,
-    };
-  } catch (error: any) {
-    return {
-      leads: [],
-      error: error.message,
-    };
-  }
+    return { leads, error: null };
+  } catch (error: any) { return { leads: [], error: error.message }; }
 }
 
 // Convert lead to contact
-export async function convertLeadToContact(leadId: string, userId: string, userName: string) {
-  console.log("🔄 Converting lead to contact:", leadId);
+export async function convertLeadToContact(leadId: string, userId: string, userName: string, organizationId: string) {
   try {
-    // 1. Get the lead
+    if (!organizationId) return { success: false, contactId: null, error: "organizationId is required to convert a lead" };
     const leadResult = await getLead(leadId);
-    if (leadResult.error || !leadResult.lead) {
-      return {
-        success: false,
-        contactId: null,
-        error: leadResult.error || "Lead not found",
-      };
-    }
-
+    if (leadResult.error || !leadResult.lead) return { success: false, contactId: null, error: leadResult.error || "Lead not found" };
     const lead = leadResult.lead;
+    if (lead.converted) return { success: false, contactId: lead.convertedToContactId || null, error: "Lead has already been converted to a contact" };
 
-    // 2. Check if already converted
-    if (lead.converted) {
-      return {
-        success: false,
-        contactId: lead.convertedToContactId || null,
-        error: "Lead has already been converted to a contact",
-      };
+    const permCheck = await hasPermission(userId, organizationId, "leads", "edit");
+    if (!permCheck.allowed) return { success: false, contactId: null, error: permCheck.reason || "You do not have permission to convert leads" };
+
+    const { getOrganizationMember } = await import("./organizations");
+    const { member } = await getOrganizationMember(organizationId, userId);
+    const userRole = member?.role || "team";
+
+    if (userRole === "team" && lead.ownerId !== userId) {
+      return { success: false, contactId: null, error: "You can only convert leads you own" };
     }
 
-    // 3. Create contact from lead data
     const { createContact } = await import("./contacts");
     const contactData = {
-      firstName: lead.firstName,
-      lastName: lead.lastName,
-      email: lead.email,
-      phone: lead.phone || null,
-      companyName: lead.companyName || null,
-      jobTitle: lead.jobTitle || null,
-      notes: lead.notes || null,
-      lastContactedAt: lead.lastContactedAt || null,
+      firstName: lead.firstName, lastName: lead.lastName, email: lead.email,
+      ...(lead.phone && { phone: lead.phone }),
+      ...(lead.companyName && { companyName: lead.companyName }),
+      ...(lead.jobTitle && { jobTitle: lead.jobTitle }),
+      ...(lead.notes && { notes: lead.notes }),
+      ...(lead.lastContactedAt && { lastContactedAt: lead.lastContactedAt }),
     };
-
-    const contactResult = await createContact(contactData, userId);
-
-    if (!contactResult.success || !contactResult.id) {
-      return {
-        success: false,
-        contactId: null,
-        error: contactResult.error || "Failed to create contact",
-      };
-    }
-
+    const contactResult = await createContact(contactData, userId, organizationId);
+    if (!contactResult.success || !contactResult.id) return { success: false, contactId: null, error: contactResult.error || "Failed to create contact" };
     const contactId = contactResult.id;
-    console.log("✅ Contact created:", contactId);
 
-    // 4. Update lead to mark as converted
     const leadDocRef = doc(db, COLLECTION_NAME, leadId);
-    await updateDoc(leadDocRef, {
-      converted: true,
-      convertedToContactId: contactId,
-      convertedAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
+    await updateDoc(leadDocRef, { converted: true, convertedToContactId: contactId, convertedAt: Timestamp.now(), updatedAt: Timestamp.now() });
 
-    console.log("✅ Lead marked as converted");
-
-    // 5. Log activity for the conversion
     const { createActivity } = await import("./activities");
-    await createActivity({
-      type: "log",
-      content: `Lead converted to contact by ${userName}`,
-      performedBy: userId,
-      performedByName: userName,
-      relatedTo: {
-        collection: "leads",
-        id: leadId,
-      },
-      metadata: {
-        contactId,
-        action: "convert_to_contact",
-      },
-    });
+    const orgId = organizationId;
+    await createActivity({ type: "log", content: `Lead converted to contact by ${userName}`, performedBy: userId, performedByName: userName, organizationId: orgId, relatedTo: { collection: "leads", id: leadId }, metadata: { contactId, action: "convert_to_contact" } });
+    await createActivity({ type: "created", content: `Contact created from lead conversion by ${userName}`, performedBy: userId, performedByName: userName, organizationId: orgId, relatedTo: { collection: "contacts", id: contactId }, metadata: { leadId, action: "converted_from_lead" } });
 
-    // Also log on the contact side
-    await createActivity({
-      type: "created",
-      content: `Contact created from lead conversion by ${userName}`,
-      performedBy: userId,
-      performedByName: userName,
-      relatedTo: {
-        collection: "contacts",
-        id: contactId,
-      },
-      metadata: {
-        leadId,
-        action: "converted_from_lead",
-      },
-    });
-
-    console.log("✅ Activities logged");
-
-    // 6. Invalidate caches
-    await redis.del("leads:list:all");
-    await redis.del("contacts:list:all");
-    if (userId) {
-      await redis.del(`dashboard:stats:${userId}`);
-    }
-
-    return {
-      success: true,
-      contactId,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to convert lead:", error.message);
-    return {
-      success: false,
-      contactId: null,
-      error: error.message,
-    };
-  }
+    if (orgId) { await redis.del(orgCacheKey(orgId, "list:all")); await redis.del(`contacts:${orgId}:list:all`); if (userId) await redis.del(`dashboard:stats:${orgId}:${userId}`); }
+    return { success: true, contactId, error: null };
+  } catch (error: any) { return { success: false, contactId: null, error: error.message }; }
 }
 
 // Convert lead to deal
-export async function convertLeadToDeal(leadId: string, userId: string, userName: string) {
-  console.log("🔄 Converting lead to deal:", leadId);
+export async function convertLeadToDeal(leadId: string, userId: string, userName: string, organizationId: string) {
   try {
-    // 1. Get the lead
+    if (!organizationId) return { success: false, dealId: null, error: "organizationId is required to convert a lead" };
     const leadResult = await getLead(leadId);
-    if (leadResult.error || !leadResult.lead) {
-      return { success: false, dealId: null, error: leadResult.error || "Lead not found" };
-    }
+    if (leadResult.error || !leadResult.lead) return { success: false, dealId: null, error: leadResult.error || "Lead not found" };
     const lead = leadResult.lead;
+    if (lead.convertedToDealId) return { success: false, dealId: lead.convertedToDealId, error: "Lead has already been converted to a deal" };
 
-    // 2. Check if already converted to deal
-    if (lead.convertedToDealId) {
-      return { success: false, dealId: lead.convertedToDealId, error: "Lead has already been converted to a deal" };
+    const permCheck = await hasPermission(userId, organizationId, "leads", "edit");
+    if (!permCheck.allowed) return { success: false, dealId: null, error: permCheck.reason || "You do not have permission to convert leads" };
+
+    const { getOrganizationMember } = await import("./organizations");
+    const { member } = await getOrganizationMember(organizationId, userId);
+    const userRole = member?.role || "team";
+
+    if (userRole === "team" && lead.ownerId !== userId) {
+      return { success: false, dealId: null, error: "You can only convert leads you own" };
     }
 
-    // 3. Create deal from lead data
     const { createDeal } = await import("./deals");
     const dealData = {
-      title: `${lead.companyName || lead.lastName + "'s"} Deal`,
-      value: lead.value || 0,
-      stage: "Pipeline" as const,
-      probability: 10,
-      description: `Converted from lead: ${lead.firstName} ${lead.lastName}. Notes: ${lead.notes || ""}`,
-      companyName: lead.companyName || undefined,
-      contactIds: [], // We might want to create a contact first, but for now empty
+      title: `${lead.companyName || lead.lastName + "'s"} Deal`, value: lead.value || 0, stage: "Pipeline" as const,
+      probability: 10, description: `Converted from lead: ${lead.firstName} ${lead.lastName}. Notes: ${lead.notes || ""}`,
+      companyName: lead.companyName || undefined, contactIds: [],
     };
-
-    const dealResult = await createDeal(dealData, userId);
-
-    if (!dealResult.success || !dealResult.id) {
-      return { success: false, dealId: null, error: dealResult.error || "Failed to create deal" };
-    }
-
+    const dealResult = await createDeal(dealData, userId, organizationId);
+    if (!dealResult.success || !dealResult.id) return { success: false, dealId: null, error: dealResult.error || "Failed to create deal" };
     const dealId = dealResult.id;
-    console.log("✅ Deal created:", dealId);
 
-    // 4. Update lead
     const leadDocRef = doc(db, COLLECTION_NAME, leadId);
-    await updateDoc(leadDocRef, {
-      converted: true,
-      convertedToDealId: dealId,
-      convertedAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
+    await updateDoc(leadDocRef, { converted: true, convertedToDealId: dealId, convertedAt: Timestamp.now(), updatedAt: Timestamp.now() });
 
-    // 5. Log activity
     const { createActivity } = await import("./activities");
-    await createActivity({
-      type: "log", // Start with log, or maybe 'deal_created'?
-      content: `Lead converted to deal by ${userName}`,
-      performedBy: userId,
-      performedByName: userName,
-      relatedTo: { collection: "leads", id: leadId },
-      metadata: { dealId, action: "convert_to_deal" },
-    });
+    const orgId = organizationId;
+    await createActivity({ type: "log", content: `Lead converted to deal by ${userName}`, performedBy: userId, performedByName: userName, organizationId: orgId, relatedTo: { collection: "leads", id: leadId }, metadata: { dealId, action: "convert_to_deal" } });
+    await createActivity({ type: "created", content: `Deal created from lead conversion by ${userName}`, performedBy: userId, performedByName: userName, organizationId: orgId, relatedTo: { collection: "deals", id: dealId }, metadata: { leadId, action: "converted_from_lead" } });
 
-    // Log on Deal side
-    await createActivity({
-      type: "created",
-      content: `Deal created from lead conversion by ${userName}`,
-      performedBy: userId,
-      performedByName: userName,
-      relatedTo: { collection: "deals", id: dealId },
-      metadata: { leadId, action: "converted_from_lead" },
-    });
-
-    // 6. Invalidate caches
-    await redis.del("leads:list:all");
-    await redis.del("deals:list:all");
-    if (userId) await redis.del(`dashboard:stats:${userId}`);
-
+    if (orgId) { await redis.del(orgCacheKey(orgId, "list:all")); await redis.del(`deals:${orgId}:list:all`); if (userId) await redis.del(`dashboard:stats:${orgId}:${userId}`); }
     return { success: true, dealId, error: null };
-  } catch (error: any) {
-    console.error("❌ Failed to convert lead to deal:", error.message);
-    return { success: false, dealId: null, error: error.message };
-  }
+  } catch (error: any) { return { success: false, dealId: null, error: error.message }; }
 }
 
 // Convert lead to project
-export async function convertLeadToProject(leadId: string, userId: string, userName: string) {
-  console.log("🔄 Converting lead to project:", leadId);
+export async function convertLeadToProject(leadId: string, userId: string, userName: string, organizationId: string) {
   try {
-    // 1. Get the lead
+    if (!organizationId) return { success: false, projectId: null, error: "organizationId is required to convert a lead" };
     const leadResult = await getLead(leadId);
-    if (leadResult.error || !leadResult.lead) {
-      return { success: false, projectId: null, error: leadResult.error || "Lead not found" };
-    }
+    if (leadResult.error || !leadResult.lead) return { success: false, projectId: null, error: leadResult.error || "Lead not found" };
     const lead = leadResult.lead;
+    if (lead.convertedToProjectId) return { success: false, projectId: lead.convertedToProjectId, error: "Lead has already been converted to a project" };
 
-    // 2. Check if already converted to project
-    if (lead.convertedToProjectId) {
-      return { success: false, projectId: lead.convertedToProjectId, error: "Lead has already been converted to a project" };
+    const permCheck = await hasPermission(userId, organizationId, "leads", "edit");
+    if (!permCheck.allowed) return { success: false, projectId: null, error: permCheck.reason || "You do not have permission to convert leads" };
+
+    const { getOrganizationMember } = await import("./organizations");
+    const { member } = await getOrganizationMember(organizationId, userId);
+    const userRole = member?.role || "team";
+
+    if (userRole === "team" && lead.ownerId !== userId) {
+      return { success: false, projectId: null, error: "You can only convert leads you own" };
     }
 
-    // 3. Create project from lead data
     const { createProject } = await import("./projects");
     const projectData = {
       name: `Project for ${lead.companyName || lead.lastName}`,
       description: `Converted from lead: ${lead.firstName} ${lead.lastName}. ${lead.notes || ""}`,
-      status: "Planning" as const,
-      priority: "Medium" as const,
-      budget: lead.value || 0,
-      startDate: Timestamp.now(),
-      clientId: "", // Empty for now, ideally linked to a Client/Contact
-      companyName: lead.companyName || undefined,
-      tags: [],
-      teamMembers: [userId],
-      progress: 0,
+      scope: `Project created from lead conversion: ${lead.firstName} ${lead.lastName}`,
+      status: "Planning" as const, priority: "Medium" as const, budget: lead.value || 0,
+      startDate: Timestamp.now(), lifecycle: "active" as const, companyName: lead.companyName || undefined,
+      phases: [{ id: crypto.randomUUID(), name: "Initial Phase", progress: 0, order: 0 }],
+      tags: [], teamMembers: [userId], progress: 0,
     };
-
-    const projectResult = await createProject(projectData, userId);
-
-    if (!projectResult.success || !projectResult.id) {
-      return { success: false, projectId: null, error: projectResult.error || "Failed to create project" };
-    }
-
+    const projectResult = await createProject(projectData, userId, organizationId);
+    if (!projectResult.success || !projectResult.id) return { success: false, projectId: null, error: projectResult.error || "Failed to create project" };
     const projectId = projectResult.id;
-    console.log("✅ Project created:", projectId);
 
-    // 4. Update lead
     const leadDocRef = doc(db, COLLECTION_NAME, leadId);
-    await updateDoc(leadDocRef, {
-      converted: true,
-      convertedToProjectId: projectId,
-      convertedAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
+    await updateDoc(leadDocRef, { converted: true, convertedToProjectId: projectId, convertedAt: Timestamp.now(), updatedAt: Timestamp.now() });
 
-    // 5. Log activity
     const { createActivity } = await import("./activities");
-    await createActivity({
-      type: "log",
-      content: `Lead converted to project by ${userName}`,
-      performedBy: userId,
-      performedByName: userName,
-      relatedTo: { collection: "leads", id: leadId },
-      metadata: { projectId, action: "convert_to_project" },
-    });
+    const orgId = organizationId;
+    await createActivity({ type: "log", content: `Lead converted to project by ${userName}`, performedBy: userId, performedByName: userName, organizationId: orgId, relatedTo: { collection: "leads", id: leadId }, metadata: { projectId, action: "convert_to_project" } });
+    await createActivity({ type: "created", content: `Project created from lead conversion by ${userName}`, performedBy: userId, performedByName: userName, organizationId: orgId, relatedTo: { collection: "projects", id: projectId }, metadata: { leadId, action: "converted_from_lead" } });
 
-    // Log on Project side
-    await createActivity({
-      type: "created",
-      content: `Project created from lead conversion by ${userName}`,
-      performedBy: userId,
-      performedByName: userName,
-      relatedTo: { collection: "projects", id: projectId },
-      metadata: { leadId, action: "converted_from_lead" },
-    });
-
-    // 6. Invalidate caches
-    await redis.del("leads:list:all");
-    await redis.del("projects:list:all");
-    if (userId) await redis.del(`dashboard:stats:${userId}`);
-
+    if (orgId) { await redis.del(orgCacheKey(orgId, "list:all")); await redis.del(`projects:${orgId}:list:all`); if (userId) await redis.del(`dashboard:stats:${orgId}:${userId}`); }
     return { success: true, projectId, error: null };
-  } catch (error: any) {
-    console.error("❌ Failed to convert lead to project:", error.message);
-    return { success: false, projectId: null, error: error.message };
-  }
+  } catch (error: any) { return { success: false, projectId: null, error: error.message }; }
 }

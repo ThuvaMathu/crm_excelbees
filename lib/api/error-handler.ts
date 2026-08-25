@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { logger } from "@/lib/logger";
+import { logger, getRequestId } from "@/lib/logger";
 
 interface ErrorResponse {
   error: string;
@@ -13,7 +13,13 @@ export function apiError(
   status: number = 500,
   details?: unknown
 ): NextResponse<ErrorResponse> {
-  logger.error({ code, message, status, details }, "API Error");
+  logger.error(message, {
+    module: "api",
+    action: code,
+    code,
+    status,
+    metadata: details !== undefined ? { details } : undefined,
+  });
   return NextResponse.json({ error: message, code, details }, { status });
 }
 
@@ -43,10 +49,12 @@ export function apiSuccess<T>(data: T, status: number = 200): NextResponse<{ suc
 
 export function apiHandler(handler: (req: Request) => Promise<NextResponse>) {
   return async (req: Request) => {
+    const requestId = await getRequestId();
+    const log = requestId ? logger.child({ requestId }) : logger;
     try {
       return await handler(req);
     } catch (error) {
-      logger.error(error, "Unhandled API error");
+      log.error("Unhandled API error", { module: "api", action: "handler", error });
       return apiError("An unexpected error occurred");
     }
   };

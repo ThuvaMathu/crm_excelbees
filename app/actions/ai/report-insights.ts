@@ -3,7 +3,7 @@
 import { generateText, extractJSON } from "@/lib/gemini/parse";
 import { GEMINI_CONFIG } from "@/lib/gemini/config";
 import { PROMPTS } from "@/lib/gemini/prompts";
-import { aiUnavailable } from "@/lib/gemini/guard";
+import { aiUnavailable, aiAccessDenied } from "@/lib/gemini/guard";
 import { logAI } from "@/lib/logger";
 import type { AIResult, ReportInsight } from "@/types/gemini";
 
@@ -13,6 +13,8 @@ export async function generateReportInsight(
 ): Promise<AIResult<ReportInsight>> {
   const guard = aiUnavailable<ReportInsight>({} as ReportInsight);
   if (guard) return guard;
+  const accessDenied = await aiAccessDenied<ReportInsight>({} as ReportInsight);
+  if (accessDenied) return accessDenied;
 
   const start = Date.now();
 

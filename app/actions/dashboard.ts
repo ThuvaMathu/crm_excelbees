@@ -1,14 +1,17 @@
 'use server';
 
 import { redis } from "@/lib/redis";
+import { logger } from "@/lib/logger";
 import { getLeads } from "@/lib/firestore/leads";
 import { getDeals } from "@/lib/firestore/deals";
 import { getCompanies } from "@/lib/firestore/companies";
 import { getProjects } from "@/lib/firestore/projects";
 import { getTasks } from "@/lib/firestore/tasks";
 import { getInvoiceStats } from "@/lib/firestore/invoices";
+import { auth } from "@/lib/auth/server-auth";
+import { getOrganizationMember } from "@/lib/firestore/organizations";
 
-const CACHE_TTL = 300; // 5 minutes in seconds
+const CACHE_TTL = 300;
 
 export interface DashboardStats {
     totalLeads: number;
@@ -20,123 +23,86 @@ export interface DashboardStats {
     upcomingTasks: any[];
 }
 
-const getMillis = (d: any) => {
-    if (!d) return 0;
-    if (typeof d.toMillis === 'function') return d.toMillis();
-    if (d instanceof Date) return d.getTime();
-    if (typeof d === 'string') return new Date(d).getTime();
-    // Handle serialized Timestamp { seconds, nanoseconds }
-    if (d && typeof d.seconds === 'number') return d.seconds * 1000;
-    return 0;
+const toMillis = (ts: any): number => {
+    if (!ts) return Infinity;
+    if (typeof ts.toMillis === 'function') return ts.toMillis();
+    if (typeof ts.seconds === 'number') return ts.seconds * 1000 + (ts.nanoseconds || 0) / 1000000;
+    if (ts instanceof Date) return ts.getTime();
+    if (typeof ts === 'string') return new Date(ts).getTime();
+    return Infinity;
 };
 
-const serializeDate = (d: any): string | null => {
-    if (!d) return null;
-    if (typeof d.toDate === 'function') return d.toDate().toISOString();
-    if (d instanceof Date) return d.toISOString();
-    if (typeof d === 'string') return d; // Assume already string
-    // Handle serialized Timestamp { seconds, nanoseconds }
-    if (d && typeof d.seconds === 'number') {
-        return new Date(d.seconds * 1000).toISOString();
-    }
+const toISO = (ts: any): string | null => {
+    if (!ts) return null;
+    if (typeof ts.toDate === 'function') return ts.toDate().toISOString();
+    if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000).toISOString();
+    if (ts instanceof Date) return ts.toISOString();
+    if (typeof ts === 'string') return ts;
     return null;
 };
 
-export async function getCachedDashboardStats(userId: string): Promise<DashboardStats | null> {
+export async function getCachedDashboardStats(userId: string, organizationId?: string): Promise<DashboardStats | null> {
     if (!userId) return null;
 
-    const cacheKey = `dashboard:stats:${userId}`;
+    // Verify the caller's session matches the requested user, and that the
+    // caller is an active member of the requested organization, before
+    // trusting the client-supplied userId/organizationId.
+    const session = await auth();
+    if (!session || session.user.uid !== userId) return null;
+
+    if (organizationId) {
+        const { member } = await getOrganizationMember(organizationId, userId);
+        if (!member || member.status !== "active") return null;
+    }
+
+    const cacheKey = organizationId ? `dashboard:stats:${organizationId}:${userId}` : `dashboard:stats:${userId}`;
 
     try {
-        // 1. Try to get from Redis
         const cachedData = await redis.get<DashboardStats>(cacheKey);
-
         if (cachedData) {
-            console.log("⚡ HIT: Dashboard stats served from Redis cache");
+            logger.debug("Dashboard stats served from Redis cache", {
+                module: "dashboard",
+                action: "get-stats",
+                userId,
+                organizationId,
+                metadata: { cache: "hit" },
+            });
             return cachedData;
         }
 
-        console.log("🐢 MISS: Fetching dashboard stats from Firestore");
+        logger.debug("Dashboard stats cache miss — fetching from Firestore", {
+            module: "dashboard",
+            action: "get-stats",
+            userId,
+            organizationId,
+            metadata: { cache: "miss" },
+        });
 
-        // 2. Fetch from Firestore (Parallel)
         const [
-            leadsResult,
-            dealsResult,
-            companiesResult,
-            projectsResult,
-            tasksResult,
-            invoiceStatsResult,
+            leadsResult, dealsResult, companiesResult, projectsResult, tasksResult, invoiceStatsResult,
         ] = await Promise.all([
-            getLeads(),
-            getDeals(),
-            getCompanies(),
-            getProjects(),
-            getTasks({ userId: userId, userRole: "associated" }),
-            getInvoiceStats(),
+            getLeads(organizationId),
+            getDeals(organizationId),
+            getCompanies(organizationId),
+            getProjects(organizationId),
+            getTasks(organizationId, { userId, userRole: "associated" }),
+            getInvoiceStats(organizationId),
         ]);
 
-        // 3. Process Data
-        const activeDeals = dealsResult.deals.filter(
-            (d) => d.stage !== "Won" && d.stage !== "Lost"
-        );
-
-        const activeProjects = projectsResult.projects.filter(
-            (p) => p.status === "Active"
-        );
-
-        const pendingTasks = tasksResult.tasks.filter(
-            (t) => t.status !== "Done"
-        );
-
-        // Get upcoming tasks (next 5, not done)
-        // Serialize dates to strings for JSON compatibility if needed, 
-        // but typically client components need serializable data anyway.
-        // We need to be careful with Firestore Timestamps. `redis` stores JSON string.
-        // We should map tasks to a simple format.
-
-        // Helper to safely get millis from Timestamp or plain {seconds, nanoseconds} object
-        const toMillis = (ts: any): number => {
-            if (!ts) return Infinity;
-            if (typeof ts.toMillis === 'function') return ts.toMillis();
-            if (typeof ts.seconds === 'number') return ts.seconds * 1000 + (ts.nanoseconds || 0) / 1000000;
-            if (ts instanceof Date) return ts.getTime();
-            if (typeof ts === 'string') return new Date(ts).getTime();
-            return Infinity;
-        };
-
-        // Helper to safely convert any timestamp-like value to ISO string
-        const toISO = (ts: any): string | null => {
-            if (!ts) return null;
-            if (typeof ts.toDate === 'function') return ts.toDate().toISOString();
-            if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000).toISOString();
-            if (ts instanceof Date) return ts.toISOString();
-            if (typeof ts === 'string') return ts;
-            return null;
-        };
+        const activeDeals = dealsResult.deals.filter((d) => d.stage !== "Won" && d.stage !== "Lost");
+        const activeProjects = projectsResult.projects.filter((p) => p.status === "Active");
+        const pendingTasks = tasksResult.tasks.filter((t) => t.status !== "Done");
 
         const upcomingTasks = tasksResult.tasks
             .filter((t) => t.status !== "Done")
-            .sort((a, b) => {
-                return toMillis(a.dueDate) - toMillis(b.dueDate);
-            })
+            .sort((a, b) => toMillis(a.dueDate) - toMillis(b.dueDate))
             .slice(0, 5)
             .map(t => ({
-                id: t.id,
-                title: t.title,
-                description: t.description,
-                status: t.status,
-                priority: t.priority,
-                type: t.type,
-                projectId: t.projectId,
-                projectName: t.projectName,
-                assigneeId: t.assigneeId,
-                assigneeName: t.assigneeName,
-                tags: t.tags,
-                dueDate: toISO(t.dueDate),
-                startDate: toISO(t.startDate),
-                createdAt: toISO(t.createdAt),
-                updatedAt: toISO(t.updatedAt),
-                completedAt: toISO(t.completedAt),
+                id: t.id, title: t.title, description: t.description, status: t.status,
+                priority: t.priority, type: t.type, projectId: t.projectId, projectName: t.projectName,
+                assigneeId: t.assigneeId, assigneeName: t.assigneeName, tags: t.tags,
+                dueDate: toISO(t.dueDate), startDate: toISO(t.startDate),
+                createdAt: toISO(t.createdAt), updatedAt: toISO(t.updatedAt), completedAt: toISO(t.completedAt),
             }));
 
         const stats = {
@@ -146,17 +112,19 @@ export async function getCachedDashboardStats(userId: string): Promise<Dashboard
             totalRevenue: invoiceStatsResult.stats?.totalRevenue || 0,
             activeProjects: activeProjects.length,
             pendingTasks: pendingTasks.length,
-            upcomingTasks: upcomingTasks
+            upcomingTasks,
         };
 
-        // 4. Save to Redis
         await redis.set(cacheKey, stats, { ex: CACHE_TTL });
-
         return stats;
-
-    } catch (error: any) {
-        console.error("Redis Cache Error:", error);
-        // Fallback: Return null to let client handle safely
+    } catch (error) {
+        logger.error("Failed to get cached dashboard stats", {
+            module: "dashboard",
+            action: "get-stats",
+            userId,
+            organizationId,
+            error,
+        });
         return null;
     }
 }

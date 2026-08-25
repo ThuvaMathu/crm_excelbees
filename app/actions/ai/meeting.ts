@@ -3,13 +3,15 @@
 import { generateText, extractJSON } from "@/lib/gemini/parse";
 import { GEMINI_CONFIG } from "@/lib/gemini/config";
 import { PROMPTS } from "@/lib/gemini/prompts";
-import { aiUnavailable } from "@/lib/gemini/guard";
+import { aiUnavailable, aiAccessDenied } from "@/lib/gemini/guard";
 import { logAI } from "@/lib/logger";
 import type { AIResult, MeetingSummary } from "@/types/gemini";
 
 export async function summarizeMeeting(notes: string): Promise<AIResult<MeetingSummary>> {
   const guard = aiUnavailable<MeetingSummary>({} as MeetingSummary);
   if (guard) return guard;
+  const accessDenied = await aiAccessDenied<MeetingSummary>({} as MeetingSummary);
+  if (accessDenied) return accessDenied;
 
   if (!notes || notes.trim().length < 10) {
     return { success: false, error: "Please provide at least a few sentences of meeting notes", data: null };

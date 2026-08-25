@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -24,6 +25,7 @@ import { uploadFiles, type UploadedFile } from "@/lib/storage/upload";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { MeetingSummarizer } from "@/components/shared/MeetingSummarizer";
+import { logger } from "@/lib/logger/client";
 
 interface ActivityTimelineProps {
     entityCollection: string;
@@ -41,6 +43,7 @@ export function ActivityTimeline({
     canEdit = true,
 }: ActivityTimelineProps) {
     const { user } = useAuth();
+    const { confirm, ConfirmDialog } = useConfirm();
     const [noteContent, setNoteContent] = useState("");
     const [attachments, setAttachments] = useState<File[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,7 +92,7 @@ export function ActivityTimeline({
                 toast.error(error || "Failed to add note");
             }
         } catch (error) {
-            console.error("Error adding note:", error);
+            logger.error("Error adding note", { module: "activities", action: "create", userId: user.uid, error });
             toast.error("An unexpected error occurred");
         }
 
@@ -97,7 +100,7 @@ export function ActivityTimeline({
     };
 
     const handleDeleteActivity = async (activityId: string) => {
-        if (!confirm("Are you sure you want to delete this activity?")) return;
+        if (!(await confirm({ title: "Delete Activity", message: "Are you sure you want to delete this activity?", confirmLabel: "Delete", destructive: true }))) return;
 
         const { success, error } = await deleteActivity(activityId);
 
@@ -282,6 +285,7 @@ export function ActivityTimeline({
                     ))
                 )}
             </div>
-        </div>
+                    <ConfirmDialog />
+                </div>
     );
 }

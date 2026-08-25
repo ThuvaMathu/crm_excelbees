@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -18,11 +18,12 @@ export const metadata: Metadata = {
         icon: "/favicon.ico",
         apple: "/logo.png",
     },
-    viewport: {
-        width: "device-width",
-        initialScale: 1,
-        maximumScale: 5,
-    },
+};
+
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
     themeColor: [
         { media: "(prefers-color-scheme: dark)", color: "#0A1628" },
         { media: "(prefers-color-scheme: light)", color: "#F59E0B" },

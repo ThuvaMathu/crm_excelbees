@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
 import { Calendar } from "@/types/calendar";
 import { cleanObject } from "@/lib/calendar/utils";
+import { logger } from "@/lib/logger";
 
 // GET /api/calendar/[calendarId] - Fetch single calendar
 export async function GET(
@@ -20,7 +21,7 @@ export async function GET(
       );
     }
 
-    console.log(`📅 Fetching calendar: ${calendarId} for user: ${userId}`);
+    logger.debug("Fetching calendar", { module: "calendar", action: "fetch", userId, metadata: { calendarId } });
 
     const calendarDoc = await db
       .collection(`marketing/calendar/users/${userId}/calendars`)
@@ -42,11 +43,11 @@ export async function GET(
       updatedAt: data?.updatedAt?.toDate() || new Date(),
     } as Calendar;
 
-    console.log(`✅ Calendar fetched: ${calendar.name}`);
+    logger.debug("Calendar fetched", { module: "calendar", action: "fetch", userId, metadata: { calendarId } });
 
     return NextResponse.json({ calendar });
   } catch (error) {
-    console.error("❌ Error fetching calendar:", error);
+    logger.error("Error fetching calendar", { module: "calendar", action: "fetch", error });
     return NextResponse.json(
       { error: "Failed to fetch calendar" },
       { status: 500 }
@@ -71,7 +72,7 @@ export async function PUT(
       );
     }
 
-    console.log(`📅 Updating calendar: ${calendarId} for user: ${userId}`);
+    logger.info("Updating calendar", { module: "calendar", action: "update", userId, metadata: { calendarId } });
 
     // Verify calendar exists and belongs to user
     const calendarDoc = await db
@@ -96,7 +97,7 @@ export async function PUT(
       .doc(calendarId)
       .update(updatedData);
 
-    console.log(`✅ Calendar updated: ${calendarId}`);
+    logger.info("Calendar updated", { module: "calendar", action: "update", userId, metadata: { calendarId } });
 
     // Fetch updated calendar
     const updated = await db
@@ -114,7 +115,7 @@ export async function PUT(
 
     return NextResponse.json({ calendar });
   } catch (error) {
-    console.error("❌ Error updating calendar:", error);
+    logger.error("Error updating calendar", { module: "calendar", action: "update", error });
     return NextResponse.json(
       { error: "Failed to update calendar" },
       { status: 500 }
@@ -139,7 +140,7 @@ export async function DELETE(
       );
     }
 
-    console.log(`📅 Deleting calendar: ${calendarId} for user: ${userId}`);
+    logger.info("Deleting calendar", { module: "calendar", action: "delete", userId, metadata: { calendarId } });
 
     // Verify calendar exists
     const calendarDoc = await db
@@ -173,14 +174,14 @@ export async function DELETE(
 
     await batch.commit();
 
-    console.log(`✅ Calendar and ${plansSnapshot.size} plans deleted`);
+    logger.info("Calendar and plans deleted", { module: "calendar", action: "delete", userId, metadata: { calendarId, deletedPlans: plansSnapshot.size } });
 
     return NextResponse.json({
       success: true,
       deletedPlans: plansSnapshot.size,
     });
   } catch (error) {
-    console.error("❌ Error deleting calendar:", error);
+    logger.error("Error deleting calendar", { module: "calendar", action: "delete", error });
     return NextResponse.json(
       { error: "Failed to delete calendar" },
       { status: 500 }

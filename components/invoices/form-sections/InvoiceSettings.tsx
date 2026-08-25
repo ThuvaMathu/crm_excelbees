@@ -13,6 +13,23 @@ export function InvoiceSettings() {
     const form = useFormContext();
     const isRecurring = form.watch("isRecurring");
 
+    const companyName  = form.watch("companyName");
+    const contactName  = form.watch("contactName");
+    const clientEmail  = form.watch("clientEmail");
+    const invoiceNumber = form.watch("invoiceNumber");
+    const paymentTerms = form.watch("paymentTerms");
+    const dealName     = form.watch("dealName");
+    const projectName  = form.watch("projectName");
+
+    const invoiceContext: Record<string, string> = {};
+    if (companyName)  invoiceContext["Company"]       = companyName;
+    if (contactName)  invoiceContext["Contact"]        = contactName;
+    if (clientEmail)  invoiceContext["Client Email"]   = clientEmail;
+    if (invoiceNumber) invoiceContext["Invoice #"]     = invoiceNumber;
+    if (paymentTerms) invoiceContext["Payment Terms"]  = paymentTerms;
+    if (dealName)     invoiceContext["Deal"]           = dealName;
+    if (projectName)  invoiceContext["Project"]        = projectName;
+
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -24,8 +41,8 @@ export function InvoiceSettings() {
                         render={({ field }) => (
                             <AITextarea
                                 label="Customer Notes"
-                                minWords={3}
                                 placeholder="Thank you for your business..."
+                                context={invoiceContext}
                                 {...field}
                             />
                         )}
@@ -36,8 +53,8 @@ export function InvoiceSettings() {
                         render={({ field }) => (
                             <AITextarea
                                 label="Terms & Conditions"
-                                minWords={5}
                                 placeholder="Payment due within 30 days..."
+                                context={invoiceContext}
                                 {...field}
                             />
                         )}

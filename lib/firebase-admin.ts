@@ -3,6 +3,7 @@ import { getApps, initializeApp, cert, type App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { getAuth } from "firebase-admin/auth";
+import { logger } from "@/lib/logger";
 
 let adminApp: App | null = null;
 
@@ -32,19 +33,21 @@ export function getAdminApp(): App {
     // Check if an app is already initialized
     const existingApps = getApps();
     if (existingApps.length > 0) {
-      console.log("Firebase Admin app already initialized. Reusing existing app.");
+      logger.info("Firebase Admin app already initialized. Reusing existing app.", {
+        module: "firebase",
+        action: "admin-init",
+      });
       adminApp = existingApps[0];
     } else {
-      console.log("Initializing new Firebase Admin app...");
+      logger.info("Initializing new Firebase Admin app...", { module: "firebase", action: "admin-init" });
       adminApp = initializeApp({
         credential: cert({ projectId, clientEmail, privateKey }),
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
-      console.log("Firebase Admin app initialized successfully.");
+      logger.info("Firebase Admin app initialized successfully.", { module: "firebase", action: "admin-init" });
     }
   } catch (error) {
-    console.error("ERROR: Failed to initialize Firebase Admin app.");
-    console.error("Details:", error);
+    logger.error("Failed to initialize Firebase Admin app", { module: "firebase", action: "admin-init", error });
     throw error;
   }
 
@@ -61,7 +64,10 @@ export function getAdminDb() {
     db.settings({ ignoreUndefinedProperties: true });
   } catch {
     // Ignore error if settings are already locked/initialized
-    console.log("Firestore settings already initialized, skipping.");
+    logger.debug("Firestore settings already initialized, skipping.", {
+      module: "firebase",
+      action: "admin-db-settings",
+    });
   }
   return db;
 }

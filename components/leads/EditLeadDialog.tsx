@@ -33,6 +33,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { leadSchema, type LeadFormData } from "@/lib/validations/lead";
 import { updateLead } from "@/lib/firestore/leads";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth";
 import type { Lead } from "@/types/crm";
 
 interface EditLeadDialogProps {
@@ -48,6 +49,7 @@ export function EditLeadDialog({
     lead,
     onSuccess,
 }: EditLeadDialogProps) {
+    const { user } = useAuthStore();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<LeadFormData>({
@@ -93,7 +95,7 @@ export function EditLeadDialog({
         const { success, error } = await updateLead(lead.id, {
             ...data,
             value: data.value ? Number(data.value) : undefined,
-        });
+        }, user!.uid);
 
         setIsSubmitting(false);
 

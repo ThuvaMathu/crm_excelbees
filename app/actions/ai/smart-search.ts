@@ -3,7 +3,7 @@
 import { generateText, extractJSON } from "@/lib/gemini/parse";
 import { GEMINI_CONFIG } from "@/lib/gemini/config";
 import { PROMPTS } from "@/lib/gemini/prompts";
-import { aiUnavailable } from "@/lib/gemini/guard";
+import { aiUnavailable, aiAccessDenied } from "@/lib/gemini/guard";
 import { logAI } from "@/lib/logger";
 import type { AIResult, SearchIntent } from "@/types/gemini";
 import { getLeads } from "@/lib/firestore/leads";
@@ -25,6 +25,8 @@ export interface SearchResult {
 export async function parseSearchIntent(query: string): Promise<AIResult<SearchIntent>> {
   const guard = aiUnavailable<SearchIntent>({} as SearchIntent);
   if (guard) return guard;
+  const accessDenied = await aiAccessDenied<SearchIntent>({} as SearchIntent);
+  if (accessDenied) return accessDenied;
 
   const start = Date.now();
 
@@ -52,7 +54,7 @@ export async function parseSearchIntent(query: string): Promise<AIResult<SearchI
   }
 }
 
-export async function smartSearch(query: string): Promise<AIResult<SearchResult[]>> {
+export async function smartSearch(query: string, organizationId: string): Promise<AIResult<SearchResult[]>> {
   const intentResult = await parseSearchIntent(query);
   if (!intentResult.success || !intentResult.data) {
     return { success: false, error: intentResult.error, data: [] };
@@ -65,40 +67,40 @@ export async function smartSearch(query: string): Promise<AIResult<SearchResult[
 
     switch (intent.collection) {
       case "leads": {
-        const { leads = [] } = await getLeads({});
+        const { leads = [] } = await getLeads(organizationId, {});
         results = leads.map((l: any) => ({
           id: l.id,
           title: `${l.firstName} ${l.lastName}`,
           subtitle: `${l.companyName || ""} • ${l.status}`,
           type: "lead",
-          url: `/leads/${l.id}`,
+          url: `/org/${organizationId}/leads/${l.id}`,
         }));
         break;
       }
       case "contacts": {
-        const { contacts = [] } = await getContacts({});
+        const { contacts = [] } = await getContacts(organizationId, {});
         results = contacts.map((c: any) => ({
           id: c.id,
           title: `${c.firstName} ${c.lastName}`,
           subtitle: `${c.companyName || c.jobTitle || ""} • ${c.email}`,
           type: "contact",
-          url: `/contacts/${c.id}`,
+          url: `/org/${organizationId}/contacts/${c.id}`,
         }));
         break;
       }
       case "companies": {
-        const { companies = [] } = await getCompanies({});
+        const { companies = [] } = await getCompanies(organizationId, {});
         results = companies.map((c: any) => ({
           id: c.id,
           title: c.name,
           subtitle: `${c.industry || ""} • ${c.size || ""}`,
           type: "company",
-          url: `/companies/${c.id}`,
+          url: `/org/${organizationId}/companies/${c.id}`,
         }));
         break;
       }
       case "deals": {
-        const { deals = [] } = await getDeals({});
+        const { deals = [] } = await getDeals(organizationId, {});
         const filtered = (intent.filters as any).stage
           ? deals.filter((d: any) => d.stage === (intent.filters as any).stage)
           : deals;
@@ -107,40 +109,40 @@ export async function smartSearch(query: string): Promise<AIResult<SearchResult[
           title: d.title,
           subtitle: `${d.companyName || ""} • $${d.value?.toLocaleString() || 0} • ${d.stage}`,
           type: "deal",
-          url: `/deals/${d.id}`,
+          url: `/org/${organizationId}/deals/${d.id}`,
         }));
         break;
       }
       case "projects": {
-        const { projects = [] } = await getProjects({});
+        const { projects = [] } = await getProjects(organizationId, {});
         results = projects.map((p: any) => ({
           id: p.id,
           title: p.name,
           subtitle: `${p.status} • ${p.priority}`,
           type: "project",
-          url: `/projects/${p.id}`,
+          url: `/org/${organizationId}/projects/${p.id}`,
         }));
         break;
       }
       case "tasks": {
-        const { tasks = [] } = await getTasks({});
+        const { tasks = [] } = await getTasks(organizationId, {});
         results = tasks.map((t: any) => ({
           id: t.id,
           title: t.title,
           subtitle: `${t.status} • ${t.priority}`,
           type: "task",
-          url: `/tasks/${t.id}`,
+          url: `/org/${organizationId}/tasks/${t.id}`,
         }));
         break;
       }
       case "invoices": {
-        const { invoices = [] } = await getInvoices({});
+        const { invoices = [] } = await getInvoices(organizationId, {});
         results = invoices.map((i: any) => ({
           id: i.id,
           title: i.invoiceNumber,
           subtitle: `${i.companyName || ""} • $${i.total?.toLocaleString() || 0} • ${i.status}`,
           type: "invoice",
-          url: `/invoices/${i.id}`,
+          url: `/org/${organizationId}/invoices/${i.id}`,
         }));
         break;
       }

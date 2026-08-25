@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb as db } from "@/lib/firebase-admin";
 import { Calendar } from "@/types/calendar";
 import { generateCalendarId, cleanObject } from "@/lib/calendar/utils";
+import { logger } from "@/lib/logger";
 
 // GET /api/calendar - Fetch all calendars for user
 export async function GET(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(`📅 Fetching calendars for user: ${userId}`);
+    logger.debug("Fetching calendars", { module: "calendar", action: "fetch", userId });
 
     const calendarsRef = db.collection(
       `marketing/calendar/users/${userId}/calendars`
@@ -45,11 +46,11 @@ export async function GET(request: NextRequest) {
     // Sort by createdAt in code
     calendars.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-    console.log(`✅ Found ${calendars.length} calendars`);
+    logger.info("Found calendars", { module: "calendar", action: "fetch", userId, metadata: { count: calendars.length } });
 
     return NextResponse.json({ calendars });
   } catch (error) {
-    console.error("❌ Error fetching calendars:", error);
+    logger.error("Error fetching calendars", { module: "calendar", action: "fetch", error });
     return NextResponse.json(
       { error: "Failed to fetch calendars" },
       { status: 500 }
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`📅 Creating calendar: ${name} for user: ${userId}`);
+    logger.info("Creating calendar", { module: "calendar", action: "create", userId, metadata: { name } });
 
     const calendarId = generateCalendarId();
 
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       .doc(calendarId)
       .set(cleanedCalendar);
 
-    console.log(`✅ Calendar created: ${calendarId}`);
+    logger.info("Calendar created", { module: "calendar", action: "create", userId, metadata: { calendarId } });
 
     return NextResponse.json({
       calendar: {
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("❌ Error creating calendar:", error);
+    logger.error("Error creating calendar", { module: "calendar", action: "create", error });
     return NextResponse.json(
       { error: "Failed to create calendar" },
       { status: 500 }

@@ -7,12 +7,16 @@ import {
   Timestamp,
   collection,
   getDocs,
+  query,
+  where,
+  documentId,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { UserProfile, UserRole, UserStatus } from "@/types/crm";
 export type { UserProfile, UserRole, UserStatus };
 import type { UserPermissions } from "@/types/crm";
 import { ROLE_DEFAULTS } from "@/types/crm";
+import { logger } from "@/lib/logger/client";
 
 export interface UserDocument {
   id: string;
@@ -39,10 +43,10 @@ export async function createUserProfile(
     photoURL?: string;
     phone?: string;
     role?: UserRole;
+    provider?: "password" | "google.com";
+    isFirstLogin?: boolean;
   }
 ) {
-  console.log("📝 User Profile Sync for UID:", uid);
-  
   try {
     const userRef = doc(db, "users", uid);
     const existingUser = await getDoc(userRef);
@@ -53,7 +57,7 @@ export async function createUserProfile(
       // We NEVER touch: role, isActive, isApproved, permissions.
       // ----------------------------------------------------------------
       const userData = existingUser.data();
-      console.log(`✅ User exists (Role: ${userData.role}). Updating safe fields only.`);
+      logger.debug("User exists, updating safe fields only", { module: "users", action: "sync-profile", metadata: { uid, role: userData.role } });
 
       const updates: Record<string, unknown> = {
         lastLoginAt: serverTimestamp(),
@@ -73,14 +77,13 @@ export async function createUserProfile(
 
       // SAFETY: never include role, isActive, isApproved, or permissions in updates.
       await setDoc(userRef, updates, { merge: true });
-      console.log("✅ User profile synced (safe fields only)");
+      logger.debug("User profile synced", { module: "users", action: "sync-profile", metadata: { uid } });
       return { success: true, error: null };
     }
 
     // ----------------------------------------------------------------
     // NEW USER: Full creation. Only called by Admin-managed flows.
     // ----------------------------------------------------------------
-    console.log("🆕 Creating NEW user profile...");
     
     const newUserProfile: Omit<UserProfile, "uid"> = {
       email: data.email,
@@ -89,21 +92,26 @@ export async function createUserProfile(
       lastName: data.lastName || "",
       photoURL: data.photoURL || "",
       phone: data.phone || "",
-      
+      position: "",
+
       // Critical Security Fields — role MUST be explicitly passed in
-      role: data.role || "team", 
-      isFirstLogin: true,
+      role: data.role || "team",
+      // Google users never need to change password; email self-signup does on first login
+      isFirstLogin: data.isFirstLogin !== undefined
+        ? data.isFirstLogin
+        : data.provider !== "google.com",
       isActive: true,
+      isOnboarded: false,  // Always requires onboarding wizard on first login
       status: "active",
-      
+
       createdAt: serverTimestamp() as Timestamp,
-      createdBy: "admin_created",
+      createdBy: uid, // self-created
       lastLoginAt: serverTimestamp() as Timestamp,
       passwordChangedAt: undefined,
       updatedAt: serverTimestamp() as Timestamp,
-      
-      provider: "password",
-      
+
+      provider: data.provider || "password",
+
       documents: [],
       settings: {
         theme: "system",
@@ -113,11 +121,11 @@ export async function createUserProfile(
     };
 
     await setDoc(userRef, newUserProfile);
-    console.log("✅ New user profile created:", uid);
+    logger.debug("New user profile created", { module: "users", action: "sync-profile", metadata: { uid } });
     
     return { success: true, error: null };
   } catch (error: any) {
-    console.error("❌ Failed to sync user profile:", error);
+    logger.error("Failed to sync user profile", { module: "users", action: "sync-profile", metadata: { uid }, error });
     return { success: false, error: error.message };
   }
 }
@@ -177,20 +185,53 @@ export async function updateLastLogin(uid: string) {
   }
 }
 
-// Get all users (for assignee lists)
-export async function getUsers(): Promise<{ users: UserProfile[] | null; error: string | null }> {
+// Get users for assignee lists, scoped to the given organization's active
+// members. Without an organizationId, no users are returned — this
+// function used to read the entire `users` collection unfiltered, which
+// leaked every user across every organization in this multi-tenant system.
+export async function getUsers(organizationId?: string): Promise<{ users: UserProfile[] | null; error: string | null }> {
     try {
+        if (!organizationId) {
+            return { users: [], error: null };
+        }
+
+        const membersQuery = query(
+            collection(db, "organization_members"),
+            where("organizationId", "==", organizationId),
+            where("status", "==", "active")
+        );
+        const membersSnap = await getDocs(membersQuery);
+        const userIds = Array.from(
+            new Set(membersSnap.docs.map((d) => d.data().userId as string).filter(Boolean))
+        );
+
+        if (userIds.length === 0) {
+            return { users: [], error: null };
+        }
+
+        // Firestore "in" queries are limited to 30 values per query.
+        const chunks: string[][] = [];
+        for (let i = 0; i < userIds.length; i += 30) {
+            chunks.push(userIds.slice(i, i + 30));
+        }
+
         const usersRef = collection(db, "users");
-        const snapshot = await getDocs(usersRef);
-        const users = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                uid: doc.id,
-                ...data,
-                // Fallback for missing displayName
-                displayName: data.displayName || data.email?.split('@')[0] || "Unknown User"
-            } as UserProfile;
-        });
+        const chunkResults = await Promise.all(
+            chunks.map((chunk) => getDocs(query(usersRef, where(documentId(), "in", chunk))))
+        );
+
+        const users = chunkResults.flatMap((snapshot) =>
+            snapshot.docs.map((docSnap) => {
+                const data = docSnap.data();
+                return {
+                    uid: docSnap.id,
+                    ...data,
+                    // Fallback for missing displayName
+                    displayName: data.displayName || data.email?.split('@')[0] || "Unknown User"
+                } as UserProfile;
+            })
+        );
+
         return { users, error: null };
     } catch (error: any) {
         return { users: [] as UserProfile[], error: error.message };
@@ -239,26 +280,6 @@ export async function deleteUser(uid: string) {
     }
 }
 
-// Get User Invoice Settings
-export async function getUserInvoiceSettings(uid: string) {
-    try {
-        const userRef = doc(db, "users", uid);
-        const userSnap = await getDoc(userRef);
-
-        if (userSnap.exists()) {
-            const userData = userSnap.data();
-            return {
-                settings: userData.invoiceSettings || null,
-                error: null,
-            };
-        } else {
-            return { settings: null, error: "User not found" };
-        }
-    } catch (error: any) {
-        return { settings: null, error: error.message };
-    }
-}
-
 // Update User Permissions (Admin only)
 export async function updateUserPermissions(
   uid: string,
@@ -298,16 +319,3 @@ export async function resetUserPermissions(
   }
 }
 
-// Set User Invoice Settings
-export async function setUserInvoiceSettings(uid: string, settings: any) {
-    try {
-        const userRef = doc(db, "users", uid);
-        await updateDoc(userRef, {
-            invoiceSettings: settings,
-            updatedAt: serverTimestamp(),
-        });
-        return { success: true, error: null };
-    } catch (error: any) {
-        return { success: false, error: error.message };
-    }
-}

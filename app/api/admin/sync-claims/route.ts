@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/admin/sync-claims
@@ -37,10 +38,10 @@ export async function POST(request: NextRequest) {
             try {
                 await adminAuth.setCustomUserClaims(uid, { role });
                 results.push({ uid, role, status: "synced" });
-                console.log(`✅ Custom claim set: ${uid} -> ${role}`);
+                logger.info("Custom claim set", { module: "api", action: "sync-claims", metadata: { uid, role } });
             } catch (claimError: any) {
                 results.push({ uid, role, status: `error: ${claimError.message}` });
-                console.error(`❌ Failed for UID ${uid}:`, claimError.message);
+                logger.error("Failed to set custom claim", { module: "api", action: "sync-claims", metadata: { uid, role }, error: claimError });
             }
         }
 
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
             results,
         });
     } catch (error: any) {
-        console.error("Sync-claims error:", error);
+        logger.error("Sync-claims error", { module: "api", action: "sync-claims", error });
         return NextResponse.json(
             { error: "Internal server error", details: error.message },
             { status: 500 }

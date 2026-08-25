@@ -1,6 +1,7 @@
 import { sendEmail } from "./email-service";
 import { getInvoicePDFBlob } from "../pdf/invoice-generator";
 import type { Invoice } from "@/types/crm";
+import { logger } from "@/lib/logger";
 
 export async function sendInvoiceEmail(
   invoice: Invoice,
@@ -99,12 +100,19 @@ export async function sendInvoiceEmail(
     const result = await sendEmail(
       recipientEmail,
       `Invoice ${invoice.invoiceNumber} from ${companyInfo?.name || "Your Company"}`,
-      emailHtml
+      emailHtml,
+      undefined,
+      [{ filename: `invoice-${invoice.invoiceNumber}.pdf`, content: pdfBase64 }],
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      invoice.organizationId
     );
 
     return result;
   } catch (error: any) {
-    console.error("Error sending invoice email:", error);
+    logger.error("Error sending invoice email", { module: "email", action: "send-invoice", organizationId: invoice.organizationId, error });
     return {
       success: false,
       error: error.message || "Failed to send invoice email",

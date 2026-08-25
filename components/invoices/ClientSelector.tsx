@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { getCompanies } from "@/lib/firestore/companies";
 import { getContacts } from "@/lib/firestore/contacts";
+import { useOrgStore } from "@/store/org";
 import type { Company, Contact } from "@/types/crm";
 import { Search, Building2, User, Mail, MapPin } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -36,6 +37,8 @@ export function ClientSelector({
     selectedCompanyId,
     selectedContactId,
 }: ClientSelectorProps) {
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [companies, setCompanies] = useState<Company[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(true);
@@ -50,8 +53,8 @@ export function ClientSelector({
     const fetchData = async () => {
         setLoading(true);
         const [companiesResult, contactsResult] = await Promise.all([
-            getCompanies(),
-            getContacts(),
+            getCompanies(organizationId),
+            getContacts(organizationId),
         ]);
 
         if (!companiesResult.error) {
@@ -73,7 +76,7 @@ export function ClientSelector({
 
             // Auto-select first contact if available
             if (companyContacts.length > 0) {
-                handleContactSelect(companyContacts[0].id);
+                handleContactSelect(companyContacts[0].id, company);
             } else {
                 const billingAddr = company.billingAddress;
                 const billingAddressStr = billingAddr
@@ -90,12 +93,21 @@ export function ClientSelector({
             }
         }
     };
-    const handleContactSelect = (contactId: string) => {
+    const handleContactSelect = (contactId: string, companyOverride?: Company) => {
         const contact = contacts.find((c) => c.id === contactId);
         if (contact) {
             setSelectedContact(contact);
 
-            const billingAddr = selectedCompany?.billingAddress;
+            // `companyOverride` covers the auto-select-first-contact path in
+            // handleCompanySelect(), which calls this synchronously right
+            // after setSelectedCompany() — the `selectedCompany` state
+            // variable hasn't re-rendered yet at that point and is still
+            // the *previous* value (null on a first selection), so reading
+            // it here sent `companyName: undefined` on every company that
+            // had any contacts, silently failing the invoice form's
+            // required companyName field.
+            const company = companyOverride ?? selectedCompany;
+            const billingAddr = company?.billingAddress;
             const billingAddressStr = billingAddr
                 ? (typeof billingAddr === 'string'
                     ? billingAddr
@@ -103,8 +115,8 @@ export function ClientSelector({
                 : undefined;
 
             onClientSelect({
-                companyId: selectedCompany?.id,
-                companyName: selectedCompany?.name,
+                companyId: company?.id,
+                companyName: company?.name,
                 contactId: contact.id,
                 contactName: `${contact.firstName} ${contact.lastName}`,
                 clientEmail: contact.email,

@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import type { Task } from "@/types/crm";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgStore } from "@/store/org";
 
 interface ArchivedTasksDialogProps {
     open: boolean;
@@ -35,6 +36,8 @@ export function ArchivedTasksDialog({
     onUpdate,
 }: ArchivedTasksDialogProps) {
     const { user } = useAuth();
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(false);
     const [unarchivingIds, setUnarchivingIds] = useState<Set<string>>(new Set());
@@ -47,7 +50,7 @@ export function ArchivedTasksDialog({
 
     const fetchArchivedTasks = async () => {
         setLoading(true);
-        const { tasks, error } = await getTasks({ isArchived: true });
+        const { tasks, error } = await getTasks(organizationId, { isArchived: true });
         if (error) {
             toast.error("Failed to load archived tasks");
         } else {

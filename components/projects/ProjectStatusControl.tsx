@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Project, ProjectStatus } from "@/types/crm";
 import { ChevronRight, Check, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth";
+import { logger } from "@/lib/logger/client";
 
 interface ProjectStatusControlProps {
     project: Project;
@@ -17,11 +19,12 @@ interface ProjectStatusControlProps {
 const STATUS_FLOW: ProjectStatus[] = ["Planning", "Development", "Active", "Management", "Completed"];
 
 export function ProjectStatusControl({ project, onUpdate, canEdit = true }: ProjectStatusControlProps) {
+    const { user } = useAuthStore();
     const [loading, setLoading] = useState(false);
 
     const handleStatusChange = async (newStatus: ProjectStatus) => {
         if (!canEdit) {
-            console.warn(`[RBAC] Project status change denied - user lacks edit permission`);
+            logger.warn("Project status change denied - user lacks edit permission", { module: "projects", action: "update-status", metadata: { projectId: project.id } });
             toast.error("You don't have permission to change project status");
             return;
         }
@@ -38,12 +41,12 @@ export function ProjectStatusControl({ project, onUpdate, canEdit = true }: Proj
 
         setLoading(true);
         try {
-            console.log(`[RBAC] User updating project ${project.id} status to ${newStatus}`);
-            await updateProjectStatus(project.id, newStatus);
+            logger.info("User updating project status", { module: "projects", action: "update-status", metadata: { projectId: project.id, newStatus } });
+            await updateProjectStatus(project.id, newStatus, user!.uid);
             toast.success(`Project moved to ${newStatus}`);
             if (onUpdate) onUpdate();
         } catch (error) {
-            console.error(`[RBAC] Failed to update project status:`, error);
+            logger.error("Failed to update project status", { module: "projects", action: "update-status", metadata: { projectId: project.id, newStatus }, error });
             toast.error("Failed to update status");
         } finally {
             setLoading(false);

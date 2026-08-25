@@ -2,10 +2,21 @@
  * Audit Logs - User Management Action Tracking
  *
  * Tracks all user management actions for security audit trails.
+ *
+ * NOTE: This module uses the Firebase *client* SDK because it's invoked
+ * from client components/hooks (e.g. permission-denial logging via
+ * `lib/auth/permission-utils.ts`), which cannot import the Admin SDK.
+ * Security-critical audit entries (user create/delete/role changes) are
+ * written server-side with the Admin SDK directly in
+ * `app/actions/admin-users.ts` (`writeAuditLog`) — that is the trustworthy
+ * source of truth. Firestore Security Rules should restrict writes here to
+ * a user's own uid as `performedBy` and disallow client reads/writes of
+ * other users' entries.
  */
 
 import { collection, addDoc, Timestamp, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { logger } from "@/lib/logger/client";
 import type { AuditLog, AuditAction } from "@/types/crm";
 
 /**
@@ -31,12 +42,21 @@ export async function createAuditLog(params: {
     };
 
     await addDoc(collection(db, "audit_logs"), logData);
-    console.log(`📝 Audit log created: ${params.action} by ${params.performedByName}`);
+    logger.debug("Audit log created", {
+      module: "audit",
+      action: params.action,
+      userId: params.performedBy,
+    });
 
     return { success: true };
-  } catch (error: any) {
-    console.error("❌ Failed to create audit log:", error);
-    return { success: false, error: error.message };
+  } catch (error) {
+    logger.error("Failed to create audit log", {
+      module: "audit",
+      action: params.action,
+      userId: params.performedBy,
+      error,
+    });
+    return { success: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -63,9 +83,14 @@ export async function getAuditLogsForUser(
     });
 
     return { logs };
-  } catch (error: any) {
-    console.error("❌ Failed to fetch audit logs:", error);
-    return { logs: [], error: error.message };
+  } catch (error) {
+    logger.error("Failed to fetch audit logs", {
+      module: "audit",
+      action: "list",
+      userId,
+      error,
+    });
+    return { logs: [], error: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -90,9 +115,13 @@ export async function getAllAuditLogs(
     });
 
     return { logs };
-  } catch (error: any) {
-    console.error("❌ Failed to fetch audit logs:", error);
-    return { logs: [], error: error.message };
+  } catch (error) {
+    logger.error("Failed to fetch audit logs", {
+      module: "audit",
+      action: "list-all",
+      error,
+    });
+    return { logs: [], error: error instanceof Error ? error.message : String(error) };
   }
 }
 

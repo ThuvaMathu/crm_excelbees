@@ -17,14 +17,19 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Send, Save, X, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { auth } from "@/lib/firebase";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useOrgStore } from "@/store/org";
 import { AIEmailAssistant } from "./AIEmailAssistant";
-import { createEmail, saveDraft } from "@/lib/firestore/emails";
+import { AIWriteBody } from "./AIWriteBody";
+import { createEmail, updateEmail, saveDraft } from "@/lib/firestore/emails";
 import { validateEmail } from "@/lib/email/merge-fields";
 import { incrementUsageCount, createTemplate } from "@/lib/firestore/email-templates";
 import type { Email, EmailContext, EmailRecipient, EmailTemplate, MergeFieldDefinition, EmailAttachment } from "@/types/email";
 import { Timestamp } from "firebase/firestore";
 import { uploadAttachment } from "@/lib/storage/attachments";
 import { Paperclip, XCircle, Loader2 } from "lucide-react";
+import { logger } from "@/lib/logger/client";
 
 interface EmailComposeModalProps {
     isOpen: boolean;
@@ -47,6 +52,9 @@ export function EmailComposeModal({
     initialEmail,
 }: EmailComposeModalProps) {
     const { user } = useAuth();
+    const { confirm, ConfirmDialog } = useConfirm();
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
 
     // Form state
     const [to, setTo] = useState<EmailRecipient[]>([]);
@@ -145,7 +153,7 @@ export function EmailComposeModal({
             toast.success("File attached");
         } catch (error: any) {
             toast.error("Failed to upload attachment");
-            console.error(error);
+            logger.error("Failed to upload attachment", { module: "email", action: "upload", userId: user?.uid, error });
         }
         setIsUploading(false);
         // Reset input
@@ -173,6 +181,10 @@ export function EmailComposeModal({
     const handleSaveDraft = async () => {
         if (!user) {
             toast.error("You must be logged in");
+            return;
+        }
+        if (!organizationId) {
+            toast.error("No organization selected");
             return;
         }
 
@@ -215,7 +227,7 @@ export function EmailComposeModal({
             }
 
             const sanitizedData = sanitizeEmailData(emailData);
-            const { success, id, error } = await saveDraft(sanitizedData, user.uid, draftId || undefined);
+            const { success, id, error } = await saveDraft(sanitizedData, user.uid, organizationId, draftId || undefined);
 
             if (success && id) {
                 setDraftId(id);
@@ -233,6 +245,10 @@ export function EmailComposeModal({
     const handleSend = async () => {
         if (!user) {
             toast.error("You must be logged in");
+            return;
+        }
+        if (!organizationId) {
+            toast.error("No organization selected");
             return;
         }
 
@@ -261,6 +277,7 @@ export function EmailComposeModal({
 
                 for (const recipient of to) {
                     const emailData: any = {
+                        organizationId,
                         from: user.email || "",
                         fromName: user.displayName || user.email || "",
                         to: [recipient], // Send to one at a time
@@ -283,19 +300,30 @@ export function EmailComposeModal({
                     };
 
                     const sanitizedData = sanitizeEmailData(emailData);
-                    const { success } = await createEmail(sanitizedData, user.uid);
-                    if (success) {
-                        // Trigger send API
-                        await fetch("/api/email/send", {
+                    const { success, id } = await createEmail(sanitizedData, user.uid, organizationId);
+                    if (success && id) {
+                        // Trigger send API — needs the caller's ID token
+                        // (verifyApiRequest requires it) and the payload
+                        // shaped as { email, context }, matching what
+                        // app/api/email/send/route.ts actually reads.
+                        const token = await auth.currentUser?.getIdToken();
+                        const sendRes = await fetch("/api/email/send", {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: {
+                                "Content-Type": "application/json",
+                                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                            },
                             body: JSON.stringify({
-                                ...sanitizedData,
-                                id: "temp-bulk-id", // API might need ID or separate endpoint
-                                // Actually createEmail returns ID. We should use it.
+                                email: { ...sanitizedData, id },
+                                context,
                             }),
                         });
-                        successCount++;
+                        const sendResult = await sendRes.json();
+                        if (sendResult.success) {
+                            successCount++;
+                        } else {
+                            failCount++;
+                        }
                     } else {
                         failCount++;
                     }
@@ -310,6 +338,13 @@ export function EmailComposeModal({
             // Normal Send Logic
             // Create email
             const emailData: any = {
+                // Required so /api/email/send resolves the org's own SMTP
+                // config (lib/email/email-service.ts's getResolvedTransporter)
+                // instead of silently falling back to the env default —
+                // this field was previously only ever passed as a separate
+                // argument to createEmail() (for the Firestore write) and
+                // never actually included on the object sent to the send API.
+                organizationId,
                 from: user.email || "",
                 fromName: user.displayName || user.email || "",
                 to,
@@ -349,7 +384,23 @@ export function EmailComposeModal({
             }
 
             const sanitizedData = sanitizeEmailData(emailData);
-            const { success, id, error } = await createEmail(sanitizedData, user.uid);
+            // If this compose session started from an existing draft,
+            // update that same doc instead of creating a new one — sending
+            // used to always createEmail() regardless, which left the
+            // original draft behind untouched (still status "draft"
+            // forever) while a separate, duplicate "sent" record appeared.
+            let success: boolean, id: string | null | undefined, error: string | null | undefined;
+            if (draftId) {
+                const result = await updateEmail(draftId, sanitizedData);
+                success = result.success;
+                id = draftId;
+                error = result.error;
+            } else {
+                const result = await createEmail(sanitizedData, user.uid, organizationId);
+                success = result.success;
+                id = result.id;
+                error = result.error;
+            }
 
             if (!success || !id) {
                 toast.error(error || "Failed to create email");
@@ -364,10 +415,17 @@ export function EmailComposeModal({
                 return;
             }
 
-            // Send email via API route (if not scheduled)
+            // Send email via API route (if not scheduled). The route is
+            // gated by verifyApiRequest(), which requires a Bearer token —
+            // without it every send fails with "Authorization header
+            // required" regardless of how valid the email itself is.
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch("/api/email/send", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
                 body: JSON.stringify({
                     email: {
                         ...emailData,
@@ -442,10 +500,10 @@ export function EmailComposeModal({
         setIsSavingTemplate(false);
     };
 
-    const handleClose = () => {
+    const handleClose = async () => {
         if (to.length > 0 || subject || body) {
-            if (confirm("You have unsaved changes. Do you want to save as draft?")) {
-                handleSaveDraft();
+            if (await confirm({ title: "Unsaved Changes", message: "You have unsaved changes. Do you want to save as draft?", confirmLabel: "Save Draft", cancelLabel: "Discard" })) {
+                await handleSaveDraft();
             }
         }
         onClose();
@@ -548,6 +606,12 @@ export function EmailComposeModal({
                             <div className="flex justify-between items-center">
                                 <Label>Body:</Label>
                                 <div className="flex gap-2">
+                                    <AIWriteBody
+                                        bodyHtml={body}
+                                        onInsert={setBody}
+                                        recipientName={to[0]?.name}
+                                        companyName={context?.relatedRecordName}
+                                    />
                                     <div className="relative">
                                         <input
                                             type="file"
@@ -697,6 +761,7 @@ export function EmailComposeModal({
                         </div>
                     </DialogContent>
                 </Dialog>
+            <ConfirmDialog />
             </DialogContent>
         </Dialog>
     );

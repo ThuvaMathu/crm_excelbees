@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebase-admin";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for") || "unknown";
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
     // 1. Extract Token from Header (or cookies)
     const authHeader = request.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.warn(`[AUTH FAIL] Missing/Invalid token from IP: ${ip}`);
+      logger.warn("Missing/invalid token", { module: "api", action: "auth", metadata: { ip } });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -19,12 +20,12 @@ export async function GET(request: NextRequest) {
 
     // 3. Verify Custom Claims/Role
     if (decodedToken.role !== "admin") {
-      console.warn(`[AUTH FORBIDDEN] User ${decodedToken.uid} attempted admin access.`);
+      logger.warn("User attempted admin access", { module: "api", action: "auth", userId: decodedToken.uid });
       return NextResponse.json({ error: "Forbidden: Insufficient privileges" }, { status: 403 });
     }
 
     // 4. Success Logging & Response
-    console.info(`[AUTH SUCCESS] Admin access granted to ${decodedToken.email}`);
+    logger.info("Admin access granted", { module: "api", action: "auth", userId: decodedToken.uid, metadata: { email: decodedToken.email } });
     
     return NextResponse.json({
       success: true,
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
     }, { status: 200 });
 
   } catch (error: any) {
-    console.error(`[AUTH ERROR] Failed token verification: ${error.message}`);
+    logger.error("Failed token verification", { module: "api", action: "auth", error });
     return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
   }
 }

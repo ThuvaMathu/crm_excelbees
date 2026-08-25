@@ -1,29 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/email-service";
 import { generateInvoiceEmailHtml } from "@/lib/email/invoice-template";
+import { verifyApiRequest } from "@/lib/auth/api-auth";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { adminDb } from "@/lib/firebase-admin";
 import type { Invoice } from "@/types/crm";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await verifyApiRequest(request);
+    if (!auth.success || !auth.user) {
+      return NextResponse.json(
+        { success: false, error: auth.error || "Unauthorized" },
+        { status: auth.statusCode || 401 }
+      );
+    }
+
+    const rateLimit = await checkRateLimit("email", auth.user.uid);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const json = await request.json();
-    
+
     // Support both old and new payload formats
-    const { 
-      to, 
-      cc, 
-      bcc, 
-      subject, 
-      body, 
-      pdfBase64, 
+    const {
+      to,
+      cc,
+      bcc,
+      subject,
+      body,
+      pdfBase64,
       pdfName,
+      invoiceId,
       // Legacy fields
-      invoice, 
-      companyInfo, 
-      recipientEmail, 
-      filename 
+      invoice,
+      companyInfo,
+      recipientEmail,
+      filename
     } = json;
 
     const finalTo = to || recipientEmail;
+
+    // Resolve organizationId server-side from the invoice itself (never
+    // trust a client-supplied orgId here) so sendEmail() can route through
+    // that org's own configured SMTP account instead of always falling
+    // back to the env default — this was previously never passed at all
+    // (see the equivalent EmailComposeModal.tsx fix for the compose flow).
+    let organizationId: string | undefined = invoice?.organizationId;
+    if (!organizationId && invoiceId) {
+      const invoiceDoc = await adminDb.collection("invoices").doc(invoiceId).get();
+      organizationId = invoiceDoc.data()?.organizationId;
+    }
     
     // Validate required fields
     if (!finalTo || !pdfBase64) {
@@ -64,14 +96,6 @@ export async function POST(request: NextRequest) {
         },
     ];
 
-    // Send email
-    // Note: If sendEmail doesn't support CC/BCC yet, they will be ignored for now.
-    // We should check email-service.ts if we want to add support, but for now let's get it working.
-    // Basic sendEmail signature: (to, subject, html, from, attachments)
-    
-    // Modify this if sendEmail supports options object in future.
-    // For now we just send to 'to'.
-    
     const result = await sendEmail(
       finalTo,
       finalSubject,
@@ -79,7 +103,10 @@ export async function POST(request: NextRequest) {
       undefined,
       attachments,
       cc,
-      bcc
+      bcc,
+      undefined,
+      undefined,
+      organizationId
     );
 
     if (result.success) {
@@ -92,7 +119,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error("Error sending invoice email:", error);
+    logger.error("Error sending invoice email", { module: "email", action: "send-invoice", error });
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

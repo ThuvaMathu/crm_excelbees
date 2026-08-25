@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { getDeals } from "@/lib/firestore/deals";
 import { getLeads } from "@/lib/firestore/leads";
 import { getInvoices } from "@/lib/firestore/invoices";
+import { useOrgStore } from "@/store/org";
 import { Deal, Lead, Invoice } from "@/types/crm";
 import { startOfMonth, subMonths, format, parseISO } from "date-fns";
+import { logger } from "@/lib/logger/client";
 
 export interface MonthlyMetric {
     name: string; // "Jan 2024"
@@ -25,6 +27,8 @@ export interface ReportsData {
 }
 
 export function useReportsData() {
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [data, setData] = useState<ReportsData>({
         monthlyMetrics: [],
         totalRevenue: 0,
@@ -40,9 +44,9 @@ export function useReportsData() {
             try {
                 // Fetch all raw data
                 const [dealsRes, leadsRes, invoicesRes] = await Promise.all([
-                    getDeals(),
-                    getLeads(),
-                    getInvoices()
+                    getDeals(organizationId),
+                    getLeads(organizationId),
+                    getInvoices(organizationId)
                 ]);
 
                 if (dealsRes.error) throw new Error(dealsRes.error);
@@ -148,7 +152,7 @@ export function useReportsData() {
                 });
 
             } catch (err: any) {
-                console.error("Reports data fetch failed:", err);
+                logger.error("Reports data fetch failed", { module: "reports", action: "fetch", organizationId, error: err });
                 setData(prev => ({ ...prev, isLoading: false, error: err.message }));
             }
         }

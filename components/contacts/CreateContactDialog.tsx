@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,13 +20,23 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AITextarea } from "@/components/ui/ai-textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { contactSchema, type ContactFormData } from "@/lib/validations/contact";
 import { createContact } from "@/lib/firestore/contacts";
+import { getCompanies } from "@/lib/firestore/companies";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgStore } from "@/store/org";
+import type { Company } from "@/types/crm";
 import { toast } from "sonner";
 
 interface CreateContactDialogProps {
@@ -42,7 +52,18 @@ export function CreateContactDialog({
 }: CreateContactDialogProps) {
     const router = useRouter();
     const { user } = useAuth();
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [companies, setCompanies] = useState<Company[]>([]);
+
+    // Load companies when the dialog opens
+    useEffect(() => {
+        if (!open || !organizationId) return;
+        getCompanies(organizationId).then(({ companies: list }) => {
+            setCompanies(list ?? []);
+        });
+    }, [open, organizationId]);
 
     const form = useForm<ContactFormData>({
         resolver: zodResolver(contactSchema),
@@ -52,27 +73,54 @@ export function CreateContactDialog({
             email: "",
             phone: "",
             companyId: "",
+            companyName: "",
             jobTitle: "",
             notes: "",
         },
     });
 
+    // Reset form when dialog closes
+    useEffect(() => {
+        if (!open) form.reset();
+    }, [open]);
+
+    const handleCompanyChange = (value: string) => {
+        if (!value || value === "__none__") {
+            form.setValue("companyId", "");
+            form.setValue("companyName", "");
+        } else {
+            const selected = companies.find((c) => c.id === value);
+            form.setValue("companyId", value);
+            form.setValue("companyName", selected?.name ?? "");
+        }
+    };
+
     const onSubmit = async (data: ContactFormData) => {
         if (!user) return;
+        if (!organizationId) {
+            toast.error("No active organization. Please select a workspace.");
+            return;
+        }
+
+        // Strip empty strings so Firestore doesn't store blank values
+        const payload: ContactFormData = {
+            ...data,
+            phone: data.phone || undefined,
+            companyId: data.companyId || undefined,
+            companyName: data.companyName || undefined,
+            jobTitle: data.jobTitle || undefined,
+            notes: data.notes || undefined,
+        };
 
         setIsSubmitting(true);
-
-        const { success, id, error } = await createContact(data, user.uid);
-
+        const { success, id, error } = await createContact(payload, user.uid, organizationId);
         setIsSubmitting(false);
 
         if (success && id) {
             toast.success("Contact created successfully!");
             form.reset();
             onOpenChange(false);
-            if (onSuccess) {
-                onSuccess();
-            }
+            onSuccess?.();
             router.refresh();
         } else {
             toast.error(error || "Failed to create contact");
@@ -155,19 +203,53 @@ export function CreateContactDialog({
                             />
                         </div>
 
-                        <FormField
-                            control={form.control}
-                            name="jobTitle"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Job Title</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="CEO" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Company selector — optional */}
+                            <FormField
+                                control={form.control}
+                                name="companyId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Company</FormLabel>
+                                        <Select
+                                            value={field.value || "__none__"}
+                                            onValueChange={handleCompanyChange}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a company (optional)" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="__none__">
+                                                    <span className="text-muted-foreground">None</span>
+                                                </SelectItem>
+                                                {companies.map((company) => (
+                                                    <SelectItem key={company.id} value={company.id}>
+                                                        {company.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="jobTitle"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Job Title</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="CEO" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
                         <FormField
                             control={form.control}

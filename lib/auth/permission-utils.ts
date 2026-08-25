@@ -1,69 +1,93 @@
 /**
  * Permission Validation Utility
- * 
- * Centralized permission checking for backend CRUD operations.
- * Provides server-side validation of user permissions for Task and Project modules.
- * 
- * IMPORTANT: This is for backend/server-side validation only.
- * Frontend should use the `usePermission` hook for UI controls.
+ *
+ * Centralized permission checking for CRUD operations on Task/Project (and,
+ * via `hasPermission`, other) modules.
+ *
+ * Permissions are org-scoped: the source of truth is
+ * `organization_members/{organizationId}_{userId}`, kept up to date by
+ * MemberPermissionsModal / updateMemberPermissionsAction. This module reads
+ * that document directly rather than the global `users/{uid}` doc, which no
+ * longer carries authoritative permissions.
+ *
+ * NOTE: This module uses the Firebase *client* SDK (`../firebase`) because
+ * it is called directly from client components as well as from the
+ * client-SDK-based firestore/*.ts data layer that also runs inside server
+ * actions. It is therefore NOT a hard security boundary by itself — a
+ * malicious client could bypass it. Real enforcement must come from
+ * Firestore Security Rules. API routes and server actions that need a
+ * trustworthy server-side check should use `lib/auth/api-auth.ts` (Admin
+ * SDK + verified ID token) instead.
  */
 
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import { getUserProfile } from "../firestore/users";
-import type { 
-  UserRole, 
-  UserPermissions, 
+import { logger } from "@/lib/logger/client";
+import type {
+  UserRole,
+  UserPermissions,
   ModuleKey,
-  ActionKey 
+  ActionKey
 } from "@/types/crm";
 import { ROLE_DEFAULTS } from "@/types/crm";
 
-// Cache for user permissions to reduce Firestore reads
+// Cache for user permissions to reduce Firestore reads. Keyed by
+// `${organizationId}_${userId}` since permissions are org-scoped.
 const permissionCache = new Map<string, { permissions: UserPermissions; role: UserRole; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Get user permissions with caching
+ * Get a user's org-scoped role + permissions (from organization_members), with caching.
  */
-async function getUserPermissionsWithCache(userId: string): Promise<{ permissions: UserPermissions; role: UserRole }> {
-  const cached = permissionCache.get(userId);
+async function getUserPermissionsWithCache(userId: string, organizationId: string): Promise<{ permissions: UserPermissions; role: UserRole }> {
+  const cacheKey = `${organizationId}_${userId}`;
+  const cached = permissionCache.get(cacheKey);
   const now = Date.now();
-  
+
   if (cached && (now - cached.timestamp) < CACHE_TTL) {
     return { permissions: cached.permissions, role: cached.role };
   }
-  
-  const { user: userProfile, error } = await getUserProfile(userId);
-  if (!userProfile || error) {
-    throw new Error(`User profile not found for ID: ${userId}: ${error}`);
+
+  const memberSnap = await getDoc(doc(db, "organization_members", cacheKey));
+  if (!memberSnap.exists() || memberSnap.data().status !== "active") {
+    throw new Error(`Active organization membership not found for user ${userId} in org ${organizationId}`);
   }
-  
-  const permissions = userProfile.permissions || ROLE_DEFAULTS[userProfile.role];
-  const result = { permissions, role: userProfile.role };
-  
-  permissionCache.set(userId, { ...result, timestamp: now });
+
+  const member = memberSnap.data();
+  const role: UserRole = member.role || "team";
+  const permissions: UserPermissions = member.permissions || ROLE_DEFAULTS[role];
+
+  const result = { permissions, role };
+  permissionCache.set(cacheKey, { ...result, timestamp: now });
   return result;
 }
 
 /**
- * Clear permission cache for a user (call when permissions change)
+ * Clear permission cache for a user. Pass organizationId to clear a single
+ * org's entry, or omit it to clear every cached org membership for that user.
  */
-export function clearPermissionCache(userId: string): void {
-  permissionCache.delete(userId);
+export function clearPermissionCache(userId: string, organizationId?: string): void {
+  if (organizationId) {
+    permissionCache.delete(`${organizationId}_${userId}`);
+    return;
+  }
+  for (const key of permissionCache.keys()) {
+    if (key.endsWith(`_${userId}`)) permissionCache.delete(key);
+  }
 }
 
 /**
- * Check if user has permission for a specific action on a module
+ * Check if user has permission for a specific action on a module, within a given org.
  */
 export async function hasPermission(
   userId: string,
+  organizationId: string,
   module: ModuleKey,
   action: ActionKey
 ): Promise<{ allowed: boolean; reason?: string }> {
   try {
-    const { permissions, role } = await getUserPermissionsWithCache(userId);
-    
+    const { permissions, role } = await getUserPermissionsWithCache(userId, organizationId);
+
     // Admin bypass - can do everything
     if (role === "admin") {
       return { allowed: true };
@@ -101,10 +125,30 @@ export async function hasPermission(
     }
     
     return { allowed: false, reason: `Action ${action} not defined for module: ${module}` };
-  } catch (error: any) {
-    console.error("❌ Permission check failed:", error.message);
-    return { allowed: false, reason: `Permission check error: ${error.message}` };
+  } catch (error) {
+    logger.warn("Permission check failed", { module: "permissions", action: "has-permission", userId, organizationId, error });
+    return { allowed: false, reason: `Permission check error: ${error instanceof Error ? error.message : String(error)}` };
   }
+}
+
+/**
+ * Record-scoped "edit" check, mirroring the Firestore rules'
+ * `canEditRecordWithPerms`: allowed if the caller has `editAll` (a blanket
+ * grant, independent of role — an admin can grant it to any member), OR the
+ * caller owns the record and has `edit`.
+ */
+export async function canEditRecord(
+  userId: string,
+  organizationId: string,
+  module: Extract<ModuleKey, "leads" | "contacts" | "companies" | "deals" | "projects" | "tasks" | "invoices" | "reports">,
+  ownerId: string | undefined
+): Promise<{ allowed: boolean; reason?: string }> {
+  const editAllCheck = await hasPermission(userId, organizationId, module, "editAll");
+  if (editAllCheck.allowed) return editAllCheck;
+  if (ownerId && ownerId === userId) {
+    return hasPermission(userId, organizationId, module, "edit");
+  }
+  return { allowed: false, reason: `No edit permission for module: ${module}` };
 }
 
 /**
@@ -113,14 +157,15 @@ export async function hasPermission(
 export async function validateTaskPermission(
   taskId: string | null, // null for create operations
   action: "read" | "create" | "update" | "delete",
-  userId: string
+  userId: string,
+  organizationId: string
 ): Promise<{ allowed: boolean; reason?: string }> {
   // First check basic module permission
-  const moduleAction: ActionKey = action === "read" ? "read" : 
+  const moduleAction: ActionKey = action === "read" ? "read" :
                                  action === "create" ? "create" :
                                  action === "update" ? "edit" : "delete";
-  
-  const moduleCheck = await hasPermission(userId, "tasks", moduleAction);
+
+  const moduleCheck = await hasPermission(userId, organizationId, "tasks", moduleAction);
   if (!moduleCheck.allowed) {
     return moduleCheck;
   }
@@ -146,29 +191,29 @@ export async function validateTaskPermission(
     const isOwner = taskOwnerId === userId;
     
     // Get user permissions for editAll check
-    const { permissions } = await getUserPermissionsWithCache(userId);
+    const { permissions } = await getUserPermissionsWithCache(userId, organizationId);
     const tasksPerm = permissions.tasks;
-    const canEditAll = typeof tasksPerm === "object" && "editAll" in tasksPerm 
-      ? (tasksPerm as { editAll: boolean }).editAll 
+    const canEditAll = typeof tasksPerm === "object" && "editAll" in tasksPerm
+      ? (tasksPerm as { editAll: boolean }).editAll
       : false;
-    
+
     // Permission logic based on action
     switch (action) {
       case "read":
         // All authenticated users can read (handled by Firestore rules)
         return { allowed: true };
-        
+
       case "update":
         // Can update if: is owner OR has editAll permission
         if (isOwner || canEditAll) {
           return { allowed: true };
         }
         return { allowed: false, reason: "Not authorized to update this task" };
-        
+
       case "delete":
         // Can delete if: is owner OR is admin (admin check already done in hasPermission)
         // For non-admins, need to check ownership
-        const { role } = await getUserPermissionsWithCache(userId);
+        const { role } = await getUserPermissionsWithCache(userId, organizationId);
         if (role === "admin" || isOwner) {
           return { allowed: true };
         }
@@ -177,9 +222,9 @@ export async function validateTaskPermission(
       default:
         return { allowed: false, reason: `Unsupported action: ${action}` };
     }
-  } catch (error: any) {
-    console.error("❌ Task permission validation failed:", error.message);
-    return { allowed: false, reason: `Validation error: ${error.message}` };
+  } catch (error) {
+    logger.warn("Task permission validation failed", { module: "permissions", action: "validate-task", userId, organizationId, error });
+    return { allowed: false, reason: `Validation error: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
 
@@ -189,14 +234,15 @@ export async function validateTaskPermission(
 export async function validateProjectPermission(
   projectId: string | null, // null for create operations
   action: "read" | "create" | "update" | "delete",
-  userId: string
+  userId: string,
+  organizationId: string
 ): Promise<{ allowed: boolean; reason?: string }> {
   // First check basic module permission
-  const moduleAction: ActionKey = action === "read" ? "read" : 
+  const moduleAction: ActionKey = action === "read" ? "read" :
                                  action === "create" ? "create" :
                                  action === "update" ? "edit" : "delete";
-  
-  const moduleCheck = await hasPermission(userId, "projects", moduleAction);
+
+  const moduleCheck = await hasPermission(userId, organizationId, "projects", moduleAction);
   if (!moduleCheck.allowed) {
     return moduleCheck;
   }
@@ -222,29 +268,29 @@ export async function validateProjectPermission(
     const isOwner = projectOwnerId === userId;
     
     // Get user permissions for editAll check
-    const { permissions } = await getUserPermissionsWithCache(userId);
+    const { permissions } = await getUserPermissionsWithCache(userId, organizationId);
     const projectsPerm = permissions.projects;
-    const canEditAll = typeof projectsPerm === "object" && "editAll" in projectsPerm 
-      ? (projectsPerm as { editAll: boolean }).editAll 
+    const canEditAll = typeof projectsPerm === "object" && "editAll" in projectsPerm
+      ? (projectsPerm as { editAll: boolean }).editAll
       : false;
-    
+
     // Permission logic based on action
     switch (action) {
       case "read":
         // All authenticated users can read (handled by Firestore rules)
         return { allowed: true };
-        
+
       case "update":
         // Can update if: is owner OR has editAll permission
         if (isOwner || canEditAll) {
           return { allowed: true };
         }
         return { allowed: false, reason: "Not authorized to update this project" };
-        
+
       case "delete":
         // Can delete if: is owner OR is admin (admin check already done in hasPermission)
         // For non-admins, need to check ownership
-        const { role } = await getUserPermissionsWithCache(userId);
+        const { role } = await getUserPermissionsWithCache(userId, organizationId);
         if (role === "admin" || isOwner) {
           return { allowed: true };
         }
@@ -253,9 +299,9 @@ export async function validateProjectPermission(
       default:
         return { allowed: false, reason: `Unsupported action: ${action}` };
     }
-  } catch (error: any) {
-    console.error("❌ Project permission validation failed:", error.message);
-    return { allowed: false, reason: `Validation error: ${error.message}` };
+  } catch (error) {
+    logger.warn("Project permission validation failed", { module: "permissions", action: "validate-project", userId, organizationId, error });
+    return { allowed: false, reason: `Validation error: ${error instanceof Error ? error.message : String(error)}` };
   }
 }
 
@@ -264,11 +310,12 @@ export async function validateProjectPermission(
  */
 export async function canEditAll(
   userId: string,
+  organizationId: string,
   module: Extract<ModuleKey, "leads" | "contacts" | "companies" | "deals" | "projects" | "tasks" | "invoices" | "reports">
 ): Promise<boolean> {
   try {
-    const { permissions, role } = await getUserPermissionsWithCache(userId);
-    
+    const { permissions, role } = await getUserPermissionsWithCache(userId, organizationId);
+
     // Admin can edit all
     if (role === "admin") {
       return true;
@@ -281,7 +328,7 @@ export async function canEditAll(
     
     return "editAll" in modulePerm ? (modulePerm as { editAll: boolean }).editAll : false;
   } catch (error) {
-    console.error("❌ canEditAll check failed:", error);
+    logger.warn("canEditAll check failed", { module: "permissions", action: "can-edit-all", userId, organizationId, error });
     return false;
   }
 }
@@ -296,9 +343,12 @@ export async function logPermissionDenial(
   action: string,
   reason: string
 ): Promise<void> {
-  console.warn(
-    `[RBAC DENIED] User ${userId} attempted ${action} on ${resourceType} ${resourceId || "(create)"}: ${reason}`
-  );
+  logger.warn("Permission denied", {
+    module: "permissions",
+    action,
+    userId,
+    metadata: { resourceType, resourceId: resourceId || null, reason },
+  });
 
   try {
     const { createAuditLog } = await import("@/lib/firestore/audit-logs");
@@ -311,6 +361,6 @@ export async function logPermissionDenial(
       details: { attemptedAction: action, reason },
     });
   } catch (err) {
-    console.error("[RBAC] Failed to write audit log:", err);
+    logger.error("Failed to write audit log", { module: "permissions", action, userId, error: err });
   }
 }

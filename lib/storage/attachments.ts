@@ -1,6 +1,7 @@
 import { storage } from "../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { v4 as uuidv4 } from "uuid";
+import { logger } from "@/lib/logger/client";
 
 /**
  * Upload an attachment to Firebase Storage
@@ -23,7 +24,7 @@ export async function uploadAttachment(file: File, userId: string): Promise<stri
     
     return downloadURL;
   } catch (error: any) {
-    console.error("Error uploading attachment:", error);
+    logger.error("Error uploading attachment", { module: "storage", action: "upload-attachment", error });
     throw new Error(`Failed to upload attachment: ${error.message}`);
   }
 }

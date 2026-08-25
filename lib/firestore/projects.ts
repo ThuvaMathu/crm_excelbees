@@ -1,435 +1,230 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  QueryConstraint,
+  collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
+  query, where, orderBy, Timestamp, QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { redis } from "../redis";
+import { projectSchema } from "../validations/project";
+import { hasPermission, canEditRecord } from "../auth/permission-utils";
 import type { Project, ProjectInput, ProjectFilters, ProjectStatus } from "@/types/crm";
 import { sanitizeData } from "./utils";
-import { validateProjectPermission } from "@/lib/auth/permission-utils";
 
 const COLLECTION_NAME = "projects";
 
-// Create a new project
-export async function createProject(data: ProjectInput, userId: string): Promise<{
-  success: boolean;
-  id: string | null;
-  error: string | null;
-  data?: any;
+function orgCacheKey(orgId: string, suffix: string) { return `projects:${orgId}:${suffix}`; }
+function cacheKey(orgId: string | undefined, suffix: string) {
+  return orgId ? orgCacheKey(orgId, suffix) : "projects:list:all";
+}
+
+function rehydrateTs(val: any) {
+  if (!val) return null;
+  if (typeof val?.toDate === 'function') return val;
+  if (typeof val === 'object' && 'seconds' in val) return new Timestamp(val.seconds, val.nanoseconds);
+  if (val instanceof Date) return Timestamp.fromDate(val);
+  if (typeof val === 'string') { try { return Timestamp.fromDate(new Date(val)); } catch { return null; } }
+  return null;
+}
+
+export async function createProject(data: ProjectInput, userId: string, organizationId: string): Promise<{
+  success: boolean; id: string | null; error: string | null; data?: any;
 }> {
   try {
-    console.log("📝 Creating project:", data.name);
-
-    // Check if user has permission to create projects
-    const { allowed, reason } = await validateProjectPermission(null, "create", userId);
-    if (!allowed) {
-      console.warn(`❌ Permission denied for user ${userId} to create project: ${reason}`);
-      return {
-        success: false,
-        id: null,
-        error: reason || "You don't have permission to create projects",
-      };
+    if (!organizationId) {
+      return { success: false, id: null, error: "organizationId is required to create a project" };
+    }
+    const permCheck = await hasPermission(userId, organizationId, "projects", "create");
+    if (!permCheck.allowed) {
+      return { success: false, id: null, error: permCheck.reason || "You do not have permission to create projects" };
+    }
+    const parsed = projectSchema.safeParse(data);
+    if (!parsed.success) {
+      return { success: false, id: null, error: parsed.error.issues.map((i) => i.message).join(", ") };
     }
 
-    const projectData = {
-      ...data,
+    const projectData: any = {
+      ...parsed.data,
+      organizationId,
       ownerId: userId,
       archived: false,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
     };
-
-    const sanitizedData = sanitizeData(projectData);
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), sanitizedData);
-    console.log("✅ Project created with ID:", docRef.id);
-
-    // Invalidate cache
-    await redis.del("projects:list:all");
-    if (userId) {
-      await redis.del(`dashboard:stats:${userId}`);
-    }
-
-    return {
-      success: true,
-      id: docRef.id,
-      error: null,
-      data: { id: docRef.id, ...projectData },
-    };
+    const sanitized = sanitizeData(projectData);
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), sanitized);
+    await redis.del(orgCacheKey(organizationId, "list:all"));
+    if (userId) await redis.del(`dashboard:stats:${organizationId}:${userId}`);
+    return { success: true, id: docRef.id, error: null, data: { id: docRef.id, ...projectData } };
   } catch (error: any) {
-    console.error("❌ Failed to create project:", error.message);
-    return {
-      success: false,
-      id: null,
-      error: error.message,
-    };
+    return { success: false, id: null, error: error.message };
   }
 }
 
-// Archive a project
 export async function archiveProject(id: string, currentUserId: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    // Check if user has permission to update this project (archiving is an update)
-    const { allowed, reason } = await validateProjectPermission(id, "update", currentUserId);
-    if (!allowed) {
-      console.warn(`❌ Permission denied for user ${currentUserId} to archive project ${id}: ${reason}`);
-      return { success: false, error: reason || "You don't have permission to archive this project" };
-    }
-
     const docRef = doc(db, COLLECTION_NAME, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Project not found" };
+    const existing = docSnap.data();
+    const permCheck = await canEditRecord(currentUserId, existing.organizationId, "projects", existing.ownerId);
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to archive this project" };
+    }
     await updateDoc(docRef, { archived: true, updatedAt: Timestamp.now() });
-
-    // Invalidate cache
-    await redis.del("projects:list:all");
-
+    if (existing.organizationId) await redis.del(orgCacheKey(existing.organizationId, "list:all"));
     return { success: true, error: null };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Unarchive a project
 export async function unarchiveProject(id: string, currentUserId: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    // Check if user has permission to update this project (unarchiving is an update)
-    const { allowed, reason } = await validateProjectPermission(id, "update", currentUserId);
-    if (!allowed) {
-      console.warn(`❌ Permission denied for user ${currentUserId} to unarchive project ${id}: ${reason}`);
-      return { success: false, error: reason || "You don't have permission to unarchive this project" };
-    }
-
     const docRef = doc(db, COLLECTION_NAME, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Project not found" };
+    const existing = docSnap.data();
+    const permCheck = await canEditRecord(currentUserId, existing.organizationId, "projects", existing.ownerId);
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to unarchive this project" };
+    }
     await updateDoc(docRef, { archived: false, updatedAt: Timestamp.now() });
-
-    // Invalidate cache
-    await redis.del("projects:list:all");
-
+    if (existing.organizationId) await redis.del(orgCacheKey(existing.organizationId, "list:all"));
     return { success: true, error: null };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Get all projects with optional filters
-export async function getProjects(filters?: ProjectFilters): Promise<{
-  projects: Project[];
-  error: string | null;
+export async function getProjects(organizationId?: string | ProjectFilters, filters?: ProjectFilters): Promise<{
+  projects: Project[]; error: string | null;
 }> {
+  if (typeof organizationId === "object") { filters = organizationId as any; organizationId = undefined; }
   try {
-    console.log("📋 Fetching projects with filters:", filters);
-
-    const cacheKey = "projects:list:all";
+    const key = cacheKey(organizationId, "list:all");
     let projects: Project[] = [];
 
-    // Helper to rehydrate timestamps
-    const createTimestamp = (val: any) => {
-      if (!val) return null;
-      if (typeof val?.toDate === 'function') return val;
-      if (typeof val === 'object' && 'seconds' in val) {
-        try { return new Timestamp(val.seconds || 0, val.nanoseconds || 0); } catch { return null; }
-      }
-      if (val instanceof Date) return Timestamp.fromDate(val);
-      if (typeof val === 'string') { try { return Timestamp.fromDate(new Date(val)); } catch { return null; } }
-      return null;
-    };
-
-    // Try cache first
-    const cached = await redis.get<Project[]>(cacheKey);
+    const cached = await redis.get<Project[]>(key);
     if (cached) {
-      console.log("⚡ HIT: Projects list from Redis");
       projects = cached.map((p: any) => ({
         ...p,
-        createdAt: createTimestamp(p.createdAt),
-        updatedAt: createTimestamp(p.updatedAt),
-        startDate: createTimestamp(p.startDate),
-        endDate: createTimestamp(p.endDate),
+        createdAt: rehydrateTs(p.createdAt), updatedAt: rehydrateTs(p.updatedAt),
+        startDate: rehydrateTs(p.startDate), endDate: rehydrateTs(p.endDate),
       }));
     }
 
-    // If no cached data, fetch from Firestore
     if (projects.length === 0) {
       const constraints: QueryConstraint[] = [];
-
-      if (filters?.ownerId) {
-        constraints.push(where("ownerId", "==", filters.ownerId));
-      }
-
+      if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+      if (filters?.ownerId) constraints.push(where("ownerId", "==", filters.ownerId));
       constraints.push(orderBy("createdAt", "desc"));
-
       const q = query(collection(db, COLLECTION_NAME), ...constraints);
       const querySnapshot = await getDocs(q);
-      console.log("📊 Projects fetched:", querySnapshot.size);
-
-      querySnapshot.forEach((doc) => {
-        projects.push({ id: doc.id, ...doc.data() } as Project);
-      });
-
-      if (projects.length > 0) {
-        await redis.set(cacheKey, projects, { ex: 300 });
-      }
+      querySnapshot.forEach((doc) => { projects.push({ id: doc.id, ...doc.data() } as Project); });
+      if (projects.length > 0) await redis.set(key, projects, { ex: 300 });
     }
 
-    // Sort by createdAt on client side
-    projects.sort((a, b) => {
-      const aTime = a.createdAt?.toMillis?.() || 0;
-      const bTime = b.createdAt?.toMillis?.() || 0;
-      return bTime - aTime;
-    });
+    projects.sort((a, b) => { const aT = a.createdAt?.toMillis?.() || 0; const bT = b.createdAt?.toMillis?.() || 0; return bT - aT; });
 
-    // Apply all filters client-side
-    let filteredProjects = projects;
-
-    // Archived filter — treats missing field as not archived
-    if (filters?.archived !== undefined) {
-      filteredProjects = filteredProjects.filter((p) => (p.archived ?? false) === filters.archived);
-    } else {
-      filteredProjects = filteredProjects.filter((p) => !p.archived);
-    }
-
-    // Status filter
-    if (filters?.status) {
-      filteredProjects = filteredProjects.filter((p) => p.status === filters.status);
-    }
-
-    // Priority filter
-    if (filters?.priority) {
-      filteredProjects = filteredProjects.filter((p) => p.priority === filters.priority);
-    }
-
-    // Company filter
-    if (filters?.companyId) {
-      filteredProjects = filteredProjects.filter((p) => p.companyId === filters.companyId);
-    }
-
-    // Deal filter
-    if (filters?.dealId) {
-      filteredProjects = filteredProjects.filter((p) => p.dealId === filters.dealId);
-    }
-
-    // Search filter
+    let filtered = projects;
+    if (filters?.archived !== undefined) filtered = filtered.filter((p) => (p.archived ?? false) === filters.archived);
+    else filtered = filtered.filter((p) => !p.archived);
+    if (filters?.status) filtered = filtered.filter((p) => p.status === filters.status);
+    if (filters?.priority) filtered = filtered.filter((p) => p.priority === filters.priority);
+    if (filters?.companyId) filtered = filtered.filter((p) => p.companyId === filters.companyId);
+    if (filters?.dealId) filtered = filtered.filter((p) => p.dealId === filters.dealId);
     if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredProjects = filteredProjects.filter(
-        (project) =>
-          project.name?.toLowerCase().includes(searchLower) ||
-          project.description?.toLowerCase().includes(searchLower) ||
-          project.companyName?.toLowerCase().includes(searchLower)
-      );
+      const s = filters.search.toLowerCase();
+      filtered = filtered.filter((p) => p.name?.toLowerCase().includes(s) || p.description?.toLowerCase().includes(s) || p.companyName?.toLowerCase().includes(s));
     }
+    if (filters?.startDateFrom) filtered = filtered.filter((p) => p.startDate?.toDate?.() && p.startDate.toDate() >= filters.startDateFrom!);
+    if (filters?.startDateTo) filtered = filtered.filter((p) => p.startDate?.toDate?.() && p.startDate.toDate() <= filters.startDateTo!);
 
-    // Date range filters
-    if (filters?.startDateFrom) {
-      filteredProjects = filteredProjects.filter(
-        (project) => project.startDate?.toDate?.() && project.startDate.toDate() >= filters.startDateFrom!
-      );
-    }
-    if (filters?.startDateTo) {
-      filteredProjects = filteredProjects.filter(
-        (project) => project.startDate?.toDate?.() && project.startDate.toDate() <= filters.startDateTo!
-      );
-    }
-
-    console.log("✅ Returning", filteredProjects.length, "projects");
-    return {
-      projects: filteredProjects,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to fetch projects:", error.message);
-    return {
-      projects: [],
-      error: error.message,
-    };
-  }
+    return { projects: filtered, error: null };
+  } catch (error: any) { return { projects: [], error: error.message }; }
 }
 
-// Get a single project by ID
-export async function getProject(id: string): Promise<{
-  project: Project | null;
-  error: string | null;
-}> {
+export async function getProject(id: string): Promise<{ project: Project | null; error: string | null }> {
   try {
-    console.log("🔍 Fetching project:", id);
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      console.log("✅ Project found:", id);
-      return {
-        project: { id: docSnap.id, ...docSnap.data() } as Project,
-        error: null,
-      };
-    } else {
-      console.warn("⚠️ Project not found:", id);
-      return {
-        project: null,
-        error: "Project not found",
-      };
-    }
-  } catch (error: any) {
-    console.error("❌ Failed to fetch project:", error.message);
-    return {
-      project: null,
-      error: error.message,
-    };
-  }
+    if (docSnap.exists()) return { project: { id: docSnap.id, ...docSnap.data() } as Project, error: null };
+    return { project: null, error: "Project not found" };
+  } catch (error: any) { return { project: null, error: error.message }; }
 }
 
-// Update a project
-export async function updateProject(id: string, data: Partial<ProjectInput>, currentUserId: string): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function updateProject(id: string, data: Partial<ProjectInput>, currentUserId: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("📝 Updating project:", id);
-    
-    // Check if user has permission to update this project
-    const { allowed, reason } = await validateProjectPermission(id, "update", currentUserId);
-    if (!allowed) {
-      console.warn(`❌ Permission denied for user ${currentUserId} to update project ${id}: ${reason}`);
-      return {
-        success: false,
-        error: reason || "You don't have permission to update this project",
-      };
-    }
-
     const docRef = doc(db, COLLECTION_NAME, id);
-
-    const updateData = {
-      ...data,
-      updatedAt: Timestamp.now(),
-    };
-
-    const sanitizedData = sanitizeData(updateData);
-    await updateDoc(docRef, sanitizedData as any);
-
-    console.log("✅ Project updated successfully");
-
-    // Invalidate cache
-    await redis.del("projects:list:all");
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to update project:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Project not found" };
+    const existing = docSnap.data();
+    const permCheck = await canEditRecord(currentUserId, existing.organizationId, "projects", existing.ownerId);
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to edit this project" };
+    }
+    const updateData = { ...data, updatedAt: Timestamp.now() };
+    await updateDoc(docRef, sanitizeData(updateData) as any);
+    if (existing.organizationId) await redis.del(orgCacheKey(existing.organizationId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Update project status
-export async function updateProjectStatus(id: string, status: ProjectStatus): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function updateProjectStatus(id: string, status: ProjectStatus, currentUserId: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("📝 Updating project status:", id, "to", status);
     const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, {
-      status,
-      updatedAt: Timestamp.now(),
-    });
-
-    console.log("✅ Project status updated");
-
-    // Invalidate cache
-    await redis.del("projects:list:all");
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to update project status:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Project not found" };
+    const existing = docSnap.data();
+    const permCheck = await canEditRecord(currentUserId, existing.organizationId, "projects", existing.ownerId);
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to edit this project" };
+    }
+    await updateDoc(docRef, { status, updatedAt: Timestamp.now() });
+    if (existing.organizationId) await redis.del(orgCacheKey(existing.organizationId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Delete a project
-export async function deleteProject(id: string, currentUserId: string): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function updateProjectLifecycle(id: string, lifecycle: "active" | "maintenance", currentUserId: string): Promise<{ success: boolean; error: string | null }> {
   try {
-    console.log("🗑️ Deleting project:", id);
-    
-    // Check if user has permission to delete this project
-    const { allowed, reason } = await validateProjectPermission(id, "delete", currentUserId);
-    if (!allowed) {
-      console.warn(`❌ Permission denied for user ${currentUserId} to delete project ${id}: ${reason}`);
-      return {
-        success: false,
-        error: reason || "You don't have permission to delete this project",
-      };
-    }
-
     const docRef = doc(db, COLLECTION_NAME, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Project not found" };
+    const existing = docSnap.data();
+    const permCheck = await canEditRecord(currentUserId, existing.organizationId, "projects", existing.ownerId);
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to edit this project" };
+    }
+    await updateDoc(docRef, { lifecycle, updatedAt: Timestamp.now() });
+    if (existing.organizationId) await redis.del(orgCacheKey(existing.organizationId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
+}
+
+export async function deleteProject(id: string, currentUserId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Project not found" };
+    const existing = docSnap.data();
+    const permCheck = await hasPermission(currentUserId, existing.organizationId, "projects", "delete");
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to delete this project" };
+    }
+    const orgId = existing.organizationId;
     await deleteDoc(docRef);
-
-    console.log("✅ Project deleted successfully");
-
-    // Invalidate cache
-    await redis.del("projects:list:all");
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to delete project:", error.message);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    if (orgId) await redis.del(orgCacheKey(orgId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Get projects by company
-export async function getProjectsByCompany(companyId: string): Promise<{
-  projects: Project[];
-  error: string | null;
+export async function getProjectsByCompany(organizationId: string | undefined, companyId: string): Promise<{
+  projects: Project[]; error: string | null;
 }> {
   try {
-    console.log("📋 Fetching projects for company:", companyId);
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where("companyId", "==", companyId),
-      orderBy("createdAt", "desc")
-    );
-
+    const constraints: QueryConstraint[] = [where("companyId", "==", companyId)];
+    if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+    constraints.push(orderBy("createdAt", "desc"));
+    const q = query(collection(db, COLLECTION_NAME), ...constraints);
     const querySnapshot = await getDocs(q);
     const projects: Project[] = [];
-
-    querySnapshot.forEach((doc) => {
-      projects.push({ id: doc.id, ...doc.data() } as Project);
-    });
-
-    console.log("✅ Found", projects.length, "projects");
-    return {
-      projects,
-      error: null,
-    };
-  } catch (error: any) {
-    console.error("❌ Failed to fetch projects:", error.message);
-    return {
-      projects: [],
-      error: error.message,
-    };
-  }
+    querySnapshot.forEach((doc) => { projects.push({ id: doc.id, ...doc.data() } as Project); });
+    return { projects, error: null };
+  } catch (error: any) { return { projects: [], error: error.message }; }
 }

@@ -3,6 +3,7 @@ import { db } from "@/lib/firebase"; // Using client SDK for now as admin setup 
 import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { addDays, isSameDay } from "date-fns";
 import type { Project } from "@/types/crm";
+import { logger } from "@/lib/logger";
 
 // This would ideally use Firebase Admin SDK for backend-only access,
 // but for this project's structure, we might be using client SDK or a separate admin instance.
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       // return new NextResponse("Unauthorized", { status: 401 });
       // Allow manual run for testing without secret for now, or log warning
-      console.warn("⚠️ Cron job triggered without valid secret");
+      logger.warn("Cron job triggered without valid secret", { module: "cron", action: "projects" });
     }
 
     const projectsRef = collection(db, "projects");
@@ -58,8 +59,6 @@ export async function GET(request: Request) {
           type: "Upcoming Recurring Fee",
           amount: project.financials.annualRecurringCost,
         };
-        
-        console.log("📧 MOCK EMAIL SENT:", notification);
         notificationsSent.push(notification);
       }
     }
@@ -72,7 +71,7 @@ export async function GET(request: Request) {
     });
 
   } catch (error: any) {
-    console.error("❌ Cron Job Failed:", error);
+    logger.error("Cron job failed", { module: "cron", action: "projects", error });
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

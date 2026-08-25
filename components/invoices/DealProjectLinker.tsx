@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { getDeals } from "@/lib/firestore/deals";
 import { getProjects } from "@/lib/firestore/projects";
+import { useOrgStore } from "@/store/org";
 import type { Deal, Project } from "@/types/crm";
 import { Briefcase, FolderKanban } from "lucide-react";
 
@@ -30,6 +31,8 @@ export function DealProjectLinker({
     selectedDealId,
     selectedProjectId,
 }: DealProjectLinkerProps) {
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [deals, setDeals] = useState<Deal[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(false);
@@ -43,8 +46,8 @@ export function DealProjectLinker({
     const fetchData = async () => {
         setLoading(true);
         const [dealsResult, projectsResult] = await Promise.all([
-            getDeals(),
-            getProjects(),
+            getDeals(organizationId),
+            getProjects(organizationId),
         ]);
 
         if (!dealsResult.error) {

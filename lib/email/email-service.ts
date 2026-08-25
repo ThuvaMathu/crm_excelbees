@@ -5,47 +5,194 @@ import {
   getPasswordResetEmailTemplate,
 } from "./templates/auth-templates";
 import { getAppUrl } from "../environment";
+import { adminDb } from "../firebase-admin";
+import { decrypt } from "../crypto";
+import { logger } from "@/lib/logger";
 
 // ============================================================================
-// TRANSPORTER SINGLETON PATTERN FOR LAMBDA COMPATIBILITY
+// TRANSPORTER CACHING PATTERN FOR LAMBDA COMPATIBILITY
 // ============================================================================
 
-let transporter: nodemailer.Transporter | null = null;
+interface ResolvedTransporter {
+  transporter: nodemailer.Transporter;
+  /** The mailbox actually authenticated with this transporter — the "From"
+   *  header MUST match this (see getResolvedTransporter's doc comment). */
+  fromEmail: string;
+  source: "org" | "env-fallback";
+  cachedAt: number;
+}
+
+// Cached transporters are only safe for a bounded time: without a TTL, an
+// org's very first send caches a transporter for the *entire lifetime of
+// the Node process* — if the admin later fixes a typo'd password, switches
+// providers, or (as tested) deliberately breaks the password, every send
+// after that first one keeps silently reusing the stale, already-working
+// transporter and never re-reads Firestore. clearTransporterCache() (called
+// from the SMTP settings POST route on every save) handles the common case
+// immediately; this TTL is a safety net for any path that updates
+// smtpConfig without going through that route.
+const TRANSPORTER_TTL_MS = 5 * 60 * 1000;
+
+const transporters = new Map<string, ResolvedTransporter>();
+let defaultTransporter: ResolvedTransporter | null = null;
+
+/** Mask a password/secret for logging: keep length + first/last char only. */
+function maskSecret(value: string | undefined | null): string {
+  if (!value) return "(empty)";
+  if (value.length <= 2) return "*".repeat(value.length);
+  return `${value[0]}${"*".repeat(value.length - 2)}${value[value.length - 1]} (len ${value.length})`;
+}
+
+/** Invalidate the cached transporter for an org so the next send re-reads
+ *  Firestore instead of reusing stale credentials. Call this any time
+ *  smtpConfig is written (see app/api/org/[orgId]/integrations/smtp/route.ts). */
+export function clearTransporterCache(orgId: string): void {
+  const had = transporters.delete(orgId);
+  logger.info("Transporter cache cleared", { module: "email", action: "clear-transporter-cache", organizationId: orgId, metadata: { hadEntry: had } });
+}
 
 /**
- * Get or create email transporter
- * Implements singleton pattern for Lambda compatibility
- * Reuses existing transporter across Lambda invocations
+ * Get or create email transporter, along with the mailbox address it's
+ * actually authenticated as. Most SMTP providers (Gmail, Zoho, Outlook)
+ * reject or spam-bucket mail whose "From" header doesn't match the
+ * authenticated account — sendMail() can still return a message ID (the
+ * provider *accepted* it for processing) even when it's about to bounce or
+ * get silently dropped downstream for exactly this mismatch. Callers must
+ * use the returned fromEmail, not a separately-configured default, or an
+ * org with its own SMTP account will see "sent successfully" in the logs
+ * and nothing ever arrive.
  */
-function getTransporter(): nodemailer.Transporter {
-  if (transporter) {
-    return transporter;
+export async function getResolvedTransporter(orgId?: string): Promise<ResolvedTransporter> {
+  logger.debug("Resolving transporter", { module: "email", action: "resolve-transporter", organizationId: orgId, metadata: { hasOrg: Boolean(orgId) } });
+
+  if (orgId) {
+    const cached = transporters.get(orgId);
+    if (cached) {
+      const age = Date.now() - cached.cachedAt;
+      if (age < TRANSPORTER_TTL_MS) {
+        logger.debug("Using cached transporter", { module: "email", action: "resolve-transporter", organizationId: orgId, metadata: { source: cached.source, ageSeconds: Math.round(age / 1000), fromEmail: cached.fromEmail } });
+        return cached;
+      }
+      logger.debug("Cached transporter expired, refetching config", { module: "email", action: "resolve-transporter", organizationId: orgId, metadata: { ageSeconds: Math.round(age / 1000) } });
+      transporters.delete(orgId);
+    }
+
+    let smtpConfig: any;
+    try {
+      logger.debug("Fetching SMTP configuration from Firestore", { module: "email", action: "resolve-transporter", organizationId: orgId });
+      const orgDoc = await adminDb.collection("organizations").doc(orgId).get();
+      smtpConfig = orgDoc.data()?.smtpConfig;
+    } catch (error) {
+      // Infra-level failure to even read the org doc — falling back to the
+      // env default here is reasonable resilience, not a hidden misconfig.
+      logger.error("Failed to read SMTP config from Firestore, falling back to env default", { module: "email", action: "resolve-transporter", organizationId: orgId, error });
+      smtpConfig = undefined;
+    }
+
+    if (smtpConfig && smtpConfig.user && smtpConfig.host) {
+      logger.info(
+        "Org SMTP config found",
+        { module: "email", action: "resolve-transporter", organizationId: orgId, metadata: { host: smtpConfig.host, port: smtpConfig.port, secure: smtpConfig.secure, fromEmail: smtpConfig.user, hasEncryptedPassword: Boolean(smtpConfig.pass) } }
+      );
+
+      let pass = smtpConfig.pass;
+      if (pass && pass !== "********") {
+         pass = decrypt(pass);
+      }
+      logger.debug(`Resolved password for org ${orgId}: ${maskSecret(pass)}`, { module: "email", action: "resolve-transporter", organizationId: orgId });
+
+      const orgTransporter = nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        secure: smtpConfig.secure,
+        auth: {
+          user: smtpConfig.user,
+          pass: pass,
+        },
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+
+      // Verify credentials up front, before caching. This is what actually
+      // catches a wrong/expired password — without it, createTransport()
+      // succeeds unconditionally (it's lazy, no network call), and a badly
+      // configured org would only find out days later when a real send
+      // silently vanished. A verified-bad org config is NOT allowed to
+      // fall through to the env default: that would send real mail from
+      // the wrong mailbox while reporting "success", hiding the org's
+      // actual misconfiguration (this is exactly the bug behind
+      // "I deliberately set a wrong password and it still said successful").
+      try {
+        logger.debug("Verifying SMTP credentials", { module: "email", action: "verify-smtp", organizationId: orgId, metadata: { host: smtpConfig.host, port: smtpConfig.port } });
+        await orgTransporter.verify();
+        logger.info("SMTP credentials verified", { module: "email", action: "verify-smtp", organizationId: orgId, metadata: { fromEmail: smtpConfig.user } });
+      } catch (verifyError: any) {
+        logger.error("SMTP credentials failed verification", { module: "email", action: "verify-smtp", organizationId: orgId, metadata: { host: smtpConfig.host, fromEmail: smtpConfig.user }, error: verifyError });
+        throw new Error(`This organization's SMTP configuration is invalid: ${verifyError.message}`);
+      }
+
+      const resolved: ResolvedTransporter = {
+        transporter: orgTransporter,
+        fromEmail: smtpConfig.user,
+        source: "org",
+        cachedAt: Date.now(),
+      };
+      transporters.set(orgId, resolved);
+      logger.info("Built and cached org transporter", { module: "email", action: "resolve-transporter", organizationId: orgId, metadata: { fromEmail: smtpConfig.user, host: smtpConfig.host } });
+      return resolved;
+    }
+
+    logger.warn("No usable org SMTP config, falling back to env default", { module: "email", action: "resolve-transporter", organizationId: orgId, metadata: { configPresent: Boolean(smtpConfig) } });
   }
 
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtppro.zoho.com.au",
-    port: parseInt(process.env.SMTP_PORT || "465"),
-    secure: true, // Use SSL
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false // Allow self-signed certificates for development
-    }
-  });
+  if (defaultTransporter) {
+    logger.debug("Using cached env-fallback transporter", { module: "email", action: "resolve-transporter", metadata: { fromEmail: defaultTransporter.fromEmail } });
+    return defaultTransporter;
+  }
 
-  return transporter;
+  const fallbackFromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
+  if (!fallbackFromEmail) {
+    throw new Error("Sender email not configured");
+  }
+
+  logger.info("Building env-fallback transporter", { module: "email", action: "resolve-transporter", metadata: { host: process.env.SMTP_HOST || "smtppro.zoho.com.au", fromEmail: fallbackFromEmail } });
+
+  defaultTransporter = {
+    transporter: nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtppro.zoho.com.au",
+      port: parseInt(process.env.SMTP_PORT || "465"),
+      secure: true, // Use SSL
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      tls: {
+        rejectUnauthorized: false // Allow self-signed certificates for development
+      }
+    }),
+    fromEmail: fallbackFromEmail,
+    source: "env-fallback",
+    cachedAt: Date.now(),
+  };
+
+  return defaultTransporter;
+}
+
+/** @deprecated kept for any external callers — prefer getResolvedTransporter() so the From header stays in sync with the authenticated mailbox. */
+export async function getTransporter(orgId?: string): Promise<nodemailer.Transporter> {
+  return (await getResolvedTransporter(orgId)).transporter;
 }
 
 // Verify transporter configuration
-export async function verifyEmailConfig(): Promise<boolean> {
+export async function verifyEmailConfig(orgId?: string): Promise<boolean> {
   try {
-    await getTransporter().verify();
-    console.log("✅ Email server is ready to send messages");
+    const transporter = await getTransporter(orgId);
+    await transporter.verify();
+    logger.info("Email server is ready to send messages", { module: "email", action: "verify-config", organizationId: orgId });
     return true;
   } catch (error) {
-    console.error("❌ Email server verification failed:", error);
+    logger.error("Email server verification failed", { module: "email", action: "verify-config", organizationId: orgId, error });
     return false;
   }
 }
@@ -60,20 +207,27 @@ export async function sendEmail(
   cc?: string | string[],
   bcc?: string | string[],
   replyTo?: string,
-  fromDisplayName?: string
+  fromDisplayName?: string,
+  orgId?: string
 ): Promise<{ success: boolean; error: string | null }> {
+  const toList = Array.isArray(to) ? to.join(", ") : to;
+  const recipientCount = Array.isArray(to) ? to.length : 1;
   try {
-    const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
+    logger.info("sendEmail called", { module: "email", action: "send", organizationId: orgId, metadata: { recipientCount, subject } });
+    const { transporter, fromEmail: authenticatedFromEmail, source, cachedAt } = await getResolvedTransporter(orgId);
+    // The "From" header must match whichever mailbox this transporter is
+    // actually authenticated as — an org-specific SMTP account (Gmail,
+    // Zoho, etc.) will reject or spam-bucket mail claiming to be from a
+    // different address, even though sendMail() still returns a message ID
+    // (see getResolvedTransporter's doc comment for why that's misleading).
+    const fromEmail = from || authenticatedFromEmail;
     const fromName = fromDisplayName || process.env.FROM_EMAIL_NAME || "Excel Bees CRM";
+    logger.debug("Using transporter", { module: "email", action: "send", organizationId: orgId, metadata: { source, cachedAgeSeconds: Math.round((Date.now() - cachedAt) / 1000), fromName, fromEmail } });
 
-    if (!fromEmail) {
-      throw new Error("Sender email not configured");
-    }
-
-    const info = await getTransporter().sendMail({
+    const info = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       replyTo: replyTo || undefined,
-      to: Array.isArray(to) ? to.join(", ") : to,
+      to: toList,
       cc: cc ? (Array.isArray(cc) ? cc.join(", ") : cc) : undefined,
       bcc: bcc ? (Array.isArray(bcc) ? bcc.join(", ") : bcc) : undefined,
       subject,
@@ -81,10 +235,10 @@ export async function sendEmail(
       attachments,
     });
 
-    console.log("✅ Email sent successfully:", info.messageId);
+    logger.info("Email accepted by SMTP server", { module: "email", action: "send", organizationId: orgId, metadata: { source, messageId: info.messageId, acceptedCount: info.accepted.length, rejectedCount: info.rejected.length } });
     return { success: true, error: null };
   } catch (error: any) {
-    console.error("❌ Failed to send email:", error.message);
+    logger.error("Failed to send email", { module: "email", action: "send", organizationId: orgId, metadata: { recipientCount }, error });
     return { success: false, error: error.message };
   }
 }

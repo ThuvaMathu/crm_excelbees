@@ -48,12 +48,12 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const valueProps = [
-  { icon: Shield, title: "Role-Based Access", desc: "Granular permission control for every team member." },
-  { icon: Bot, title: "AI-Powered Automation", desc: "Save 2+ hours daily on data entry and follow-ups." },
-  { icon: DollarSign, title: "Up to 60% Cheaper", desc: "Transparent pricing with no hidden enterprise fees." },
+  { icon: Shield, title: "Role-Based Access", desc: "Granular permission control for Admin, Manager, Team, and Scanner roles." },
+  { icon: Bot, title: "AI-Powered Automation", desc: "Auto-fill contacts, enrich leads, draft emails. Save 2+ hours daily." },
+  { icon: DollarSign, title: "Up to 60% Cheaper", desc: "Transparent AUD pricing with no hidden add-ons or enterprise fees." },
   { icon: Clock, title: "Ready in Under a Day", desc: "Onboard your team and go live without a consultant." },
-  { icon: Users, title: "Built for Teams of 1–100", desc: "Scales with you. Pay only for seats you use." },
-  { icon: TrendingUp, title: "Visual Deal Pipeline", desc: "See your entire pipeline at a glance, always." },
+  { icon: TrendingUp, title: "Projects, Tasks & Quotes", desc: "Manage deliverables and send branded AUD quotes from the same platform." },
+  { icon: Users, title: "Contacts, Companies & Deals", desc: "Full CRM from first contact to closed deal — all linked in one record." },
 ];
 
 const faqs = [
@@ -72,6 +72,14 @@ const faqs = [
   {
     q: "Can I trial RCRM before committing?",
     a: "Yes. We offer a guided trial period so you can test the platform with your own data.",
+  },
+  {
+    q: "Does RCRM manage projects and tasks?",
+    a: "Yes. RCRM includes a full Projects & Tasks module. Create projects linked to deals or contacts, assign tasks to team members, set milestones, and attach notes — all in one place.",
+  },
+  {
+    q: "Can I send quotes and invoices from RCRM?",
+    a: "Yes. RCRM has native Quote and Invoice modules with AUD pricing and GST support. Create a quote, send it as a branded PDF, and convert it to an invoice in a single click.",
   },
 ];
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -34,6 +33,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { companySchema, type CompanyFormData } from "@/lib/validations/company";
 import { createCompany } from "@/lib/firestore/companies";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgStore } from "@/store/org";
 import { toast } from "sonner";
 import { AITextarea } from "../ui/ai-textarea";
 
@@ -48,8 +48,9 @@ export function CreateCompanyDialog({
     onOpenChange,
     onSuccess,
 }: CreateCompanyDialogProps) {
-    const router = useRouter();
     const { user } = useAuth();
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<CompanyFormData>({
@@ -59,11 +60,7 @@ export function CreateCompanyDialog({
             email: "",
             domain: "",
             industry: "",
-            size: undefined, // Kept as undefined because Select handles it, but maybe safer as null?
-            // Actually, for Select, undefined is fine if the component handles it.
-            // But the warning is about 'input'.
-            // Let's modify all inputs to ensure they fallback to "" in the render method if logic is complex.
-            // But here, I will verify defaultValues.
+            size: "" as any,
             annualRevenue: "",
             phone: "",
             description: "",
@@ -78,30 +75,35 @@ export function CreateCompanyDialog({
 
     const onSubmit = async (data: CompanyFormData) => {
         if (!user) return;
+        if (!organizationId) {
+            toast.error("No active organization. Please select a workspace.");
+            return;
+        }
 
         setIsSubmitting(true);
 
-        // Transform form data to match Company interface
+        // Transform form data to match Company interface. Firestore rejects undefined values
+        // so every optional field must be null or a valid value.
         const companyData: any = {
             name: data.name,
-            email: data.email,
-            domain: data.domain,
-            industry: data.industry,
-            size: data.size,
-            annualRevenue: data.annualRevenue ? Number(data.annualRevenue) : undefined,
-            phone: data.phone,
-            description: data.description,
-            notes: data.notes,
+            email: data.email || null,
+            domain: data.domain || null,
+            industry: data.industry || null,
+            size: data.size || null,
+            annualRevenue: data.annualRevenue ? Number(data.annualRevenue) : null,
+            phone: data.phone || null,
+            description: data.description || null,
+            notes: data.notes || null,
             billingAddress: {
-                street: data.billingStreet,
-                city: data.billingCity,
-                state: data.billingState,
-                zipCode: data.billingZipCode,
-                country: data.billingCountry,
+                street: data.billingStreet || null,
+                city: data.billingCity || null,
+                state: data.billingState || null,
+                zipCode: data.billingZipCode || null,
+                country: data.billingCountry || null,
             },
         };
 
-        const { success, id, error } = await createCompany(companyData, user.uid);
+        const { success, id, error } = await createCompany(companyData, user.uid, organizationId);
 
         setIsSubmitting(false);
 
@@ -112,7 +114,6 @@ export function CreateCompanyDialog({
             if (onSuccess) {
                 onSuccess();
             }
-            router.refresh();
         } else {
             toast.error(error || "Failed to create company");
         }
@@ -153,7 +154,7 @@ export function CreateCompanyDialog({
                                     <FormItem>
                                         <FormLabel>Company Email</FormLabel>
                                         <FormControl>
-                                            <Input type="email" placeholder="contact@acme.com" {...field} />
+                                            <Input type="email" placeholder="contact@acme.com" {...field} value={field.value ?? ""} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -168,7 +169,7 @@ export function CreateCompanyDialog({
                                         <FormItem>
                                             <FormLabel>Website</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="acme.com" {...field} />
+                                                <Input placeholder="acme.com" {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -182,7 +183,7 @@ export function CreateCompanyDialog({
                                         <FormItem>
                                             <FormLabel>Industry</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Technology" {...field} />
+                                                <Input placeholder="Technology" {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -198,7 +199,7 @@ export function CreateCompanyDialog({
                                         <FormItem>
                                             <FormLabel>Phone</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="+1 (555) 000-0000" {...field} />
+                                                <Input placeholder="+1 (555) 000-0000" {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -243,6 +244,7 @@ export function CreateCompanyDialog({
                                                 type="number"
                                                 placeholder="1000000"
                                                 {...field}
+                                                value={field.value ?? ""}
                                                 onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : "")}
                                             />
                                         </FormControl>
@@ -261,7 +263,7 @@ export function CreateCompanyDialog({
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormControl>
-                                                <Input placeholder="Street Address" {...field} />
+                                                <Input placeholder="Street Address" {...field} value={field.value ?? ""} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -275,7 +277,7 @@ export function CreateCompanyDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="City" {...field} />
+                                                    <Input placeholder="City" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -288,7 +290,7 @@ export function CreateCompanyDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="State/Province" {...field} />
+                                                    <Input placeholder="State/Province" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -303,7 +305,7 @@ export function CreateCompanyDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="ZIP/Postal Code" {...field} />
+                                                    <Input placeholder="ZIP/Postal Code" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -316,7 +318,7 @@ export function CreateCompanyDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <Input placeholder="Country" {...field} />
+                                                    <Input placeholder="Country" {...field} value={field.value ?? ""} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -342,6 +344,7 @@ export function CreateCompanyDialog({
                                                 minWords={5}
                                                 placeholder="Brief company description..."
                                                 {...field}
+                                                value={field.value ?? ""}
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -353,12 +356,13 @@ export function CreateCompanyDialog({
                                 name="notes"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Internal Notes</FormLabel>
+                                        <FormLabel>Internal Notes <span className="text-muted-foreground font-normal">(optional)</span></FormLabel>
                                         <FormControl>
                                             <AITextarea
                                                 minWords={5}
-                                                placeholder="Add any internal notes..."
+                                                placeholder="Add any internal notes about this company..."
                                                 {...field}
+                                                value={field.value ?? ""}
                                             />
                                         </FormControl>
                                         <FormMessage />

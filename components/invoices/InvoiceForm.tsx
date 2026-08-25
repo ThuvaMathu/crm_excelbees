@@ -115,7 +115,14 @@ export function InvoiceForm({ invoice, mode, onSave, saving = false }: InvoiceFo
                 startDate: Timestamp.fromDate(data.recurring.startDate),
                 endDate: data.recurring.endDate ? Timestamp.fromDate(data.recurring.endDate) : undefined,
             } : undefined,
-            status: (sendEmail ? "Sent" : data.status) as InvoiceStatus,
+            // Creation never marks an invoice "Sent" by itself anymore —
+            // that used to happen here unconditionally whenever the
+            // "Create & Send" button fired, before the email had actually
+            // been composed or confirmed sent. The status now only flips
+            // to "Sent" once InvoiceEmailComposeModal's onSent callback
+            // fires after a real successful send (see
+            // app/org/[orgId]/invoices/[id]/page.tsx's handleEmailSent).
+            status: data.status as InvoiceStatus,
         };
 
         // Remove all undefined fields to prevent Firestore errors

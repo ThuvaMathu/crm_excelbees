@@ -7,6 +7,7 @@ import { UserRole, FeatureKey, ModuleKey } from "@/types/crm";
 import { ROLE_DEFAULTS } from "@/types/crm";
 import { Loader2 } from "lucide-react";
 import { usePermission } from "@/hooks/usePermission";
+import { useOrgStore } from "@/store/org";
 
 interface RBACGuardProps {
     children: React.ReactNode;
@@ -29,6 +30,7 @@ export function RBACGuard({
     fallback,
 }: RBACGuardProps) {
     const { user, loading, hydrated } = useAuth();
+    const { currentOrg, currentMember } = useOrgStore();
     const { can, hasFeature: checkFeature } = usePermission();
     const router = useRouter();
     const pathname = usePathname();
@@ -56,20 +58,21 @@ export function RBACGuard({
         }
 
         // 2. Check Approval Status
-        if (requireApproval && !user.isActive) {
-            router.push("/pending");
+        if (requireApproval && user.isActive === false) {
+            router.push("/login?error=account_deactivated");
             return;
         }
 
         // 3. Check Roles
         if (requiredRole) {
             const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
-            if (user.role && !roles.includes(user.role)) {
-                router.push("/dashboard");
+            const userRole = currentMember?.role || user.role;
+            if (userRole && !roles.includes(userRole)) {
+                router.push("/org");
                 return;
             }
-            if (!user.role) {
-                router.push("/dashboard");
+            if (!userRole) {
+                router.push("/org");
                 return;
             }
         }
@@ -78,7 +81,7 @@ export function RBACGuard({
         if (requirePermission) {
             const { module, action = "read" } = requirePermission;
             if (!can(module, action)) {
-                router.push("/dashboard");
+                router.push("/org");
                 return;
             }
         }
@@ -86,14 +89,14 @@ export function RBACGuard({
         // 5. Check Feature Access
         if (requireFeature) {
             if (!checkFeature(requireFeature)) {
-                router.push("/dashboard");
+                router.push("/org");
                 return;
             }
         }
 
         // All checks passed
         setIsAuthorized(true);
-    }, [user, loading, hydrated, router, pathname, requiredRole, requireApproval, requirePermission, requireFeature, isMounted, can, checkFeature]);
+    }, [user, loading, hydrated, router, pathname, requiredRole, requireApproval, requirePermission, requireFeature, isMounted, can, checkFeature, currentMember, currentOrg]);
 
     // Show loading only when not mounted or actively loading
     if (!isMounted || loading) {
@@ -176,8 +179,10 @@ interface RoleGateProps {
 
 export function RoleGate({ children, fallback = null, allowedRoles }: RoleGateProps) {
     const { user } = useAuth();
+    const { currentMember } = useOrgStore();
+    const userRole = currentMember?.role || user?.role;
 
-    if (!user?.role || !allowedRoles.includes(user.role)) {
+    if (!userRole || !allowedRoles.includes(userRole)) {
         return <>{fallback}</>;
     }
 

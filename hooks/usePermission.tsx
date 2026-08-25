@@ -2,25 +2,36 @@
 
 import { useMemo, ReactNode } from "react";
 import { useAuth } from "./useAuth";
+import { useOrgStore } from "@/store/org";
 import { ROLE_DEFAULTS, UserPermissions, ModuleKey, ActionKey, FeatureKey, UserRole } from "@/types/crm";
 
 /**
  * usePermission - Enterprise Permission Hook
  *
  * Provides granular permission checking for modules, features, and actions.
- * Resolves permissions in this order:
- * 1. User-specific custom permissions (if exists)
- * 2. Role-based defaults (fallback)
+ *
+ * Permissions are org-scoped: an admin edits them via `organization_members/{orgId}_{uid}`
+ * (MemberPermissionsModal), and `currentMember` (store/org.ts) is kept in sync with that
+ * document in real time by the org layout. So `currentMember` — not the global `users/{uid}`
+ * doc backing `useAuth().user` — is the source of truth whenever we're inside an org route.
+ * Outside an org route (no currentMember loaded yet), we fall back to the user's global role.
+ *
+ * Resolution order:
+ * 1. currentMember.permissions (org-scoped custom permissions, real-time)
+ * 2. Role-based defaults (fallback, e.g. legacy member docs missing permissions)
  * 3. Admin bypass (admin always has full access)
  */
 export function usePermission() {
   const { user } = useAuth();
+  const currentMember = useOrgStore((s) => s.currentMember);
+
+  const resolvedRole: UserRole | undefined = currentMember?.role || user?.role;
 
   // Get user's resolved permissions (custom or role defaults)
   const permissions = useMemo(() => {
-    if (!user?.role) return null;
-    return user.permissions || ROLE_DEFAULTS[user.role];
-  }, [user]);
+    if (!resolvedRole) return null;
+    return currentMember?.permissions || ROLE_DEFAULTS[resolvedRole];
+  }, [currentMember, resolvedRole]);
 
   // Check if user can perform action on a module
   const can = (
@@ -28,7 +39,7 @@ export function usePermission() {
     action: ActionKey = "read"
   ): boolean => {
     // Admin bypass - can do everything
-    if (user?.role === "admin") return true;
+    if (resolvedRole === "admin") return true;
 
     // No permissions data
     if (!permissions) return false;
@@ -58,7 +69,7 @@ export function usePermission() {
   // Check if user has access to a feature
   const hasFeature = (feature: FeatureKey): boolean => {
     // Admin bypass
-    if (user?.role === "admin") return true;
+    if (resolvedRole === "admin") return true;
 
     // No permissions data
     if (!permissions) return false;
@@ -76,7 +87,7 @@ export function usePermission() {
 
   // Check if user can edit all records (not just own)
   const canEditAll = (module: Extract<ModuleKey, "leads" | "contacts" | "companies" | "deals" | "projects" | "tasks" | "invoices" | "reports">): boolean => {
-    if (user?.role === "admin") return true;
+    if (resolvedRole === "admin") return true;
     if (!permissions) return false;
 
     const modulePerm = permissions[module];
@@ -92,12 +103,12 @@ export function usePermission() {
 
   // Check if user has admin-level access
   const isAdmin = (): boolean => {
-    return user?.role === "admin";
+    return resolvedRole === "admin";
   };
 
   // Check if user is manager or admin
   const isManager = (): boolean => {
-    return user?.role === "admin" || user?.role === "manager";
+    return resolvedRole === "admin" || resolvedRole === "manager";
   };
 
   // Get all enabled modules for UI rendering
@@ -121,7 +132,7 @@ export function usePermission() {
       manager: "Manager",
       team: "Team Member",
     };
-    return user?.role ? labels[user.role] : "Unknown";
+    return resolvedRole ? labels[resolvedRole] : "Unknown";
   };
 
   return {
@@ -134,7 +145,7 @@ export function usePermission() {
     getEnabledModules,
     getRoleLabel,
     permissions,
-    userRole: user?.role,
+    userRole: resolvedRole,
   };
 }
 

@@ -1,0 +1,2882 @@
+{
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components.json": {
+    "mtime": 1766976875.8138368,
+    "ast_hash": "cbcb1ab4cb5c8563de335755196fedc8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\firebase.json": {
+    "mtime": 1784968082.8028674,
+    "ast_hash": "4aa56ac128bc71c4a857ad178c343091",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\firestore.indexes.json": {
+    "mtime": 1785576481.7433832,
+    "ast_hash": "e135cb6e7e69fd2b987c42a235c9a8dc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\middleware.ts": {
+    "mtime": 1786277298.3216789,
+    "ast_hash": "593265126a958baf15c841321d6ec57f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\next.config.ts": {
+    "mtime": 1781515064.6798139,
+    "ast_hash": "cec376546e846405c20055d7d26aff03",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\package.json": {
+    "mtime": 1785659608.6891868,
+    "ast_hash": "379a08ba186f486a1569856f50ede027",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\playwright.config.ts": {
+    "mtime": 1786179754.0757067,
+    "ast_hash": "991862f7cd8c6379cc9f312daad26454",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\postcss.config.mjs": {
+    "mtime": 1766976871.5180025,
+    "ast_hash": "3507368dae6e94b0070b0a10efa15a05",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\skills-lock.json": {
+    "mtime": 1781523829.6894064,
+    "ast_hash": "63ff384c1d29a0e61f8119df8d1a24b8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tailwind.config.ts": {
+    "mtime": 1772631045.4042504,
+    "ast_hash": "5167e8eb10ebe13d819d26ffd3a79534",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tsconfig.json": {
+    "mtime": 1766977141.358506,
+    "ast_hash": "1323fa36932b0150a12737784ebf15f8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\settings.json": {
+    "mtime": 1785576481.6804965,
+    "ast_hash": "5d6ecd96cf065b16e8bb9fbf5d7d8f0d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\settings.local.json": {
+    "mtime": 1785576481.686766,
+    "ast_hash": "3904383bb15afd9f144b3ef082ea9cd9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\scripts\\cip\\core.py": {
+    "mtime": 1781523760.2401235,
+    "ast_hash": "97922bcc747a77d5564f2f67d8b4c7b9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\scripts\\cip\\generate.py": {
+    "mtime": 1781523760.2401235,
+    "ast_hash": "4e21922d1169f73729fe4f7d9d0d6b62",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\scripts\\cip\\render-html.py": {
+    "mtime": 1781523760.241124,
+    "ast_hash": "e0f4ec7de6cbfe51386e2b64ccd19c21",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\scripts\\cip\\search.py": {
+    "mtime": 1781523760.241124,
+    "ast_hash": "3c6a773330a5c317f6214da55b4077ff",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\scripts\\icon\\generate.py": {
+    "mtime": 1781523760.2426302,
+    "ast_hash": "00856566d7283782e7a02c9c0c238cca",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\scripts\\logo\\core.py": {
+    "mtime": 1781523760.243636,
+    "ast_hash": "6f79fef275acb58f37a9c9746de9f157",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\scripts\\logo\\generate.py": {
+    "mtime": 1781523760.243636,
+    "ast_hash": "c055fcd5fc7d01874b6fc90dc797e5e9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\scripts\\logo\\search.py": {
+    "mtime": 1781523760.2446353,
+    "ast_hash": "751a89ded37904135601234dd4f5ad21",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design-system\\scripts\\fetch-background.py": {
+    "mtime": 1781523760.2176888,
+    "ast_hash": "845de6824aaabb9f04bb0826d859bf6b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design-system\\scripts\\generate-slide.py": {
+    "mtime": 1781523760.2176888,
+    "ast_hash": "4bbb10408cb4443e39941a294786a73f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design-system\\scripts\\search-slides.py": {
+    "mtime": 1781523760.2196894,
+    "ast_hash": "bf072244fc927f737e0b96b8507aca4f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design-system\\scripts\\slide_search_core.py": {
+    "mtime": 1781523760.2206893,
+    "ast_hash": "2613032ccc664e4a036f07e7851e796b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\scripts\\shadcn_add.py": {
+    "mtime": 1781523760.3474948,
+    "ast_hash": "f48766f026e79dcc33963214271487a2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\scripts\\tailwind_config_gen.py": {
+    "mtime": 1781523760.3474948,
+    "ast_hash": "0524a678e8c06da8494183fae5f62159",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\scripts\\tests\\coverage-ui.json": {
+    "mtime": 1781523760.348495,
+    "ast_hash": "42c486def8b180c1e72b1e7b865b9607",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\scripts\\tests\\test_shadcn_add.py": {
+    "mtime": 1781523760.350492,
+    "ast_hash": "3dd7ee21be2436d9c11cb3baa25f94e8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\scripts\\tests\\test_tailwind_config_gen.py": {
+    "mtime": 1781523760.350492,
+    "ast_hash": "d7bf6262c528b829caa11b01b19eab4e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.opencode\\opencode.json": {
+    "mtime": 1782490635.937363,
+    "ast_hash": "11bdf2e0b5b895f49d3b37bcab87a896",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.opencode\\package.json": {
+    "mtime": 1784859741.4634697,
+    "ast_hash": "d240ca9744aaf4e1ea5ca4ab919dd2db",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.opencode\\plugins\\graphify.js": {
+    "mtime": 1782210083.546348,
+    "ast_hash": "32b67963417a30cb80544e0b2a56a98d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\error.tsx": {
+    "mtime": 1786277892.8359797,
+    "ast_hash": "5b56a0eaa75b46e28deca47cc77227ac",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\global-error.tsx": {
+    "mtime": 1786277899.0652187,
+    "ast_hash": "d3d7a350dd567025eb52cafeefecd3cc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\layout.tsx": {
+    "mtime": 1786179925.7396636,
+    "ast_hash": "e682f6baf234d2800e27cbfa9fbff1b3",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\not-found.tsx": {
+    "mtime": 1767280595.593788,
+    "ast_hash": "b523fe85f82c379cdaf3cde12a9e621d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\page.tsx": {
+    "mtime": 1781679277.9695752,
+    "ast_hash": "03d491e47e0f7cd4c360dce709b54725",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(auth)\\layout.tsx": {
+    "mtime": 1785576481.6874864,
+    "ast_hash": "ef0ec97344c381ecc41c017201570106",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(auth)\\change-password\\page.tsx": {
+    "mtime": 1786278006.1239533,
+    "ast_hash": "f6a57643f0c3a388e5ea49a9e8bdf5c2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(auth)\\forgot-password\\page.tsx": {
+    "mtime": 1785576481.6874864,
+    "ast_hash": "676468419dcb604a0e64e46543e2dd3b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(auth)\\login\\page.tsx": {
+    "mtime": 1785576481.6874864,
+    "ast_hash": "29508223cab17fa7f09cffbdc8257f67",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(auth)\\signup\\page.tsx": {
+    "mtime": 1782271265.0577097,
+    "ast_hash": "9435a71b464d8990d0d60bc141ca2673",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(landing)\\layout.tsx": {
+    "mtime": 1781609511.4384234,
+    "ast_hash": "76ed277aabbac31c4a2f31f06755299b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(landing)\\about\\page.tsx": {
+    "mtime": 1781645355.2044015,
+    "ast_hash": "9f9c8a406bd66511e444c40b9779c913",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(landing)\\blog\\page.tsx": {
+    "mtime": 1781645362.4821284,
+    "ast_hash": "e09052cc5535fa9c06b34f7dad1e3953",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(landing)\\blog\\[slug]\\page.tsx": {
+    "mtime": 1781679260.06761,
+    "ast_hash": "60dbe18f544f34fa3e86434413539f95",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\(landing)\\contact\\page.tsx": {
+    "mtime": 1781645370.5929608,
+    "ast_hash": "04e0dc96ea035da0f334c164f2590183",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\admin-users.ts": {
+    "mtime": 1786277674.351187,
+    "ast_hash": "33e15425fe5bed894fe05fa481032846",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\dashboard.ts": {
+    "mtime": 1786277694.436212,
+    "ast_hash": "1a43d1a8c37bff0b8c5d45ef86481b32",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\invite-actions.ts": {
+    "mtime": 1786277720.8015454,
+    "ast_hash": "eb34d8abcaf98678a9394933a06b6bea",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\login-rate-limit.ts": {
+    "mtime": 1784862597.1924052,
+    "ast_hash": "f8e1bbbf9866bd446af8be11c13690a0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\deal-insights.ts": {
+    "mtime": 1785576481.6942832,
+    "ast_hash": "65f3ad37be9c0f912c0348901306363d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\email-assist.ts": {
+    "mtime": 1785576481.6942832,
+    "ast_hash": "ec1d876a9654568af29ec43fc394999f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\follow-up.ts": {
+    "mtime": 1785576481.6942832,
+    "ast_hash": "0c717355f753527a3feb0586456ff496",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\generate.ts": {
+    "mtime": 1784862678.8395839,
+    "ast_hash": "c082376799d7856afdc5ccb4b988278d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\lead-intelligence.ts": {
+    "mtime": 1785576481.6942832,
+    "ast_hash": "72759fd4ba07abb59cbf0b94b1c8ca7e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\meeting.ts": {
+    "mtime": 1785576481.6942832,
+    "ast_hash": "b164e854588efc9929679b0184a0b25e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\report-insights.ts": {
+    "mtime": 1785576481.6942832,
+    "ast_hash": "54fe960c7cd3b1d8e0c8481d5e6c58e5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\rewrite.ts": {
+    "mtime": 1785576481.700827,
+    "ast_hash": "b72f1970041a65050e0e24deb59e2c77",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\sentiment.ts": {
+    "mtime": 1785576481.702347,
+    "ast_hash": "14e4d63a87bbf9e8ac8afe739c6891b8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\smart-search.ts": {
+    "mtime": 1785576481.702347,
+    "ast_hash": "cbc0ec7c6f06b0b1606f96a6d68872a5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\actions\\ai\\task-priority.ts": {
+    "mtime": 1785576481.702347,
+    "ast_hash": "c6cfb317d91a72272fc6c0a97eab44aa",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\admin\\route.ts": {
+    "mtime": 1786277897.2884507,
+    "ast_hash": "27e23e9fadc9682faf01c46c54ae7630",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\admin\\sync-claims\\route.ts": {
+    "mtime": 1786277910.498298,
+    "ast_hash": "18a248768522fc73478341b2692195c9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\calendar\\route.ts": {
+    "mtime": 1786277943.2769663,
+    "ast_hash": "df5019080fa9c97b900683f3cc13b1ed",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\calendar\\export\\route.ts": {
+    "mtime": 1786278081.8493938,
+    "ast_hash": "68cd44dd33e88b4442862b3c081fb99e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\calendar\\templates\\route.ts": {
+    "mtime": 1786278113.507774,
+    "ast_hash": "51ffea46e4f32501056aad853c46d7a4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\calendar\\[calendarId]\\route.ts": {
+    "mtime": 1786277983.7638514,
+    "ast_hash": "75d5283f894b8eb5e54fd0ff6be0d4da",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\calendar\\[calendarId]\\plans\\route.ts": {
+    "mtime": 1786278016.598361,
+    "ast_hash": "3e2d46022efa27f894a8bcef825f2c14",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\calendar\\[calendarId]\\plans\\[planId]\\route.ts": {
+    "mtime": 1786278057.8945975,
+    "ast_hash": "a9f62088d6026ea7e0cbb07d27312526",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\cron\\process-scheduled\\route.ts": {
+    "mtime": 1786278128.9045744,
+    "ast_hash": "909e6f1ce9b73cb24326c8f9715fdf5f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\cron\\projects\\route.ts": {
+    "mtime": 1786278146.4321194,
+    "ast_hash": "d5c6872d66962b21ee8eb453544356ad",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\email\\send\\route.ts": {
+    "mtime": 1786278155.3460445,
+    "ast_hash": "9c1d04dc538d4aac897e8c10350b077a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\email\\track\\click\\route.ts": {
+    "mtime": 1786278168.742432,
+    "ast_hash": "7769f54be1c874b838b56b4ba18bb0a5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\email\\track\\open\\[id]\\route.ts": {
+    "mtime": 1786278182.1437767,
+    "ast_hash": "3daedc50e499117e323edec72ebc1c09",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\health\\route.ts": {
+    "mtime": 1781516941.8781087,
+    "ast_hash": "16597695ebb3c918ad859b5339cfc525",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\invoices\\send\\route.ts": {
+    "mtime": 1786278678.1901748,
+    "ast_hash": "eb03b354c601a98b718dae8b731568b0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\org\\[orgId]\\integrations\\smtp\\route.ts": {
+    "mtime": 1786278694.0902681,
+    "ast_hash": "e353c67418ccfb28aa238ff0469cefda",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\storage\\files\\route.ts": {
+    "mtime": 1786278218.0268023,
+    "ast_hash": "a1f25b6ecb1472129497099503a1307a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\api\\upload\\logo\\route.ts": {
+    "mtime": 1786278227.1256554,
+    "ast_hash": "7c37fc5a8ae5a67b72cabfe92c2e86d4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\invite\\[token]\\page.tsx": {
+    "mtime": 1786277904.3136501,
+    "ast_hash": "28b01966eefc07040d8d9c05d60cef52",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\onboarding\\page.tsx": {
+    "mtime": 1784966472.2796397,
+    "ast_hash": "2b6cabe0c02794fe8bbf747cf38a6bfe",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\layout.tsx": {
+    "mtime": 1782207284.5356333,
+    "ast_hash": "1861d2af752a633a4693c9073ad1c7b8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\(hub)\\layout.tsx": {
+    "mtime": 1782357109.807599,
+    "ast_hash": "9589496a2bcaf47a348328e3b47db01f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\(hub)\\page.tsx": {
+    "mtime": 1786277909.5568833,
+    "ast_hash": "37a3b508d23e0233ea4878960d3c3928",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\(hub)\\profile\\page.tsx": {
+    "mtime": 1785682597.146685,
+    "ast_hash": "4f976283a27f2d18d89574957432d7b2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\(hub)\\settings\\page.tsx": {
+    "mtime": 1782351039.1562579,
+    "ast_hash": "ef78238d1d1c571846244404e7750b59",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\layout.tsx": {
+    "mtime": 1786277967.3771844,
+    "ast_hash": "f255de5a1e6dd02d5912e2c411f97827",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\analytics\\page.tsx": {
+    "mtime": 1786277915.3619635,
+    "ast_hash": "d6fe30f8d37c661cfcbbb86175794c78",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\companies\\page.tsx": {
+    "mtime": 1786277927.3526888,
+    "ast_hash": "03a71d6140ca0720dc7eab343894ed03",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\companies\\[id]\\page.tsx": {
+    "mtime": 1785673131.210925,
+    "ast_hash": "34b0165b3fb261797daeeff11e47b80d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\contacts\\page.tsx": {
+    "mtime": 1786277927.9996684,
+    "ast_hash": "a2f345a0ca84485fa63f269a6a85ee19",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\contacts\\[id]\\page.tsx": {
+    "mtime": 1785682329.3606462,
+    "ast_hash": "d090da73f2aeb8128a0bfbc57928c8fe",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\dashboard\\page.tsx": {
+    "mtime": 1786277934.0223167,
+    "ast_hash": "2c57955ada14de173d4848ddb108800b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\deals\\page.tsx": {
+    "mtime": 1786277939.5245273,
+    "ast_hash": "2a5778f9ae95df7c46e3a8a2b59675a1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\deals\\[id]\\page.tsx": {
+    "mtime": 1785673111.449569,
+    "ast_hash": "acfcf0d8b1a23b77b78ee0cf9ba61ef1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\emails\\page.tsx": {
+    "mtime": 1785576974.8639033,
+    "ast_hash": "6ac6a74ccc715c389a32dba9cc593957",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\integrations\\page.tsx": {
+    "mtime": 1782552119.208805,
+    "ast_hash": "03c20b70bc1d6cd61fcc4b173f7fbdf0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\integrations\\smtp\\page.tsx": {
+    "mtime": 1786277945.7959049,
+    "ast_hash": "5942ea712217882994f7438e4d5b0bf0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\invoices\\page.tsx": {
+    "mtime": 1786277951.923489,
+    "ast_hash": "58c8811d6f89c84de8e7159bd79b7d6c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\invoices\\create\\page.tsx": {
+    "mtime": 1786277962.0343063,
+    "ast_hash": "a3dd387e07e5ec7c22b2fb477e2fe8de",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\invoices\\[id]\\page.tsx": {
+    "mtime": 1786268308.4855552,
+    "ast_hash": "2b9f3e9520a606d2039ddb3b83b6973b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\invoices\\[id]\\edit\\page.tsx": {
+    "mtime": 1786268284.0717304,
+    "ast_hash": "2ce308180ee4bc82edad40d3582fcc91",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\leads\\page.tsx": {
+    "mtime": 1786277973.4886503,
+    "ast_hash": "6440c81dc356617d202ed9a36fe2922c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\leads\\[id]\\page.tsx": {
+    "mtime": 1785682569.5001295,
+    "ast_hash": "f732ed4a149531493a1a1e9046185924",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\notes\\page.tsx": {
+    "mtime": 1786277978.478697,
+    "ast_hash": "24c4af45a13c29520a4a9bd54e1b8bb5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\profile\\page.tsx": {
+    "mtime": 1785682366.6635404,
+    "ast_hash": "4f2f1834cd8e7ad701d1ddbc7e783316",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\projects\\page.tsx": {
+    "mtime": 1786277983.4255495,
+    "ast_hash": "5eddf900684d470054525475ed91bebb",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\projects\\[id]\\page.tsx": {
+    "mtime": 1785576972.7752197,
+    "ast_hash": "bd5547837fa2e6191200ecd8f9062d5b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\quotes\\page.tsx": {
+    "mtime": 1786277988.4247444,
+    "ast_hash": "631317a1f25dbf15e27f7fccebdc10a9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\reports\\page.tsx": {
+    "mtime": 1785682523.3357303,
+    "ast_hash": "e0b8e2d33edf6dcb26ed66109ac4541e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\settings\\page.tsx": {
+    "mtime": 1786277995.4603796,
+    "ast_hash": "f95ff87e4e0b1b8c8913a9f71e3c5135",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\tasks\\page.tsx": {
+    "mtime": 1786278000.613973,
+    "ast_hash": "4bb64135e02560deacea78c2d297a2bd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app\\org\\[orgId]\\users\\page.tsx": {
+    "mtime": 1785682412.3310783,
+    "ast_hash": "24c1a994ae23d65bc920dfa76ba5a768",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\theme-provider.tsx": {
+    "mtime": 1766976918.1303594,
+    "ast_hash": "8eb91280ebdb04f1488cafc25914e916",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\activity\\ActivityTimeline.tsx": {
+    "mtime": 1786278011.3244202,
+    "ast_hash": "9c6ab70879dfa3533117c1c81fbf3cc7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\auth\\AuthGate.tsx": {
+    "mtime": 1785576481.7117653,
+    "ast_hash": "76001f7abba24df2e394badc0fd6f9f9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\auth\\AuthProvider.tsx": {
+    "mtime": 1786278033.3561978,
+    "ast_hash": "140ba0c8a4333bd307460b0d92ce99dd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\auth\\RBACGuard.tsx": {
+    "mtime": 1785576481.7151787,
+    "ast_hash": "c56df709f7fe651b55631ed0d8fe4442",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\calendar\\index.ts": {
+    "mtime": 1772619431.1053,
+    "ast_hash": "e82657faaef6b837c48180a9e5d9a005",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\calendar\\UniversalCalendar.tsx": {
+    "mtime": 1772619431.104285,
+    "ast_hash": "07dab85740ed3c30ca33a4f7a1160b8f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\calendar\\views\\CalendarDayView.tsx": {
+    "mtime": 1772619431.1072931,
+    "ast_hash": "569c8a349aa5597f3664338a21e6ccfc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\calendar\\views\\CalendarWeekView.tsx": {
+    "mtime": 1772619431.1082928,
+    "ast_hash": "8452e4c3b9dd14ee42906de85671a9d4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\charts\\ActivityChart.tsx": {
+    "mtime": 1767121953.3553057,
+    "ast_hash": "9aa95c4bb91ed06f31afb58655bbffea",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\charts\\PipelineChart.tsx": {
+    "mtime": 1767122027.6053612,
+    "ast_hash": "eca6197c0aa078b506c1f8d24fb585a6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\charts\\RevenueChart.tsx": {
+    "mtime": 1767122022.2804377,
+    "ast_hash": "3d41bc01331e7679fba5faae5179a439",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\companies\\CreateCompanyDialog.tsx": {
+    "mtime": 1786179686.9315338,
+    "ast_hash": "77ae8ba6da1a018feb88afdd80e17595",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\companies\\EditCompanyDialog.tsx": {
+    "mtime": 1786179738.1702914,
+    "ast_hash": "052691f86b98c7e2932716d599709889",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\contacts\\CreateContactDialog.tsx": {
+    "mtime": 1785576481.7151787,
+    "ast_hash": "c055abb72954bd61fc480b0731b4a008",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\contacts\\EditContactDialog.tsx": {
+    "mtime": 1785576481.7151787,
+    "ast_hash": "2327c0bb9828aa551e98a71d6c8d579b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\contacts\\ImportCSVDialog.tsx": {
+    "mtime": 1785576481.7151787,
+    "ast_hash": "90b9ac75f0baa84c2533f4397b152fdc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\dashboard\\SmartFollowUps.tsx": {
+    "mtime": 1781515292.4469101,
+    "ast_hash": "75f230fc4a78ba9b363ebb7691e337e1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\deals\\CreateDealDialog.tsx": {
+    "mtime": 1786278040.0996087,
+    "ast_hash": "d2b767b653a18e99b273114c411f1953",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\deals\\DealStageBadge.tsx": {
+    "mtime": 1767000816.272919,
+    "ast_hash": "ece26c469bd5a8e7ffc9800276478fa2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\deals\\EditDealDialog.tsx": {
+    "mtime": 1785576481.7226343,
+    "ast_hash": "b8a389971d0bfeff2074f7a95b746e91",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\deals\\KanbanCard.tsx": {
+    "mtime": 1784970720.399934,
+    "ast_hash": "88c98854955f8690ce8c075a5bb462a8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\deals\\KanbanColumn.tsx": {
+    "mtime": 1784970715.2801971,
+    "ast_hash": "db7b36d769162278412563fcdf21c0de",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\email\\AIEmailAssistant.tsx": {
+    "mtime": 1781515264.9131024,
+    "ast_hash": "530d0f6e6089f4a3d7079bfa2cc871c2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\email\\AIWriteBody.tsx": {
+    "mtime": 1786183876.4963703,
+    "ast_hash": "48f8bb65cbf5f28010e2b06f5770500f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\email\\EmailComposeModal.tsx": {
+    "mtime": 1786278046.8804622,
+    "ast_hash": "7d590cfe58ee599c11c62c2677779e57",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\email\\MergeFieldDropdown.tsx": {
+    "mtime": 1772619431.11894,
+    "ast_hash": "5a2604f0315675e44f867d9638c8413e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\email\\RecipientInput.tsx": {
+    "mtime": 1785576481.7226343,
+    "ast_hash": "ae13c177fe64b374c4c1caad017c0fc4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\email\\TemplateSelector.tsx": {
+    "mtime": 1786278051.661264,
+    "ast_hash": "ab17c70f82f50582f6bed56094f2e506",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\error\\ErrorBoundary.tsx": {
+    "mtime": 1786278057.565164,
+    "ast_hash": "a1a2b9d2c4031c72ecd13aee569a5a77",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\ClientSelector.tsx": {
+    "mtime": 1785767036.4503236,
+    "ast_hash": "c9d787cce0f84d7db8738380a6b53f11",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\DealProjectLinker.tsx": {
+    "mtime": 1785576481.7226343,
+    "ast_hash": "5e61214af65a19c17bbab99eaf276517",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\InvoiceDetail.tsx": {
+    "mtime": 1786265891.294716,
+    "ast_hash": "40ca139a3a1b7b231139a82f14e67312",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\InvoiceEmailComposeModal.tsx": {
+    "mtime": 1786278072.3231392,
+    "ast_hash": "8d7ec2fc9599d4679e80686b8895f7a2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\InvoiceForm.tsx": {
+    "mtime": 1773752070.3986907,
+    "ast_hash": "9c7d40725efc82e8f8035f00db641b57",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\InvoiceSettingsModal.tsx": {
+    "mtime": 1786278100.5706527,
+    "ast_hash": "b3b6d1791ac4e1334d97ade5c0b2aa42",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\LineItemsTable.tsx": {
+    "mtime": 1767123053.346904,
+    "ast_hash": "ab34600eb269dc55ae3c54f2af355465",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\form-sections\\InvoiceBasicInfo.tsx": {
+    "mtime": 1786278063.3801649,
+    "ast_hash": "8abe3b2f780a599ba8034325411e79ea",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\form-sections\\InvoiceLineItems.tsx": {
+    "mtime": 1781490129.027481,
+    "ast_hash": "0c9a6db83031219fe01e14605d0a4434",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\invoices\\form-sections\\InvoiceSettings.tsx": {
+    "mtime": 1785576481.7330365,
+    "ast_hash": "a0e86b0a8e13317ee4e961c136471be1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\AboutPageContent.tsx": {
+    "mtime": 1781645451.841854,
+    "ast_hash": "76e06e92d21a6390995d3da19b04b820",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\AboutSection.tsx": {
+    "mtime": 1781610671.3974378,
+    "ast_hash": "fc71ff0fd129c3b9186ed5ae321b5c78",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\BlogCard.tsx": {
+    "mtime": 1781679246.360265,
+    "ast_hash": "3ddd119f7d114bbd29519629277ba881",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\BlogPageContent.tsx": {
+    "mtime": 1781728555.3097167,
+    "ast_hash": "972d72dada4356231ae1942cfc75a685",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\BlogPostContent.tsx": {
+    "mtime": 1781679266.9559095,
+    "ast_hash": "b4c6c7af2710d3748020cc056e276cf6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\BlogSection.tsx": {
+    "mtime": 1781645623.1376743,
+    "ast_hash": "3b49a49919664c475aa1e7792f4a0fbd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\ContactPageContent.tsx": {
+    "mtime": 1781649068.2746396,
+    "ast_hash": "1b6f9cd382cb46f630506348aab67c1b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\ContactSection.tsx": {
+    "mtime": 1781649250.1187513,
+    "ast_hash": "60865c0175b4598498f446fcbfd48051",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\FeatureCard.tsx": {
+    "mtime": 1781610626.7838142,
+    "ast_hash": "b5f6eff8500268373b9ea945846f0800",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\FeaturesSection.tsx": {
+    "mtime": 1781610636.2911296,
+    "ast_hash": "0cca2b043a2773b1d31344645c0e2f50",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\Footer.tsx": {
+    "mtime": 1781728046.7247133,
+    "ast_hash": "9a24c693820b8e3c64434e6a39f82795",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\HeroSection.tsx": {
+    "mtime": 1781610820.8418112,
+    "ast_hash": "e35b9a11eb4570e8efb6f6d8b922c28a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\Navbar.tsx": {
+    "mtime": 1785576481.7350428,
+    "ast_hash": "4deeee642f3b940c2b74317de133e37b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\TeamCard.tsx": {
+    "mtime": 1781610680.927774,
+    "ast_hash": "a07630299a9c44224c1c146d8f8bec08",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\TestimonialCard.tsx": {
+    "mtime": 1781610648.1832576,
+    "ast_hash": "a74de3ae2e8166d8b90bf8ffa8980da0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\landing\\TestimonialsSection.tsx": {
+    "mtime": 1781610658.3063004,
+    "ast_hash": "ae67ec9f5aef0bbc5c261ae9fcc781c3",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\layout\\Header.tsx": {
+    "mtime": 1772619431.1442926,
+    "ast_hash": "0a36583c94d53668606c2ffaeb84ca4d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\layout\\MobileNav.tsx": {
+    "mtime": 1766984128.2557237,
+    "ast_hash": "774b2dedba9d1073ede7cc1e0ff80aff",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\layout\\OrgSidebar.tsx": {
+    "mtime": 1785103526.6321936,
+    "ast_hash": "f12bee2be07fa7bbea2857c065054363",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\layout\\Sidebar.tsx": {
+    "mtime": 1781527796.2976592,
+    "ast_hash": "cebd97f2095a6dcf7f29a4c58779cdbc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\leads\\CreateLeadDialog.tsx": {
+    "mtime": 1785576481.737249,
+    "ast_hash": "61b62cbd2a27de2570e79868224daf17",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\leads\\EditLeadDialog.tsx": {
+    "mtime": 1785576481.737249,
+    "ast_hash": "250d4e1acffcc0039c5a8a717f9b819a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\leads\\LeadStatusBadge.tsx": {
+    "mtime": 1766986444.5468383,
+    "ast_hash": "60e0c8f0bdbbd26016101d17e6c8e794",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\notifications\\NotificationBell.tsx": {
+    "mtime": 1772619431.1518373,
+    "ast_hash": "9bfea7b1bee9345c9022384c54fc34ff",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\org\\OrgSwitcher.tsx": {
+    "mtime": 1786278106.2001283,
+    "ast_hash": "09e196939c04887a6540b2e245a46114",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\projects\\CreateProjectDialog.tsx": {
+    "mtime": 1785576481.737249,
+    "ast_hash": "02b5d963db3d4b58bdcf1125010f28ee",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\projects\\EditProjectDialog.tsx": {
+    "mtime": 1785576481.737249,
+    "ast_hash": "e8de9ec37d62bd5914ba83d63a869943",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\projects\\ProjectFinancialsCard.tsx": {
+    "mtime": 1773795622.6858754,
+    "ast_hash": "3b8784d3f13cb583971df8dadb72c5bd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\projects\\ProjectStatusControl.tsx": {
+    "mtime": 1786278117.4610648,
+    "ast_hash": "6c2571b2edd86a4d898f9e61ce9f27e6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\reports\\AIExecutiveSummary.tsx": {
+    "mtime": 1781515561.7594128,
+    "ast_hash": "76c11fab6800c7653dc371543e9aec95",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\reports\\ReportQueryInput.tsx": {
+    "mtime": 1772619431.1590548,
+    "ast_hash": "8d360265ea9af734da2115f8cc8ca568",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\reports\\ReportsDataManager.tsx": {
+    "mtime": 1786278122.8752673,
+    "ast_hash": "8e0ab3a1bab0d46efd94e368c72c59ce",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\reports\\RevenueForecastChart.tsx": {
+    "mtime": 1772619431.1608498,
+    "ast_hash": "adb1d2143b8eeea1990fa4aa5ecbb9a6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\search\\CommandPalette.tsx": {
+    "mtime": 1786278128.9713745,
+    "ast_hash": "0858f58e27dae1978991ade600d2717b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\shared\\EmptyState.tsx": {
+    "mtime": 1766986442.4810004,
+    "ast_hash": "a19d4098787121fc603545289450bc29",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\shared\\MeetingSummarizer.tsx": {
+    "mtime": 1781515342.7237651,
+    "ast_hash": "4adbd1f39d0f03441bdf5e2d6522ce2c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\shared\\PageHeader.tsx": {
+    "mtime": 1772619431.1613555,
+    "ast_hash": "0937b8e842a6d6d7ac2e494cef84f544",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\shared\\RelationshipHealth.tsx": {
+    "mtime": 1781515314.460395,
+    "ast_hash": "c0c37d9c4bc0256671f26e2cac508446",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\skeletons\\PageSkeletons.tsx": {
+    "mtime": 1767121324.923228,
+    "ast_hash": "2340bdc7c5fc7614f4a0e6556043642c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\tasks\\ArchivedTasksDialog.tsx": {
+    "mtime": 1785576481.7433832,
+    "ast_hash": "b19f223e8e370c0b3f1482360a9be855",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\tasks\\CalendarToolbar.tsx": {
+    "mtime": 1772619431.1628742,
+    "ast_hash": "e826bf4d2c37efdabc9ba05ec55fc87e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\tasks\\CreateTaskDialog.tsx": {
+    "mtime": 1786278135.8965578,
+    "ast_hash": "2d1b5e347d2fd929b9e5846b329bd368",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\tasks\\KanbanTaskCard.tsx": {
+    "mtime": 1784971425.829214,
+    "ast_hash": "53cc1c9590f51a7979e658631c1318a7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\tasks\\KanbanTaskColumn.tsx": {
+    "mtime": 1784971432.0765934,
+    "ast_hash": "67c8d24f7d223743a52b87992bd335b1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\tasks\\TaskCalendar.tsx": {
+    "mtime": 1772619431.164498,
+    "ast_hash": "db30bf4a991ed41dd439d91ce8e0eae9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\tasks\\TaskDetailSheet.tsx": {
+    "mtime": 1785576758.7727497,
+    "ast_hash": "a7535b08bd7e58faa32be1662b5a51ac",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\tasks\\TaskFiltersBar.tsx": {
+    "mtime": 1774221906.832505,
+    "ast_hash": "e410bf2e2b84fe6260a6289c3ec36eb5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\team\\AddMemberModal.tsx": {
+    "mtime": 1782353146.0482461,
+    "ast_hash": "4d0153d4f760e681e8036b3d8fb37400",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\team\\MemberPermissionsModal.tsx": {
+    "mtime": 1782357040.1107512,
+    "ast_hash": "49b4461dcffe44c75815099900a8ee58",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\ai-textarea.tsx": {
+    "mtime": 1785576481.7433832,
+    "ast_hash": "366db616cc766940a688e19b654cccd6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\alert.tsx": {
+    "mtime": 1772619431.169217,
+    "ast_hash": "8ceefed89b240f2918f5568b31fd7c0d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\avatar.tsx": {
+    "mtime": 1766977122.6281075,
+    "ast_hash": "0008445bf0b90f231d702bcd9141726c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\badge.tsx": {
+    "mtime": 1766977122.9967372,
+    "ast_hash": "d418e7d17e73d698299284a0e46e3e9f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\breadcrumb.tsx": {
+    "mtime": 1772619431.169217,
+    "ast_hash": "7192e52a148f102616091be53dca0842",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\button.tsx": {
+    "mtime": 1766977121.7672515,
+    "ast_hash": "4870ecf032591e7dc71cd4e3c36bb683",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\calendar.tsx": {
+    "mtime": 1766986377.4783814,
+    "ast_hash": "7168347f8b1856c73700206300a511a4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\card.tsx": {
+    "mtime": 1766977122.0331655,
+    "ast_hash": "9f1da48791217371e13fa28ce90ae444",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\checkbox.tsx": {
+    "mtime": 1767261864.0707347,
+    "ast_hash": "dacae2a5ca64442a7dcc2530215b1889",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\ColorThemePicker.tsx": {
+    "mtime": 1772619431.1661618,
+    "ast_hash": "eaff5ac84e3c9304bf71baf01c796b48",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\command.tsx": {
+    "mtime": 1766986377.8925004,
+    "ast_hash": "4959e8e943e449005b2d9520b5f8207a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\confirm-dialog.tsx": {
+    "mtime": 1785576679.4008458,
+    "ast_hash": "6d35a4b50ac3e2433131de6f8d6355fb",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\CustomColorPicker.tsx": {
+    "mtime": 1772619431.1661618,
+    "ast_hash": "689d6eedec4bbc843f66144cf0cc5bcf",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\dialog.tsx": {
+    "mtime": 1766977123.1908817,
+    "ast_hash": "b50bd6bf4e382e6550c29c49f65ca7a9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\dropdown-menu.tsx": {
+    "mtime": 1766977122.4270453,
+    "ast_hash": "a674cf69830585ae1fe11fc61d3b36e1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\form.tsx": {
+    "mtime": 1766986377.6949553,
+    "ast_hash": "7ac145b72b7c9d232925baf027b68589",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\input.tsx": {
+    "mtime": 1766977122.2317803,
+    "ast_hash": "962daebde14319230f0cbf88a8472f70",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\label.tsx": {
+    "mtime": 1766986377.0950153,
+    "ast_hash": "14579f07e6e3133b6ee65d3ec778b013",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\loading-spinner.tsx": {
+    "mtime": 1766982884.7732022,
+    "ast_hash": "19f14980d9cc98c77dcf2e96ea6a621f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\logo.tsx": {
+    "mtime": 1766999128.2602024,
+    "ast_hash": "a298c8a9860ed44ceb1b221ee4fea873",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\LogoUploader.tsx": {
+    "mtime": 1786278141.1600273,
+    "ast_hash": "a57c99dc643a43da1e6e4d5cbf463ae0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\popover.tsx": {
+    "mtime": 1766986376.7324648,
+    "ast_hash": "80a5a48c7c392d6e8a5cbf8e733b4da7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\progress.tsx": {
+    "mtime": 1772619431.1707258,
+    "ast_hash": "b470c1bb0ed5a68fe2321a728e0f2970",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\radio-group.tsx": {
+    "mtime": 1772619431.1707258,
+    "ast_hash": "5e1c1dd36996ad6ce9dc61a21636f9f1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\rich-text-editor.tsx": {
+    "mtime": 1772619431.1722631,
+    "ast_hash": "63d228b1c24275745a1d30988f377169",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\scroll-area.tsx": {
+    "mtime": 1767132932.5950968,
+    "ast_hash": "3205f3686c10fa46810af9db517d72dd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\select.tsx": {
+    "mtime": 1772619431.173277,
+    "ast_hash": "b9572b59f3f20246f35e0c6799363c83",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\separator.tsx": {
+    "mtime": 1766977122.8196814,
+    "ast_hash": "85fd1a835601a122f1f226ccb31a0d67",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\sheet.tsx": {
+    "mtime": 1766985688.6696098,
+    "ast_hash": "37e7a8592c3402cc56568d9f59d7db68",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\skeleton.tsx": {
+    "mtime": 1767108071.8823214,
+    "ast_hash": "b3838adb8c3fabd49a8696c1d92bb405",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\slider.tsx": {
+    "mtime": 1772619431.1745267,
+    "ast_hash": "fc125660d51f5228b28db7f0884ce4c7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\switch.tsx": {
+    "mtime": 1767132932.0054357,
+    "ast_hash": "bf0598ce90aaee824ec8669c93522779",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\table.tsx": {
+    "mtime": 1766977123.5715613,
+    "ast_hash": "0ae7dbae059df3f7e3faa6a93e81267f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\tabs.tsx": {
+    "mtime": 1766986376.5507033,
+    "ast_hash": "c29805833a6aa95e1a36e7896a76a571",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\textarea.tsx": {
+    "mtime": 1766997044.6995914,
+    "ast_hash": "28a5b8c2caa9c86b73ca82fab179c356",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\toast.tsx": {
+    "mtime": 1766986375.8847072,
+    "ast_hash": "153f9642aaa5749ff413c4236b2309eb",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\ui\\toaster.tsx": {
+    "mtime": 1766986376.3535893,
+    "ast_hash": "fcdccc15f76eb7acaa4e68813634da20",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\users\\CreateUserDialog.tsx": {
+    "mtime": 1786278148.1441789,
+    "ast_hash": "e7b23cc7b019021b178251f979353f4f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\components\\users\\EditUserDialog.tsx": {
+    "mtime": 1786278154.0974495,
+    "ast_hash": "1daac173a5d73215ab3a88ad083d8954",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\config\\site.ts": {
+    "mtime": 1781489691.3256812,
+    "ast_hash": "2e992e98c5bd180294b9d2c3f5bb890b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\cors.json": {
+    "mtime": 1773752070.407802,
+    "ast_hash": "0e634cbfed1ed9f23cb10b3be9fd793c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\hooks\\use-toast.ts": {
+    "mtime": 1766986376.1431537,
+    "ast_hash": "8be7876e08c12ac4eea618920cd25285",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\hooks\\useAuth.ts": {
+    "mtime": 1785576481.7523854,
+    "ast_hash": "fd22b8d573adb00856bc43fe043a18db",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\hooks\\usePermission.tsx": {
+    "mtime": 1785576481.7543986,
+    "ast_hash": "63caef1ea5ba28b41f1065d62d1612fd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\analytics.ts": {
+    "mtime": 1786277443.4625273,
+    "ast_hash": "8950247e6c23e12abb01a42afd3172cd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\crypto.ts": {
+    "mtime": 1786277427.2226999,
+    "ast_hash": "150546f0b3cf686c1761f4cb51e1c7e5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\environment.ts": {
+    "mtime": 1773795622.6899283,
+    "ast_hash": "ef755fac218506558d9cfbcbe6b3800d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firebase-admin.ts": {
+    "mtime": 1786277411.0067842,
+    "ast_hash": "89b41db71e0f18d9c6c44f7248907377",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firebase.ts": {
+    "mtime": 1786277416.9230587,
+    "ast_hash": "00838344d9e5f581d4c93a4ad07aee8d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\rate-limit.ts": {
+    "mtime": 1781516921.2120094,
+    "ast_hash": "8bc2b523dbaad12fdfbb2f5d2913c82f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\redis.ts": {
+    "mtime": 1785576481.7985437,
+    "ast_hash": "3ea90dc8a0eb4e1cebe286179fb4b27f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\utils.ts": {
+    "mtime": 1785576481.7985437,
+    "ast_hash": "d14801e70220f427f6ee3c1051f8d9cd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\api\\api-fetch.ts": {
+    "mtime": 1786277544.9127605,
+    "ast_hash": "304d07a37f5be209a532ce0e430cb9f8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\api\\error-handler.ts": {
+    "mtime": 1786277344.6383033,
+    "ast_hash": "03e52b07b96ac1bf5bd55f359ec7f507",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\api\\protected-route.ts": {
+    "mtime": 1772619431.1908937,
+    "ast_hash": "be4051956fd1639110548ba8ddbd3824",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\auth\\api-auth.ts": {
+    "mtime": 1786277403.4775703,
+    "ast_hash": "9d1bbf5922bdf5504b0b9b764829a496",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\auth\\auth-service.ts": {
+    "mtime": 1786277470.8979769,
+    "ast_hash": "5497e2968da20b1d5f4f52398fc9672a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\auth\\permission-utils.ts": {
+    "mtime": 1786277510.7613983,
+    "ast_hash": "d1d71f3cc340c95e0c3decb45c31edbb",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\auth\\server-auth.ts": {
+    "mtime": 1786277389.997563,
+    "ast_hash": "da6c76c65d91ba97dc5dd19b9eb5edcc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\calendar\\utils.ts": {
+    "mtime": 1772619431.1955144,
+    "ast_hash": "38897eda7c649740114c63496c49c5a0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\features.ts": {
+    "mtime": 1781609375.7040467,
+    "ast_hash": "1694ce5ce042904c5b0fe6f90cea2183",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\team.ts": {
+    "mtime": 1781609386.382023,
+    "ast_hash": "bdebe427438c2d3848e9cf4ca1cbf7de",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\testimonials.ts": {
+    "mtime": 1781609380.6149242,
+    "ast_hash": "e238ee043a24959a291225be405ee173",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\blog\\authors.ts": {
+    "mtime": 1781650214.3581073,
+    "ast_hash": "daa7d2a6bf45873d5baddfb9331a4bed",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\blog\\blog1-5.ts": {
+    "mtime": 1781913432.8315077,
+    "ast_hash": "c0e9cde1869206f5578ead4556d6ddd6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\blog\\blog11-15.ts": {
+    "mtime": 1781913435.5126984,
+    "ast_hash": "2b23843486462960cd6b64cb85b91b0c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\blog\\blog6-10.ts": {
+    "mtime": 1781913434.3711946,
+    "ast_hash": "b382efea4a5839966104a2ab512d4371",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\blog\\index.ts": {
+    "mtime": 1781650220.045465,
+    "ast_hash": "13b1a1ccb60895ce7fafa25a14e03d22",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\blog\\posts.ts": {
+    "mtime": 1781653158.4938922,
+    "ast_hash": "69b5c44c28ffca56ec3ce80aa2bad724",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\blog\\schema.ts": {
+    "mtime": 1781679238.9685621,
+    "ast_hash": "52f1da6fbe6546bea28d3382dcb9cc6e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\email\\email-compose-service.ts": {
+    "mtime": 1786278311.3196118,
+    "ast_hash": "7bcc0b0ac9800c21ed6b3f3fa6b777b9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\email\\email-service.ts": {
+    "mtime": 1786278272.8293245,
+    "ast_hash": "23976dd6d00ae913d75c5aa0a448fc45",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\email\\invoice-email.ts": {
+    "mtime": 1786278320.4456272,
+    "ast_hash": "ab712c7250ab4e4fedad75acdc6d2bea",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\email\\invoice-template.ts": {
+    "mtime": 1772619431.2042272,
+    "ast_hash": "a58299d46c00c7bfd158a09c65721450",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\email\\merge-fields.ts": {
+    "mtime": 1767134068.6851301,
+    "ast_hash": "76863f2c1f0068100b5a7128f9612133",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\email\\templates\\auth-templates.ts": {
+    "mtime": 1772619431.2052395,
+    "ast_hash": "ff28a41599da85e32c69c82683112b3e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\email\\templates\\invoice-template.ts": {
+    "mtime": 1786278914.424717,
+    "ast_hash": "984871f5ea3beb3eec27921163fbf0c5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\activities.ts": {
+    "mtime": 1785576481.7647147,
+    "ast_hash": "f451a3d509cbfb9ea095543ed81fdefb",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\admin-users.ts": {
+    "mtime": 1786278363.5499096,
+    "ast_hash": "7e124cd686b7341761396fdcf670eb9c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\audit-logs.ts": {
+    "mtime": 1786277576.1152277,
+    "ast_hash": "e5e7a2e81395a2c4707a14ed4816e676",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\companies.ts": {
+    "mtime": 1785576481.7699668,
+    "ast_hash": "63b81f41b62407d87061b635a627066e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\contacts.ts": {
+    "mtime": 1785576481.7708223,
+    "ast_hash": "b639b167cf734e042b75ba3417007159",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\deals.ts": {
+    "mtime": 1786278384.698238,
+    "ast_hash": "b9d64dfb598872b62e436bc109035c86",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\email-templates.ts": {
+    "mtime": 1786278443.4624329,
+    "ast_hash": "0eff7f7be066aa5b67977509e90077d0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\emails.ts": {
+    "mtime": 1786278398.929931,
+    "ast_hash": "a173d531d14563a5ef587985859db87b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\invoice-number-generator.ts": {
+    "mtime": 1786278465.6708457,
+    "ast_hash": "e42edb61c98e0f8b1bafde0fa7b6cfd9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\invoices.ts": {
+    "mtime": 1786278478.873802,
+    "ast_hash": "7e972c1c01a25c1c0235dbfcfeed92b8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\leads.ts": {
+    "mtime": 1786278507.0558002,
+    "ast_hash": "a73533da8a942dd9cc66ea5b13fa887d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\notes.ts": {
+    "mtime": 1784970346.6833656,
+    "ast_hash": "fc4de504018d67d16d529fd5383b1012",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\notifications.ts": {
+    "mtime": 1785576481.7828574,
+    "ast_hash": "8f1a9ccc0923cde6f84a598ff15ad98e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\organizations.ts": {
+    "mtime": 1786278529.6023283,
+    "ast_hash": "14f7bd89b43c4eb5e47b0cf40725a394",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\projects.ts": {
+    "mtime": 1785576481.7866836,
+    "ast_hash": "a63f7825a7a5ee45c522841092414fa8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\quotes.ts": {
+    "mtime": 1782269204.4048574,
+    "ast_hash": "b5e16dbc5ffaca5237c0346d1307bd42",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\tasks.ts": {
+    "mtime": 1785576481.7887008,
+    "ast_hash": "8913b03cc2975a0a3294ee316a9613d5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\users.ts": {
+    "mtime": 1786278568.1014688,
+    "ast_hash": "4d1e799bcecf28760d63516adf667fad",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\firestore\\utils.ts": {
+    "mtime": 1772619431.2206576,
+    "ast_hash": "d0dfc5f355675cb46fc0d3d739dc1d26",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\gemini\\client.ts": {
+    "mtime": 1781493064.0079527,
+    "ast_hash": "bd15dc36b2546259c9636b0b70da2bad",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\gemini\\config.ts": {
+    "mtime": 1781526488.658502,
+    "ast_hash": "de82020d323801e2b87b96a0c9ee5c15",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\gemini\\guard.ts": {
+    "mtime": 1785576481.7938242,
+    "ast_hash": "8b350c0b574c9b2577adc33b5f6b69ad",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\gemini\\parse.ts": {
+    "mtime": 1786277436.1814837,
+    "ast_hash": "4467533ac6c147027bcbf701f4d56745",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\gemini\\prompts.ts": {
+    "mtime": 1785576481.7958324,
+    "ast_hash": "4da9bb0e552b678e219a57fbbec147c2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\logger\\client.ts": {
+    "mtime": 1786277333.3152006,
+    "ast_hash": "98c71a46a290dce05c8032f990e29237",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\logger\\index.ts": {
+    "mtime": 1786277281.8176134,
+    "ast_hash": "6bd463eb259da897c7995eb72dfc2432",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\logger\\levels.ts": {
+    "mtime": 1786277193.382066,
+    "ast_hash": "fd8eb7783c097c9f1acb0e8cff644646",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\logger\\request-id.ts": {
+    "mtime": 1786277217.2759278,
+    "ast_hash": "b5129329bf29f6402b3ef4aad04697f4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\logger\\sanitize.ts": {
+    "mtime": 1786278854.07578,
+    "ast_hash": "2b902ba97f95fd609ea5528f711fd8c3",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\logger\\serialize.ts": {
+    "mtime": 1786277211.0736506,
+    "ast_hash": "f174e0eaceb88584cb744203e76a5349",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\logger\\server.ts": {
+    "mtime": 1786277338.1267717,
+    "ast_hash": "6f02d9f46b58d4e404c92c765172e765",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\logger\\types.ts": {
+    "mtime": 1786277186.5668879,
+    "ast_hash": "835fdaf641e426c0193410be8a9fb556",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\pdf\\invoice-generator copy.ts": {
+    "mtime": 1773752070.4285245,
+    "ast_hash": "3b1fe7c00aa94742825ba1477e9426a2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\pdf\\invoice-generator.ts": {
+    "mtime": 1786278609.9425566,
+    "ast_hash": "324c988edfd9c824c73bb793f63c030b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\permissions\\index.ts": {
+    "mtime": 1772619431.226771,
+    "ast_hash": "032d5aedfe2fd872480f228a00511572",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\services\\project-financials.ts": {
+    "mtime": 1772619431.2296338,
+    "ast_hash": "dc0d9197a8806a88774b49c59346f6d5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\storage\\attachments.ts": {
+    "mtime": 1786278575.8592346,
+    "ast_hash": "ef4739034d5209d26b45fd3a879daf57",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\storage\\upload.ts": {
+    "mtime": 1786278583.9306438,
+    "ast_hash": "ba6db6e3d93ab7656f4ec0bfbba58825",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\storage\\users.ts": {
+    "mtime": 1767000153.8365464,
+    "ast_hash": "94ed73048313bad979a24b365394fb54",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\auth.ts": {
+    "mtime": 1767000506.180567,
+    "ast_hash": "321040899aae1eecafb9cd3edcb3af6c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\company.ts": {
+    "mtime": 1785766362.1671615,
+    "ast_hash": "0594cc6af5dd1ce65170730d897a4b41",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\contact.ts": {
+    "mtime": 1785693084.566781,
+    "ast_hash": "ad4f911a73ec05ee9295eb1e999803e9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\date-coerce.ts": {
+    "mtime": 1785107173.358463,
+    "ast_hash": "7e118c277a6cf10bc7e8b4f33634566d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\deal.ts": {
+    "mtime": 1785693100.9594748,
+    "ast_hash": "ebfb8b775369a21ac65466fd9b3ed893",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\invoice.ts": {
+    "mtime": 1785766829.347793,
+    "ast_hash": "aaeba649d49dbe010ee6811eed46e6cb",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\invoiceSettings.ts": {
+    "mtime": 1773752070.4322362,
+    "ast_hash": "fa4e766edc1d1b48e8ed6dcea6d5333a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\lead.ts": {
+    "mtime": 1785693063.4712548,
+    "ast_hash": "5e902c7ce7c5eb6d9afa66761e6b0ba0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\project.ts": {
+    "mtime": 1785576481.8054955,
+    "ast_hash": "b787fc4447869698072d3ebc84f6b2ae",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\validations\\task.ts": {
+    "mtime": 1785576481.8075047,
+    "ast_hash": "135071be30a54dbaca1981f44b847f6b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\scripts\\cleanup-playwright-orgs.ts": {
+    "mtime": 1785664597.5551913,
+    "ast_hash": "6b5a5e7655a5984fac90b4ea24b61456",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\scripts\\migrate-to-multi-tenant.ts": {
+    "mtime": 1782207540.451965,
+    "ast_hash": "eed7e4a9bef55189483e53957156c8f3",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\scripts\\migrate-users.ts": {
+    "mtime": 1773752070.4482021,
+    "ast_hash": "7059143b78523601bc4a64f83c0cdfee",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\scripts\\package.json": {
+    "mtime": 1772619431.2403238,
+    "ast_hash": "4d3114ba0be9dff0a0c03563478b7f62",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\scripts\\seed-playwright-test-users.ts": {
+    "mtime": 1785693857.390818,
+    "ast_hash": "fa8ae59daaa9b8414b225fd0fd7ba211",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\scripts\\verify-robots.js": {
+    "mtime": 1773752070.4501438,
+    "ast_hash": "ecc853781c53d55cffe0a7a67c0ec182",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\store\\auth.ts": {
+    "mtime": 1772619431.2636194,
+    "ast_hash": "3c0996c2d4083a59d614562cd3e68258",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\store\\org.ts": {
+    "mtime": 1782207194.3424165,
+    "ast_hash": "6d87c2f6c4cba5c57b0f4bc256b29a6f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\store\\ui.ts": {
+    "mtime": 1767279588.8994946,
+    "ast_hash": "6a8d76dfa03369ff119125b4f1276da9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\tsconfig.json": {
+    "mtime": 1785659329.19054,
+    "ast_hash": "9a5252c37c6bd460dd988e9f695240f8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\data\\urls.ts": {
+    "mtime": 1785659358.9958415,
+    "ast_hash": "cde562e49d613943eab4522de3ad0ae0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\data\\users.ts": {
+    "mtime": 1785659651.306451,
+    "ast_hash": "06fc4bbaeec3e6fefc5000633d2d4e77",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\activity\\timeline.spec.ts": {
+    "mtime": 1785663813.9566536,
+    "ast_hash": "591b4a8ce5d42088841beade0eff87d0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\ai\\ai-features.spec.ts": {
+    "mtime": 1785663556.159907,
+    "ast_hash": "a3e117b466e26b5bfceca2712b845ab1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\auth\\login.spec.ts": {
+    "mtime": 1785660515.7638226,
+    "ast_hash": "c2e740bb9a05ee1f625828250c31eff7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\auth\\session.spec.ts": {
+    "mtime": 1785783257.6343462,
+    "ast_hash": "f08b83cbe778bf95fa6436139f7d6bdc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\command-palette\\search.spec.ts": {
+    "mtime": 1785663844.0045114,
+    "ast_hash": "b07540a1c5a60b97477a0886fe1ecfcd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\companies\\companies.spec.ts": {
+    "mtime": 1785694855.7329476,
+    "ast_hash": "bb10d38122281dcee05eaabf79a84ae3",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\contacts\\contacts.spec.ts": {
+    "mtime": 1785782124.6203277,
+    "ast_hash": "75cef669a464cb1cf5eea22f80cd0d3e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\cross-org\\isolation.spec.ts": {
+    "mtime": 1785825904.6715195,
+    "ast_hash": "fa14b8fae0f3a726f595796f99b86859",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\dashboard\\access.spec.ts": {
+    "mtime": 1786179768.0558705,
+    "ast_hash": "24eca40ae9ffd36c7592588b4904da0c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\dashboard\\extra.spec.ts": {
+    "mtime": 1785784059.7384803,
+    "ast_hash": "b147e9dec1caaabe74d81a6b71e3eca9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\deals\\deals.spec.ts": {
+    "mtime": 1785663274.9474785,
+    "ast_hash": "4592eeda7cea9b800532e3f0cad755f9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\email\\email.spec.ts": {
+    "mtime": 1785663405.6138055,
+    "ast_hash": "1e7ca27d663e730f7a8168444dce9982",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\error-recovery\\error-recovery.spec.ts": {
+    "mtime": 1785663709.8369062,
+    "ast_hash": "4d6618bdb4432ff48fbb87efca13e403",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\human-behavior\\mistakes.spec.ts": {
+    "mtime": 1785663737.5433948,
+    "ast_hash": "6fb8c2cc201785362a0fd39e5b673095",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\integrations\\integrations.spec.ts": {
+    "mtime": 1785694009.1119568,
+    "ast_hash": "5a90641d3daf6a438fee9a5ef8da0a2f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\invoices\\invoices.spec.ts": {
+    "mtime": 1785767274.0227537,
+    "ast_hash": "1398bb29c8b636f4e6454b6bb622b3fe",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\leads\\crud.spec.ts": {
+    "mtime": 1785659494.2244925,
+    "ast_hash": "1990cacfbcaafd72a22e99a55f94bb79",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\leads\\extra.spec.ts": {
+    "mtime": 1785783404.6616697,
+    "ast_hash": "a6265e3d072ad630c9b49116a1dcedad",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\logger\\logger.spec.ts": {
+    "mtime": 1786279089.6785219,
+    "ast_hash": "fc6328df23f0e1bb656d9591e993212c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\navigation\\navigation.spec.ts": {
+    "mtime": 1785663613.387683,
+    "ast_hash": "633ef4a28176f551dfd22e077bf0ceb1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\notes\\notes.spec.ts": {
+    "mtime": 1785694891.8864627,
+    "ast_hash": "4075916d0bac9614048017059c94bf0e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\notifications\\notifications.spec.ts": {
+    "mtime": 1785663834.2444363,
+    "ast_hash": "340d1b963455b915c06e8f4c748c2b6f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\onboarding\\registration.spec.ts": {
+    "mtime": 1785662541.5296762,
+    "ast_hash": "7940beb71de1c5e0343a90a188e62086",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\organizations\\org-picker.spec.ts": {
+    "mtime": 1785780615.244958,
+    "ast_hash": "e104a084e95e9e4383a1d85b610d87f2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\permissions\\rbac-menus.spec.ts": {
+    "mtime": 1785694019.9508293,
+    "ast_hash": "9733d09fac7e2acef55b3ecd9df5cefe",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\permissions\\rbac.spec.ts": {
+    "mtime": 1785661058.7524133,
+    "ast_hash": "3f71fcb94b1963b8ee85041fac272c14",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\projects\\projects.spec.ts": {
+    "mtime": 1785663314.2216456,
+    "ast_hash": "abb8624f4743b8e17799475a88a9d474",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\quotes\\quotes.spec.ts": {
+    "mtime": 1785663370.4335423,
+    "ast_hash": "4f4f15734c3988013925541451d7386d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\regression\\known-bugs.spec.ts": {
+    "mtime": 1785784554.7448642,
+    "ast_hash": "7f0a99d608aeacd82e6281dd4bb0baab",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\reports\\reports.spec.ts": {
+    "mtime": 1785693209.2845123,
+    "ast_hash": "84dd185ae91f4aa567a6dcafbe1d1729",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\security\\security.spec.ts": {
+    "mtime": 1785781053.520983,
+    "ast_hash": "ef781c46788e30d752d641b2ff55e933",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\settings\\settings.spec.ts": {
+    "mtime": 1785782388.5757291,
+    "ast_hash": "4820bab88bc8cca76daaa5ff4c561f7f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\tasks\\tasks.spec.ts": {
+    "mtime": 1785695021.622525,
+    "ast_hash": "2b33cf53e5ee3acb3abb54ac3a7af7c8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\team\\invite.spec.ts": {
+    "mtime": 1785692776.3918924,
+    "ast_hash": "ae097e38f53c8dc820d45c8aa08fd811",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\team\\user-management.spec.ts": {
+    "mtime": 1785693324.8703415,
+    "ast_hash": "40b1b6f7076c9f1403bb9b4067362a8a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\e2e\\validation\\edge-cases.spec.ts": {
+    "mtime": 1785767291.6117737,
+    "ast_hash": "e874103265254534d6d2568ea366f112",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\fixtures\\auth.ts": {
+    "mtime": 1785659460.6430638,
+    "ast_hash": "69f8df7a8014befeafacbac07f41400f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\helpers\\admin.ts": {
+    "mtime": 1785780572.6569836,
+    "ast_hash": "61379cb88a011fa3ccfb5ab3a208c0f4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\helpers\\auth.ts": {
+    "mtime": 1785664578.0684319,
+    "ast_hash": "9c0147bfb5ec38938a0abaaf95b0db0e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\helpers\\data.ts": {
+    "mtime": 1785663915.1660407,
+    "ast_hash": "47dde059c18a33f397253206c51a9346",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\helpers\\navigation.ts": {
+    "mtime": 1785659397.8778179,
+    "ast_hash": "f096f4e90c1d859236b35b248c4a54af",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\helpers\\screenshot.ts": {
+    "mtime": 1785659401.829383,
+    "ast_hash": "866d42131bfc652701542e3b9c5a7a2b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\helpers\\wait.ts": {
+    "mtime": 1785660742.3367748,
+    "ast_hash": "956d51e27a3b0bbd4532506fe5aa003d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\base.page.ts": {
+    "mtime": 1785659431.6724422,
+    "ast_hash": "aee7c54cdd2150dcae6bfd71d1573e10",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\companies.page.ts": {
+    "mtime": 1785662257.0850606,
+    "ast_hash": "3d17e08bd3488761859028908c10bd86",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\contacts.page.ts": {
+    "mtime": 1785659439.4527812,
+    "ast_hash": "f222f954acf5a940cee3c1a030ad8617",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\dashboard.page.ts": {
+    "mtime": 1785660875.9748511,
+    "ast_hash": "d8a0c3e694b3b306fd321f40a80f29d7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\deals.page.ts": {
+    "mtime": 1785659442.32023,
+    "ast_hash": "bf30033fc7a39d7dcfa1c23dee3d84bd",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\emails.page.ts": {
+    "mtime": 1785662292.4622989,
+    "ast_hash": "715bf599e6adf0d88672998adc2b3fc4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\integrations.page.ts": {
+    "mtime": 1785662311.7413347,
+    "ast_hash": "4c6a356d7cecc086a5e90e3a11b9b8a2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\invoices.page.ts": {
+    "mtime": 1785662278.36955,
+    "ast_hash": "5fcbaababd281eea68184af47be26220",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\leads.page.ts": {
+    "mtime": 1785660891.9599426,
+    "ast_hash": "6127ff714a1bc7ad873280c90e47eada",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\login.page.ts": {
+    "mtime": 1785664563.4088118,
+    "ast_hash": "d05cbfdb6be9961af97d799197c554e5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\notes.page.ts": {
+    "mtime": 1785662287.4854808,
+    "ast_hash": "96a281495b6586b0e8d8dcd69e52279a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\org-picker.page.ts": {
+    "mtime": 1785662317.1844747,
+    "ast_hash": "416cb3bd9c865f254e353227eb298786",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\projects.page.ts": {
+    "mtime": 1785662262.6190805,
+    "ast_hash": "10db7c51178725682cb64726bff05829",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\quotes.page.ts": {
+    "mtime": 1785692330.6118135,
+    "ast_hash": "bdcbba2aa6f30f4ef4e3d99c295674b6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\settings.page.ts": {
+    "mtime": 1785662305.531852,
+    "ast_hash": "446d84b16614fed5677c6425fa7568d3",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\signup.page.ts": {
+    "mtime": 1785662328.5115602,
+    "ast_hash": "ef8ba6ab8585125f35f01c80c0aff032",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\tasks.page.ts": {
+    "mtime": 1785662271.248109,
+    "ast_hash": "80f678c0bcd32cd848be31336cbccd2e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\pages\\users.page.ts": {
+    "mtime": 1785662298.1940002,
+    "ast_hash": "fbb348e4e6d2b22b323d4a807dfd3c49",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\types\\calendar.ts": {
+    "mtime": 1772619431.2686498,
+    "ast_hash": "0f6aaf5eaefbcd2670fde93ac62c840e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\types\\crm.ts": {
+    "mtime": 1785576481.822671,
+    "ast_hash": "f53421aad948dfc3ee52cedfcef6152e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\types\\email.ts": {
+    "mtime": 1785576481.8246846,
+    "ast_hash": "6991da3c1ed0f60f794ff3c3d20c5f66",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\types\\gemini.ts": {
+    "mtime": 1785576481.8267443,
+    "ast_hash": "7d3461a53460ab17e8ba1a610c1a99c9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\AGENTS.md": {
+    "mtime": 1786279803.5650783,
+    "ast_hash": "4ebd1787c2a6311a3e53e569ab01e995",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\app_tree.txt": {
+    "mtime": 1784962360.658099,
+    "ast_hash": "280c8879c418ef9abca7885e6b9f82b1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\CLAUDE.md": {
+    "mtime": 1782209398.6048923,
+    "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\correction-do-not-read.md": {
+    "mtime": 1782661696.7684855,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\CRM-Error.md": {
+    "mtime": 1784962990.6380446,
+    "ast_hash": "596a5a4a03ed458377b310832092d7c6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\CRM-FunIssueReport.md": {
+    "mtime": 1784962424.9319534,
+    "ast_hash": "7ccb93bcbd9934859b8e623c6eaaf014",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\CRM-FunTestCase.md": {
+    "mtime": 1784863397.1830852,
+    "ast_hash": "16c87720b42f11573287ae9027b19f57",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\CRM-IssueReport.md": {
+    "mtime": 1784861421.1888642,
+    "ast_hash": "8c29605d9945d003f0573b038beb102f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\CRM-Phase1-Analysis.md": {
+    "mtime": 1784860819.5188775,
+    "ast_hash": "550ea346bc8520c669cea0c0960d19d7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\CRM-TestCases.md": {
+    "mtime": 1784861180.4748137,
+    "ast_hash": "c94cd896981f9735fc851b0d9fdfbe1b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\CRM-UseCase.md": {
+    "mtime": 1785113140.6473315,
+    "ast_hash": "5e94dc5cc646bfc99c99fcb7d385cb6a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\humanlike-test-case.md": {
+    "mtime": 1785521702.9534614,
+    "ast_hash": "87876e3fd228adf166d1ce986917a979",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\Landing-Site.md": {
+    "mtime": 1781606434.4913497,
+    "ast_hash": "5ef3ae2e81d8e4cca1463057f5504705",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\MissingPermissionImplementation.md": {
+    "mtime": 1785098161.7912698,
+    "ast_hash": "502d9750558a162ab384c34013c00a9a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\multi-tennant-migration-plan.md": {
+    "mtime": 1782269377.7858024,
+    "ast_hash": "91b35d23674f3b2a5cf88e8c4aa02cf2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\PermissionArchitecture.md": {
+    "mtime": 1785098106.5302327,
+    "ast_hash": "4b5cfb35ef679311a6c2848312e30847",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\PermissionFlow.md": {
+    "mtime": 1785098194.3191981,
+    "ast_hash": "a868ea1bafd921fbede5d201ddd4e147",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\PermissionIssueReport.md": {
+    "mtime": 1785098143.2344327,
+    "ast_hash": "dd91e69fa9eb7bc64b30481ea2cb8af9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\SecurityAudit.md": {
+    "mtime": 1785098174.4466102,
+    "ast_hash": "fc001d0f59bbe2f137529ca99dad43c2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\ship-to-prd.md": {
+    "mtime": 1781826335.347184,
+    "ast_hash": "9533a91f9207d3b0e7f7fdbe4f57c6c7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\so-far-migrated.md": {
+    "mtime": 1782269428.038969,
+    "ast_hash": "f50a5e88d06f5fcd5d813543ff77521c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\TESTING.md": {
+    "mtime": 1785659571.4495916,
+    "ast_hash": "f85f8bf664bd42c7df312bf0bdaae7a8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\usermanagement-report.md": {
+    "mtime": 1781524660.6648085,
+    "ast_hash": "8d9a1d872b05721a51f03385e6aa0647",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\SKILL.md": {
+    "mtime": 1781523760.1958816,
+    "ast_hash": "1bee3c3249845db66e6a1d22f678f4ff",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\approval-checklist.md": {
+    "mtime": 1781523760.1968832,
+    "ast_hash": "32c1cbadbd8fb01558c89e47a3eea2c9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\asset-organization.md": {
+    "mtime": 1781523760.1968832,
+    "ast_hash": "3fd34bbdbcb6f7d6bc3e3b54291c1f81",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\brand-guideline-template.md": {
+    "mtime": 1781523760.1978774,
+    "ast_hash": "a105e4b545d7ee596951e5a942941f52",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\color-palette-management.md": {
+    "mtime": 1781523760.1978774,
+    "ast_hash": "ff5b9d16adfa70735bfaaf86c092cff2",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\consistency-checklist.md": {
+    "mtime": 1781523760.198879,
+    "ast_hash": "1508efecb7217da592bacbe5dd8453c3",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\logo-usage-rules.md": {
+    "mtime": 1781523760.198879,
+    "ast_hash": "880c7a7461a816256d1eb29a4c9a45a1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\messaging-framework.md": {
+    "mtime": 1781523760.1998763,
+    "ast_hash": "57f14bdc36a88948ac5da2927dd478ba",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\typography-specifications.md": {
+    "mtime": 1781523760.1998763,
+    "ast_hash": "e977a8b6c3f3cce2c300db34b5c478d4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\update.md": {
+    "mtime": 1781523760.2008767,
+    "ast_hash": "5c10082d89427a1038f572ba8c7e4d4b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\visual-identity.md": {
+    "mtime": 1781523760.2008767,
+    "ast_hash": "222cd317fcd2fd46c1c9771da9dd28f8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\references\\voice-framework.md": {
+    "mtime": 1781523760.2018764,
+    "ast_hash": "e3ec9108522055fa2a7a3b6e390a1b48",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-brand\\templates\\brand-guidelines-starter.md": {
+    "mtime": 1781523760.2061806,
+    "ast_hash": "9dcc6005ce27b600247070138aa815c6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\SKILL.md": {
+    "mtime": 1781523760.223612,
+    "ast_hash": "ed6792e882de28e3cdf8e93159241f34",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\banner-sizes-and-styles.md": {
+    "mtime": 1781523760.2295322,
+    "ast_hash": "d77cc03e8ce1a2621dd8d6e565d2a835",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\cip-deliverable-guide.md": {
+    "mtime": 1781523760.2305307,
+    "ast_hash": "f553a691a1feeda942a1ad7a8e7fa14f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\cip-design.md": {
+    "mtime": 1781523760.2305307,
+    "ast_hash": "e401b8a6364d782d896b7562e0e78c8b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\cip-prompt-engineering.md": {
+    "mtime": 1781523760.2305307,
+    "ast_hash": "c37289aaaa114caa03642c3e582b8363",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\cip-style-guide.md": {
+    "mtime": 1781523760.2320364,
+    "ast_hash": "af22ac3b3af8c0845e9e20216adc0ca5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\design-routing.md": {
+    "mtime": 1781523760.2325509,
+    "ast_hash": "33ca1737a2fa08c2651cb2970b17988b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\icon-design.md": {
+    "mtime": 1781523760.2325509,
+    "ast_hash": "878c3c03161170f19c5c27eddc7bea61",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\logo-color-psychology.md": {
+    "mtime": 1781523760.2334964,
+    "ast_hash": "ea8820f66e2ea82d52acc70ec8fa2211",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\logo-design.md": {
+    "mtime": 1781523760.2334964,
+    "ast_hash": "1f0ac87c092a11964f00846ec80c0c97",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\logo-prompt-engineering.md": {
+    "mtime": 1781523760.2345572,
+    "ast_hash": "42ac71a96a568ba6d151ab2b512c59c4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\logo-style-guide.md": {
+    "mtime": 1781523760.2345572,
+    "ast_hash": "71429dc380a3c5a731c8654addb467c6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\slides-copywriting-formulas.md": {
+    "mtime": 1781523760.2355566,
+    "ast_hash": "25ee8ea822b1c8186db79aa794fa246c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\slides-create.md": {
+    "mtime": 1781523760.2361164,
+    "ast_hash": "477752a5cc080a9ce932b02ba961a0d8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\slides-html-template.md": {
+    "mtime": 1781523760.2361164,
+    "ast_hash": "f72faaf4f650dfc05550619a42fae258",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\slides-layout-patterns.md": {
+    "mtime": 1781523760.2371225,
+    "ast_hash": "0cbb0495b234ea4b7182e661570a1879",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\slides-strategies.md": {
+    "mtime": 1781523760.2371225,
+    "ast_hash": "3356abc0533fe316df905a39c4a3afa0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\slides.md": {
+    "mtime": 1781523760.2381232,
+    "ast_hash": "90e3b6463ed33d5bb87556cf69873705",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design\\references\\social-photos-design.md": {
+    "mtime": 1781523760.2381232,
+    "ast_hash": "b8617d37634488aee25a5d8298e26e8d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design-system\\SKILL.md": {
+    "mtime": 1781523760.2071793,
+    "ast_hash": "0810798ee4a353e6d11509a767e5a6e0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design-system\\references\\component-specs.md": {
+    "mtime": 1781523760.212682,
+    "ast_hash": "800d64833545996f7c61af874ea0c66e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design-system\\references\\states-and-variants.md": {
+    "mtime": 1781523760.2156892,
+    "ast_hash": "7c9ea66af1b4b2df9b1cb585d9d67d84",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-design-system\\references\\tailwind-integration.md": {
+    "mtime": 1781523760.2156892,
+    "ast_hash": "d8cbd2666cd878b35bee5ea2dc25e4e0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-slides\\SKILL.md": {
+    "mtime": 1781523760.2456436,
+    "ast_hash": "a92c2c4ade3184c3c10573349f599c41",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-slides\\references\\copywriting-formulas.md": {
+    "mtime": 1781523760.2466536,
+    "ast_hash": "25ee8ea822b1c8186db79aa794fa246c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-slides\\references\\create.md": {
+    "mtime": 1781523760.2466536,
+    "ast_hash": "477752a5cc080a9ce932b02ba961a0d8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-slides\\references\\html-template.md": {
+    "mtime": 1781523760.2476594,
+    "ast_hash": "f72faaf4f650dfc05550619a42fae258",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-slides\\references\\layout-patterns.md": {
+    "mtime": 1781523760.2488463,
+    "ast_hash": "0cbb0495b234ea4b7182e661570a1879",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-slides\\references\\slide-strategies.md": {
+    "mtime": 1781523760.2488463,
+    "ast_hash": "3356abc0533fe316df905a39c4a3afa0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\LICENSE.txt": {
+    "mtime": 1781523760.2498925,
+    "ast_hash": "0ba5044c64ef53cb0189c9546081e228",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\SKILL.md": {
+    "mtime": 1781523760.2508914,
+    "ast_hash": "d6b1c5a77cf1846a43a5a1b9dd4eace0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\ArsenalSC-OFL.txt": {
+    "mtime": 1781523760.2508914,
+    "ast_hash": "055bd399651c728b58127489b203a607",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\BigShoulders-OFL.txt": {
+    "mtime": 1781523760.255312,
+    "ast_hash": "b0ec6188dddb41bf5044b09a7491debc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\Boldonse-OFL.txt": {
+    "mtime": 1781523760.2573016,
+    "ast_hash": "854766d78df004c93bb082be848947b9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\BricolageGrotesque-OFL.txt": {
+    "mtime": 1781523760.2602997,
+    "ast_hash": "bd05ea51cf13ec198f9133c1f1f64da0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\CrimsonPro-OFL.txt": {
+    "mtime": 1781523760.2648368,
+    "ast_hash": "333ff51d7c275eb19f486ec9abbf21af",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\DMMono-OFL.txt": {
+    "mtime": 1781523760.267376,
+    "ast_hash": "b03164427c6f0defd4796fd3f3fb0cf4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\EricaOne-OFL.txt": {
+    "mtime": 1781523760.2683735,
+    "ast_hash": "9ad51b36a93965acb98cf1c652c60970",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\GeistMono-OFL.txt": {
+    "mtime": 1781523760.2703745,
+    "ast_hash": "f07afc995766b888767e16ae8d119901",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\Gloock-OFL.txt": {
+    "mtime": 1781523760.272917,
+    "ast_hash": "3fcad5713c9b110fddef500d051ac585",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\IBMPlexMono-OFL.txt": {
+    "mtime": 1781523760.2770107,
+    "ast_hash": "992dcb568e1ffac11f740ee2fa1f028b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\InstrumentSans-OFL.txt": {
+    "mtime": 1781523760.2892046,
+    "ast_hash": "030a9e886b4fe2e1720b5db020eca3ad",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\Italiana-OFL.txt": {
+    "mtime": 1781523760.294149,
+    "ast_hash": "4447ac843a769071814ae5cab23693ec",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\JetBrainsMono-OFL.txt": {
+    "mtime": 1781523760.2961538,
+    "ast_hash": "d91d325d953444833285afa3b119e0fa",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\Jura-OFL.txt": {
+    "mtime": 1781523760.302665,
+    "ast_hash": "5aaa855638a6f50828766d1e9c876f4c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\LibreBaskerville-OFL.txt": {
+    "mtime": 1781523760.302665,
+    "ast_hash": "585261c25563d76996884860f128bcf1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\Lora-OFL.txt": {
+    "mtime": 1781523760.3106818,
+    "ast_hash": "65d41d82ac358216fb2707da15c1d3fb",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\NationalPark-OFL.txt": {
+    "mtime": 1781523760.31374,
+    "ast_hash": "367777dbf9fa1d1ef152fd06b5e08fc6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\NothingYouCouldDo-OFL.txt": {
+    "mtime": 1781523760.3153346,
+    "ast_hash": "42a7c035f1ddb3fcda7ddf746519b017",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\Outfit-OFL.txt": {
+    "mtime": 1781523760.3173435,
+    "ast_hash": "af9efd1ed592546b9477763b02d684c1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\PixelifySans-OFL.txt": {
+    "mtime": 1781523760.3203433,
+    "ast_hash": "24ba91e15992e8bbd5a20db081d4d92f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\PoiretOne-OFL.txt": {
+    "mtime": 1781523760.3203433,
+    "ast_hash": "3d4cab0d7b79e053c1a40dab710bfc95",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\RedHatMono-OFL.txt": {
+    "mtime": 1781523760.3233998,
+    "ast_hash": "ef29b840f660a62db32c43d71a7280c0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\Silkscreen-OFL.txt": {
+    "mtime": 1781523760.3248165,
+    "ast_hash": "6bd21d8f9817d19bb012997a9726d968",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\SmoochSans-OFL.txt": {
+    "mtime": 1781523760.3273382,
+    "ast_hash": "79208bd389da9f263bc0b3d79aaaa3f6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\Tektur-OFL.txt": {
+    "mtime": 1781523760.3283665,
+    "ast_hash": "5bf5c4d52bb660a0b29f6ca8d1d5b892",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\WorkSans-OFL.txt": {
+    "mtime": 1781523760.336416,
+    "ast_hash": "e5dd6bfc16fb9c9713dce1e02d877c90",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\canvas-fonts\\YoungSerif-OFL.txt": {
+    "mtime": 1781523760.3384278,
+    "ast_hash": "016f9e9ecf329086639c0e1b542bf9a6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\references\\canvas-design-system.md": {
+    "mtime": 1781523760.3404293,
+    "ast_hash": "31a5d5a6e020a02a32415ad17067da24",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\references\\shadcn-accessibility.md": {
+    "mtime": 1781523760.3404293,
+    "ast_hash": "5158549b94aaae3326b7e7854d51dc06",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\references\\shadcn-components.md": {
+    "mtime": 1781523760.3419528,
+    "ast_hash": "7dfd7e872df6c607a571dbeeb59e1789",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\references\\shadcn-theming.md": {
+    "mtime": 1781523760.342973,
+    "ast_hash": "80597d1759014fe29c7cbee37bc5caf9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\references\\tailwind-customization.md": {
+    "mtime": 1781523760.3434837,
+    "ast_hash": "c2366766ac4d6183eae1fddcc45f3c29",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\references\\tailwind-responsive.md": {
+    "mtime": 1781523760.3434837,
+    "ast_hash": "4bd3c15e0828b65f646e248a4e6c67a8",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\references\\tailwind-utilities.md": {
+    "mtime": 1781523760.3444972,
+    "ast_hash": "b0a93822074b869ebe3c6647acffa733",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\scripts\\requirements.txt": {
+    "mtime": 1781523760.3464959,
+    "ast_hash": "d2f397f72424decd5aca67cc7c28dc4c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ckm-ui-styling\\scripts\\tests\\requirements.txt": {
+    "mtime": 1781523760.3494976,
+    "ast_hash": "d60e024efe9d4a8d1d065ec333260210",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\frontend-design\\LICENSE.txt": {
+    "mtime": 1781523494.216374,
+    "ast_hash": "29256199be2a609aac596980ffc11996",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\frontend-design\\SKILL.md": {
+    "mtime": 1781523494.216374,
+    "ast_hash": "f5c3db69b9c6a00578301dd0cbe90253",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\.claude\\skills\\ui-ux-pro-max\\SKILL.md": {
+    "mtime": 1781523760.352019,
+    "ast_hash": "9e67626a0013e85287078d475bdf105f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\COMPETITOR_ENV_SETUP.md": {
+    "mtime": 1772619431.1792617,
+    "ast_hash": "2aad188892dbcd81c5c3d24e3c69d982",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\COMPETITOR_PHASE1_COMPLETE.md": {
+    "mtime": 1772619431.180262,
+    "ast_hash": "69c3fddff9fc7d064bbe1671150a33e1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\FIRESTORE_SECURITY_RULES.md": {
+    "mtime": 1767121465.137829,
+    "ast_hash": "44a494a934f7b17b6adaac0d4e940811",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\LOGGING.md": {
+    "mtime": 1786279726.4705725,
+    "ast_hash": "f6d42267dfc02ba2a9ac9db22ac74b50",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\employee-user-integration-plan.md": {
+    "mtime": 1772619431.1812625,
+    "ast_hash": "4b28c9f354152199cbb51ec144c7ae9b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\EmployeeManagementPlan.md": {
+    "mtime": 1772619430.960341,
+    "ast_hash": "a7f8f831de04a0f9f8f512721d8b77e7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\ENV_FIX_PLAN.md": {
+    "mtime": 1774142549.2257578,
+    "ast_hash": "50ab0dc6835c8d0309e1dd1f37b9d494",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\invoice_refactor_plan.md": {
+    "mtime": 1773752070.4113817,
+    "ast_hash": "9a1dbbe2d653a9ae698071067293a7d5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\model-consolidate.md": {
+    "mtime": 1773799074.9099183,
+    "ast_hash": "5763cbfb7c8c79b823d142b12019c118",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\PLAN.md": {
+    "mtime": 1767092421.0623817,
+    "ast_hash": "b31b8a9246c3c28e009f63cfc17da97a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\PLANAI.md": {
+    "mtime": 1767294805.585474,
+    "ast_hash": "0afac4b215d4541e783c5549eab87b6f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\progress.md": {
+    "mtime": 1767282939.4874048,
+    "ast_hash": "571dce2c913e5590e2cba6061d24385c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\docs\\archive\\PROJECT.md": {
+    "mtime": 1774221906.8240902,
+    "ast_hash": "2c58157bbb2a840b78b5b042669ee024",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\lib\\constants\\blog\\imagelist.md": {
+    "mtime": 1781913724.5257735,
+    "ast_hash": "73a43c3780fe140df537e4167ab35b67",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\logo-dark.png": {
+    "mtime": 1752256978.4168825,
+    "ast_hash": "680857afe6f185fdd2bd5eb8b36c2b6e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\logo.png": {
+    "mtime": 1752257016.0969293,
+    "ast_hash": "b9888ba485fbdf137aed444da61bcd76",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\og-image.jpg": {
+    "mtime": 1763691880.081895,
+    "ast_hash": "db1433d63e255e10f56e8fefd2280607",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-1-cover.webp": {
+    "mtime": 1781912632.1149309,
+    "ast_hash": "d888698e12252ec912cf6ede4c3eb01e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-1-main.webp": {
+    "mtime": 1781912632.1309965,
+    "ast_hash": "09a33f12d2dbd2f9dfb220294dac9369",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-1-thumb.webp": {
+    "mtime": 1781912632.1470053,
+    "ast_hash": "1a7f3e8303f1a37d4d405931eb273125",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-10-cover.webp": {
+    "mtime": 1781912632.379116,
+    "ast_hash": "c6c3985d7108e16909b00b1fe341d1e0",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-10-main.webp": {
+    "mtime": 1781912632.384572,
+    "ast_hash": "831f7ae2a7254805312d8542e01f59b6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-10-thumb.webp": {
+    "mtime": 1781912632.4021091,
+    "ast_hash": "8d9058b3263debb3e94087370b01de00",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-11-cover.webp": {
+    "mtime": 1781912632.4118445,
+    "ast_hash": "a9c0d6c3909d479208d980512861f672",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-11-main.webp": {
+    "mtime": 1781912632.4158676,
+    "ast_hash": "b3993e536666ad114790d0f86d88eb83",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-11-thumb.webp": {
+    "mtime": 1781912632.4263148,
+    "ast_hash": "0ec619d465b465abb64ce824f51f813b",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-12-cover.webp": {
+    "mtime": 1781912632.4319134,
+    "ast_hash": "4327a2ab77c3a420068620a89fffc5c1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-12-main.webp": {
+    "mtime": 1781912632.4478648,
+    "ast_hash": "19dfde26f46e30ec68f955b8f7d2aa9c",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-12-thumb.webp": {
+    "mtime": 1781912632.4568543,
+    "ast_hash": "5e2e62b3c21b75aa877e0a09b5395660",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-13-cover.webp": {
+    "mtime": 1781912632.4656575,
+    "ast_hash": "51d2b800be862c7cc18fe4277438b837",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-13-main.webp": {
+    "mtime": 1781912632.4741108,
+    "ast_hash": "d88e935874cb4f10784c5272c68ec74a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-13-thumb.webp": {
+    "mtime": 1781912632.479646,
+    "ast_hash": "f3a2e8cd7990fb42a97207748477ab3a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-14-cover.webp": {
+    "mtime": 1781912632.479646,
+    "ast_hash": "b85d1446fc084d9f6587dccc62e8e96e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-14-main.webp": {
+    "mtime": 1781912632.4978402,
+    "ast_hash": "6aa79ec4fc47eb1cc27a97378191ec54",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-14-thumb.webp": {
+    "mtime": 1781912632.5108955,
+    "ast_hash": "108a0a156acac4bc0298db55bdef32a1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-15-cover.webp": {
+    "mtime": 1781912632.5108955,
+    "ast_hash": "338c96eb8f0e012e06cf0b032f040a5d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-15-main.webp": {
+    "mtime": 1781912632.526732,
+    "ast_hash": "251dcc6f4d44f5310853e003dcec71f9",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-15-thumb.webp": {
+    "mtime": 1781912632.53861,
+    "ast_hash": "2339ed416eb9ebcf9e8e1b6cacaad922",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-2-cover.webp": {
+    "mtime": 1781912632.1568384,
+    "ast_hash": "ebc80e35e0cc59f4bb5f3b32d5b6049e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-2-main.webp": {
+    "mtime": 1781912632.1627705,
+    "ast_hash": "fcf2630b9888a0175e76036a368f54de",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-2-thumb.webp": {
+    "mtime": 1781912632.178461,
+    "ast_hash": "b21341ab9f8d29a68f05f78ca1865ee4",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-3-cover.webp": {
+    "mtime": 1781912632.178461,
+    "ast_hash": "8790bdc065813b0af82e24a0deca9f2a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-3-main.webp": {
+    "mtime": 1781912632.1975353,
+    "ast_hash": "aa701b3a5aa0548fb01fc5d0a12b454a",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-3-thumb.webp": {
+    "mtime": 1781912632.207139,
+    "ast_hash": "251845d7e57e606782ec7894d891aa29",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-4-cover.webp": {
+    "mtime": 1781912632.2101252,
+    "ast_hash": "d1d07141223738b72dba855131d7fcfc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-4-main.webp": {
+    "mtime": 1781912632.2261615,
+    "ast_hash": "9012be2015913d3bc1174e3eb2af0bff",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-4-thumb.webp": {
+    "mtime": 1781912632.2261615,
+    "ast_hash": "6195d02b873a1157130fb01f8ff094b6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-5-cover.webp": {
+    "mtime": 1781912632.2419074,
+    "ast_hash": "51d2b800be862c7cc18fe4277438b837",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-5-main.webp": {
+    "mtime": 1781912632.2419074,
+    "ast_hash": "95c7f3e98e14e32bd88f20379fb9d2d5",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-5-thumb.webp": {
+    "mtime": 1781912632.2578475,
+    "ast_hash": "1a7f3e8303f1a37d4d405931eb273125",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-6-cover.webp": {
+    "mtime": 1781912632.2732346,
+    "ast_hash": "e8c7dd9d7fa76da38b4477b5df48bd3f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-6-main.webp": {
+    "mtime": 1781912632.2766428,
+    "ast_hash": "efdb30b91c435fd75f6e9a69f1fd7664",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-6-thumb.webp": {
+    "mtime": 1781912632.2893326,
+    "ast_hash": "108a0a156acac4bc0298db55bdef32a1",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-7-cover.webp": {
+    "mtime": 1781912632.2977066,
+    "ast_hash": "d888698e12252ec912cf6ede4c3eb01e",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-7-main.webp": {
+    "mtime": 1781912632.3115337,
+    "ast_hash": "a8cb84fa48d638bd678a527a82870be3",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-7-thumb.webp": {
+    "mtime": 1781912632.319465,
+    "ast_hash": "a9181feb5a7a912a6fd63456858e23db",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-8-cover.webp": {
+    "mtime": 1781912632.3282392,
+    "ast_hash": "abc5b49726b177f1adc2f31f9f5d72fc",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-8-main.webp": {
+    "mtime": 1781912632.339019,
+    "ast_hash": "0fb74f847b60f84bb21f7ec96cc2d53f",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-8-thumb.webp": {
+    "mtime": 1781912632.3410287,
+    "ast_hash": "ca851d069349d49098375a9bf82f0ca6",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-9-cover.webp": {
+    "mtime": 1781912632.3547583,
+    "ast_hash": "5e0232ddff669e01663ff93d3f7f45e7",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-9-main.webp": {
+    "mtime": 1781912632.356766,
+    "ast_hash": "6fc7d1ec925844ba58385299c06eb29d",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\public\\images\\blog\\blog-9-thumb.webp": {
+    "mtime": 1781912632.3688495,
+    "ast_hash": "02a351ad042768285e5ea67bb2513611",
+    "semantic_hash": ""
+  },
+  "D:\\Excel bees\\Projects\\crm_excelbees\\tests\\fixtures\\images\\valid-avatar.png": {
+    "mtime": 1785780881.5094342,
+    "ast_hash": "e44e7ecfec99356632c13cd3eaa3e250",
+    "semantic_hash": ""
+  }
+}

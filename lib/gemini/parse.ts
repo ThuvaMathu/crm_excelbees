@@ -1,5 +1,6 @@
 import { getGeminiClient } from "./client";
 import { GEMINI_CONFIG } from "./config";
+import { logger } from "@/lib/logger";
 
 interface GenerateOptions {
   prompt: string;
@@ -30,7 +31,12 @@ export async function generateText(opts: GenerateOptions): Promise<string | null
     const result = await model.generateContent(fullPrompt);
     return result.response.text();
   } catch (error) {
-    console.error("[Gemini] Generation failed:", error);
+    logger.error("Gemini generation failed", {
+      module: "ai",
+      action: "generate",
+      metadata: { model: opts.model || GEMINI_CONFIG.textGeneration.model },
+      error,
+    });
     return null;
   }
 }
