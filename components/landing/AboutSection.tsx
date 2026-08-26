@@ -29,18 +29,19 @@ export function AboutSection() {
               Built by a Team That Got Frustrated Too
             </h2>
             <p className="mb-6 text-base leading-relaxed text-muted-foreground">
-              ExcelBees started as a boutique development agency helping Brisbane
-              businesses streamline operations. We ran our own sales pipeline through
-              every major CRM on the market — and were frustrated by the same things
-              every time: bloat, price, and complexity.
+              ExcelBees is a Brisbane-based digital marketing and web design agency.
+              We help Queensland SMBs grow online through SEO and content marketing.
+              RCRM is our internal CRM — built because every platform we tried was
+              too expensive, too complex, or missing Australian-specific features.
+              We decided to share it — and make it permanently free for all ExcelBees clients.
             </p>
 
             {/* Story quote */}
             <div className="mb-8 rounded-xl border-l-4 border-enterprise-amber bg-enterprise-midnight/60 p-5">
               <p className="text-sm leading-relaxed text-foreground italic">
-                "Inspired by exploring Sierra Enterprises and realising existing CRMs were
-                bloated and expensive, we built RCRM for our own needs — then decided other
-                businesses deserved the same lean, powerful tool at an affordable price."
+                "We built RCRM for ourselves as a digital marketing agency managing dozens of
+                client relationships. When it worked, we made it free for all our clients
+                — and opened it to everyone else."
               </p>
             </div>
 
@@ -49,7 +50,7 @@ export function AboutSection() {
               onClick={() => scrollTo("#contact")}
               className="border-enterprise-amber text-enterprise-amber hover:bg-enterprise-amber/10 hover:text-enterprise-amber group"
             >
-              Work With Our Team
+              Claim Your Free Access
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
           </motion.div>
@@ -70,6 +71,7 @@ export function AboutSection() {
                   role={member.role}
                   bio={member.bio}
                   initials={member.initials}
+                  socialLinks={member.socialLinks}
                   index={index}
                 />
               ))}

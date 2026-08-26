@@ -27,7 +27,19 @@ if (missingConfig.length > 0) {
 }
 
 // Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const isNewApp = getApps().length === 0;
+const app = isNewApp ? initializeApp(firebaseConfig) : getApp();
+
+if (missingConfig.length === 0) {
+  logger.info(isNewApp ? "Firebase client SDK initialized" : "Firebase client SDK reused existing app", {
+    module: "firebase",
+    action: "client-init",
+    metadata: {
+      projectId: firebaseConfig.projectId,
+      authDomain: firebaseConfig.authDomain,
+    },
+  });
+}
 
 // Initialize services
 export const auth = getAuth(app);

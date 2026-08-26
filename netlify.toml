@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Netlify's Next.js plugin is auto-installed — no manual [[plugins]] block needed.
+# Pinning it here would opt out of automatic updates.
+# See: https://docs.netlify.com/integrations/frameworks/next-js/overview/

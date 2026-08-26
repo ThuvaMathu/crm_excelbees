@@ -15,7 +15,7 @@ const stats = [
 const chips = [
   "Contacts, Deals & Projects",
   "Quotes & Invoicing (AUD)",
-  "AI Assistant Built-In",
+  "Free for ExcelBees Clients",
 ];
 
 export function HeroSection() {
@@ -79,7 +79,7 @@ export function HeroSection() {
               >
                 <span className="inline-flex items-center gap-2 rounded-full border border-enterprise-amber/30 bg-enterprise-amber/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-enterprise-amber">
                   <span className="h-1.5 w-1.5 rounded-full bg-enterprise-amber animate-pulse" />
-                  Brisbane-Built CRM
+                  By ExcelBees — Free for Our Clients
                 </span>
               </motion.div>
 
@@ -107,9 +107,9 @@ export function HeroSection() {
                   Business Needs
                 </h1>
                 <p className="max-w-lg text-lg leading-relaxed text-muted-foreground">
-                  Stop paying for bloated CRMs. RCRM gives you exactly what
-                  your business needs — no more, no less — at a fraction of
-                  enterprise pricing.
+                  Built by <a href="https://excelbees.com" target="_blank" rel="noopener noreferrer" className="text-enterprise-amber hover:text-amber-400 transition-colors font-medium">ExcelBees</a>, Brisbane's digital marketing agency.
+                  RCRM is our own CRM — made available to everyone, and{" "}
+                  <span className="text-foreground font-medium">always free</span> for ExcelBees clients.
                 </p>
               </div>
 
@@ -149,7 +149,15 @@ export function HeroSection() {
 
               {/* Trust line */}
               <p className="text-xs text-muted-foreground/60">
-                No credit card required &middot; Setup in under a day &middot; Cancel anytime
+                No credit card required &middot; Setup in under a day &middot; Always free for{" "}
+                <a
+                  href="https://excelbees.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-enterprise-amber hover:text-amber-400 transition-colors"
+                >
+                  ExcelBees clients
+                </a>
               </p>
             </motion.div>
 

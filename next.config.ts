@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
         NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     },
 
+    // Prevent pino and pino-pretty from being bundled into Netlify Edge Functions
+    // (middleware runs as an Edge Function — pino uses Node.js APIs unavailable there).
+    serverExternalPackages: ["pino", "pino-pretty"],
+
     experimental: {
         serverActions: {
             bodySizeLimit: '2mb',

@@ -89,37 +89,23 @@ export function ContactSection() {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/email/send", {
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: "excelbees2024@gmail.com",
-          subject: `Demo Request from ${data.name} — ${data.businessType}`,
-          html: `
-            <div style="font-family:sans-serif;max-width:600px">
-              <h2 style="color:#F59E0B">New Demo Request — RCRM</h2>
-              <table style="width:100%;border-collapse:collapse">
-                <tr><td style="padding:8px;font-weight:bold;color:#666">Name</td><td style="padding:8px">${data.name}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;color:#666">Email</td><td style="padding:8px">${data.email}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;color:#666">Business Type</td><td style="padding:8px">${data.businessType}</td></tr>
-              </table>
-              <h3 style="color:#333">Message</h3>
-              <p style="line-height:1.6">${data.message.replace(/\n/g, "<br>")}</p>
-            </div>
-          `,
-        }),
+        body: JSON.stringify(data),
       });
 
-      if (res.ok) {
+      const json = await res.json();
+      if (res.ok && json.success) {
         setSubmitted(true);
         form.reset();
         toast.success("Request sent! We'll reach out within 24 hours.");
         setTimeout(() => setSubmitted(false), 8000);
       } else {
-        toast.error("Something went wrong. Please try again.");
+        toast.error(json.error || "Something went wrong. Please try again.");
       }
     } catch {
-      toast.error("Failed to send. Please try again.");
+      toast.error("Failed to send. Please try email us at info@excelbees.com.au");
     } finally {
       setIsSubmitting(false);
     }

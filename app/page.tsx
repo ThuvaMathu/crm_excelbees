@@ -21,7 +21,7 @@ import { Footer } from "@/components/landing/Footer";
 export const metadata: Metadata = {
   title: "RCRM by ExcelBees — Complete CRM Platform for Australian Businesses",
   description:
-    "Contacts, deals, projects, quotes, invoices, email campaigns & analytics — all in one platform. Affordable, modular CRM built for Australian SMBs. Role-based access, integrated AI, and transparent AUD pricing. Save up to 60% vs Salesforce.",
+    "Contacts, deals, projects, quotes, invoices, email campaigns & analytics — all in one platform. Built by ExcelBees, Brisbane's digital marketing agency. Free for all ExcelBees clients. Role-based access, integrated AI, transparent AUD pricing.",
   keywords: [
     "CRM software Australia",
     "custom CRM Brisbane",
@@ -33,14 +33,17 @@ export const metadata: Metadata = {
     "CRM with invoicing Australia",
     "email campaign CRM Australia",
     "CRM analytics Australia",
+    "ExcelBees CRM",
     "RCRM ExcelBees",
     "role-based CRM",
     "modular CRM",
     "Brisbane CRM software",
+    "Ipswich CRM software",
+    "Queensland small business CRM",
   ],
-  authors: [{ name: "ExcelBees", url: "https://excelbees.com.au" }],
+  authors: [{ name: "ExcelBees", url: "https://excelbees.com" }],
   creator: "ExcelBees",
-  publisher: "ExcelBees",
+  publisher: "ExcelBees Australia",
   robots: {
     index: true,
     follow: true,
@@ -55,11 +58,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_AU",
-    url: "https://excelbees.com.au",
+    url: "https://excelbees.com",
     siteName: "RCRM by ExcelBees",
     title: "RCRM — Complete CRM Platform for Australian Businesses",
     description:
-      "Contacts, deals, projects, quotes, invoices, email campaigns & analytics in one modular platform. Built for Australian SMBs. Integrated AI, role-based access, transparent AUD pricing.",
+      "Built by ExcelBees Brisbane. Contacts, deals, projects, quotes, invoices, email campaigns & analytics in one modular platform. Free for ExcelBees clients. AI-powered, role-based access, transparent AUD pricing.",
     images: [
       {
         url: "/og-image.png",
@@ -73,12 +76,12 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "RCRM — Complete CRM Platform for Australian Businesses",
     description:
-      "Contacts, projects, quotes, invoices & AI — one modular platform for Australian SMBs. Save up to 60% vs Salesforce.",
+      "Built by ExcelBees Brisbane. Contacts, projects, quotes, invoices & AI — one modular platform for Australian SMBs. Free for ExcelBees clients.",
     images: ["/og-image.png"],
     creator: "@excelbees",
   },
   alternates: {
-    canonical: "https://excelbees.com.au",
+    canonical: "https://excelbees.com",
   },
 };
 
@@ -94,25 +97,61 @@ export default function Home() {
             "@graph": [
               {
                 "@type": "Organization",
-                "@id": "https://excelbees.com.au/#organization",
-                name: "ExcelBees",
-                url: "https://excelbees.com.au",
+                "@id": "https://excelbees.com/#organization",
+                name: "ExcelBees Australia",
+                legalName: "ExcelBees Australia",
+                url: "https://excelbees.com",
+                description:
+                  "Brisbane digital marketing agency specialising in web design, SEO, local SEO, and content marketing for Queensland small businesses and startups. Creator of RCRM.",
                 logo: {
                   "@type": "ImageObject",
-                  url: "https://excelbees.com.au/logo.png",
+                  url: "https://excelbees.com/logos/logo.png",
                 },
                 address: {
                   "@type": "PostalAddress",
-                  addressLocality: "Brisbane",
+                  streetAddress: "",
+                  addressLocality: "Redbank",
                   addressRegion: "QLD",
+                  postalCode: "4301",
                   addressCountry: "AU",
                 },
-                contactPoint: {
-                  "@type": "ContactPoint",
-                  contactType: "sales",
-                  email: "excelbees2024@gmail.com",
+                geo: {
+                  "@type": "GeoCoordinates",
+                  latitude: "-27.46980",
+                  longitude: "153.02510",
                 },
-                sameAs: [],
+                contactPoint: [
+                  {
+                    "@type": "ContactPoint",
+                    contactType: "customer support",
+                    email: "info@excelbees.com.au",
+                    telephone: "+61-431-668-645",
+                    areaServed: "AU",
+                    availableLanguage: "English",
+                  },
+                  {
+                    "@type": "ContactPoint",
+                    contactType: "sales",
+                    email: "info@excelbees.com.au",
+                    telephone: "+61-431-668-645",
+                    areaServed: "AU",
+                  },
+                ],
+                sameAs: [
+                  "https://www.facebook.com/Excelbees/",
+                  "https://twitter.com/excelbees",
+                  "https://www.linkedin.com/company/excelbees/",
+                  "https://instagram.com/excel_bees",
+                  "https://excelbees.com",
+                ],
+                identifier: {
+                  "@type": "PropertyValue",
+                  name: "ABN",
+                  value: "39 950 664 967",
+                },
+                areaServed: [
+                  "Brisbane", "Gold Coast", "Ipswich", "Logan Central", "Augustine Heights", "Queensland", "Australia",
+                ],
               },
               {
                 "@type": "SoftwareApplication",
@@ -146,13 +185,6 @@ export default function Home() {
                   "Australian Privacy Act Compliant",
                   "Transparent AUD Pricing",
                 ],
-                aggregateRating: {
-                  "@type": "AggregateRating",
-                  ratingValue: "5",
-                  reviewCount: "3",
-                  bestRating: "5",
-                  worstRating: "1",
-                },
               },
               {
                 "@type": "WebPage",
@@ -232,7 +264,7 @@ export default function Home() {
         <main id="main-content">
           <HeroSection />
           <FeaturesSection />
-          <TestimonialsSection />
+          {/* TestimonialsSection hidden — will be re-enabled once real customer reviews are collected */}
           <AboutSection />
           <BlogSection />
         </main>

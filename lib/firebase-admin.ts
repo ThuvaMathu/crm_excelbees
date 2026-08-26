@@ -44,7 +44,17 @@ export function getAdminApp(): App {
         credential: cert({ projectId, clientEmail, privateKey }),
         storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       });
-      logger.info("Firebase Admin app initialized successfully.", { module: "firebase", action: "admin-init" });
+      // Mask clientEmail: show first 6 chars + domain only (e.g. fireba...@crm-excelbees.iam.gserviceaccount.com)
+      const maskedEmail = clientEmail.replace(/^(.{6})([^@]+)(@.+)$/, "$1...$3");
+      logger.info("Firebase Admin app initialized successfully.", {
+        module: "firebase",
+        action: "admin-init",
+        metadata: {
+          projectId,
+          serviceAccount: maskedEmail,
+          storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        },
+      });
     }
   } catch (error) {
     logger.error("Failed to initialize Firebase Admin app", { module: "firebase", action: "admin-init", error });

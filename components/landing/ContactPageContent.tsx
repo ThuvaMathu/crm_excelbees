@@ -95,37 +95,23 @@ export function ContactPageContent() {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/email/send", {
+      const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: "excelbees2024@gmail.com",
-          subject: `Demo Request from ${data.name} — ${data.businessType}`,
-          html: `
-            <div style="font-family:sans-serif;max-width:600px">
-              <h2 style="color:#F59E0B">New Demo Request — RCRM</h2>
-              <table style="width:100%;border-collapse:collapse">
-                <tr><td style="padding:8px;font-weight:bold;color:#666">Name</td><td style="padding:8px">${data.name}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;color:#666">Email</td><td style="padding:8px">${data.email}</td></tr>
-                <tr><td style="padding:8px;font-weight:bold;color:#666">Business Type</td><td style="padding:8px">${data.businessType}</td></tr>
-              </table>
-              <h3 style="color:#333">Message</h3>
-              <p style="line-height:1.6">${data.message.replace(/\n/g, "<br>")}</p>
-            </div>
-          `,
-        }),
+        body: JSON.stringify(data),
       });
 
-      if (res.ok) {
+      const json = await res.json();
+      if (res.ok && json.success) {
         setSubmitted(true);
         form.reset();
         toast.success("Request sent! We'll reach out within 24 hours.");
         setTimeout(() => setSubmitted(false), 8000);
       } else {
-        toast.error("Something went wrong. Please try again.");
+        toast.error(json.error || "Something went wrong. Please try again.");
       }
     } catch {
-      toast.error("Failed to send. Please try again.");
+      toast.error("Failed to send. Please email us at info@excelbees.com.au");
     } finally {
       setIsSubmitting(false);
     }
@@ -178,9 +164,9 @@ export function ContactPageContent() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 divide-y divide-enterprise-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {[
-              { icon: MapPin, label: "Based In", value: "Brisbane, Queensland, Australia" },
-              { icon: Mail, label: "Email Us", value: "excelbees2024@gmail.com" },
-              { icon: MessageSquare, label: "Response Time", value: "Within 1 business day" },
+              { icon: MapPin, label: "Based In", value: "Redbank, QLD 4301, Australia" },
+              { icon: Mail, label: "Email Us", value: "info@excelbees.com.au", href: "mailto:info@excelbees.com.au" },
+              { icon: MessageSquare, label: "Phone", value: "+61 431 668 645", href: "tel:+61431668645" },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-4 px-6 py-6">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-enterprise-amber/10">
@@ -190,7 +176,16 @@ export function ContactPageContent() {
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {item.label}
                   </p>
-                  <p className="text-sm font-medium text-foreground">{item.value}</p>
+                  {(item as any).href ? (
+                    <a
+                      href={(item as any).href}
+                      className="text-sm font-medium text-enterprise-amber hover:text-amber-400 transition-colors"
+                    >
+                      {item.value}
+                    </a>
+                  ) : (
+                    <p className="text-sm font-medium text-foreground">{item.value}</p>
+                  )}
                 </div>
               </div>
             ))}

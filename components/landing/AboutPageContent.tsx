@@ -78,10 +78,10 @@ const milestones = [
 ];
 
 const stats = [
-  { value: "Brisbane", label: "Proudly built here", icon: MapPin },
+  { value: "Redbank QLD", label: "Proudly built here", icon: MapPin },
   { value: "60%+", label: "Cheaper than enterprise CRMs", icon: TrendingUp },
   { value: "< 1 day", label: "Average setup time", icon: CheckCircle },
-  { value: "100%", label: "Your data, your control", icon: Shield },
+  { value: "Free", label: "Always for ExcelBees clients", icon: Shield },
 ];
 
 export function AboutPageContent() {
@@ -117,15 +117,17 @@ export function AboutPageContent() {
               <span className="text-enterprise-amber">Frustrated Too</span>
             </h1>
             <p className="mb-8 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-              ExcelBees is a Brisbane-based software studio. We started as a boutique
-              development agency helping local businesses streamline operations — and
-              after running our own sales pipeline through every major CRM on the market,
-              we decided to build the one we actually wanted to use.
+              ExcelBees is a Brisbane-based digital marketing and web design agency.
+              We help Queensland SMBs grow online through SEO, local SEO, and content
+              marketing — and we needed a CRM to manage our own client relationships.
+              After trying every major platform, we built RCRM for ourselves. Now we're
+              sharing it with everyone, and it's{" "}
+              <span className="text-enterprise-amber font-medium">always free for ExcelBees clients</span>.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/contact">
                 <Button className="h-12 bg-enterprise-amber px-6 text-sm font-semibold text-black shadow-lg shadow-enterprise-amber/25 transition-all hover:bg-amber-500 hover:-translate-y-0.5 hover:shadow-enterprise-amber/40">
-                  Work With Our Team
+                  Get Your Free Access
                   <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               </Link>
@@ -208,12 +210,20 @@ export function AboutPageContent() {
 
               <blockquote className="mt-8 rounded-xl border-l-4 border-enterprise-amber bg-enterprise-midnight/60 p-5">
                 <p className="text-sm leading-relaxed text-foreground italic">
-                  "Inspired by exploring Sierra Enterprises and realising existing CRMs were
-                  bloated and expensive, we built RCRM for our own needs — then decided other
-                  Australian businesses deserved the same lean, powerful tool at an affordable price."
+                  "We're a digital marketing agency — we manage client relationships every day.
+                  We built RCRM because every CRM we tried was either too expensive, too complex,
+                  or missing features Australian businesses actually need. Now our clients use it for free."
                 </p>
                 <footer className="mt-3 text-xs font-semibold text-enterprise-amber">
-                  — Alex Johnson, Founder & CTO, ExcelBees
+                  — ExcelBees Team, Redbank QLD &middot;{" "}
+                  <a
+                    href="https://excelbees.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-amber-400 transition-colors"
+                  >
+                    excelbees.com
+                  </a>
                 </footer>
               </blockquote>
             </motion.div>
@@ -340,6 +350,7 @@ export function AboutPageContent() {
                 role={member.role}
                 bio={member.bio}
                 initials={member.initials}
+                socialLinks={member.socialLinks}
                 index={index}
               />
             ))}
@@ -401,8 +412,8 @@ export function AboutPageContent() {
                 {[
                   {
                     icon: MapPin,
-                    title: "100% Australian-Based Team",
-                    desc: "Every developer, designer, and support person is based in Brisbane, Queensland.",
+                    title: "Redbank, QLD 4301 — Australia",
+                    desc: "Every developer, designer, and support person is based right here in Queensland.",
                   },
                   {
                     icon: Shield,
@@ -412,12 +423,12 @@ export function AboutPageContent() {
                   {
                     icon: Users,
                     title: "Direct Access to the Team",
-                    desc: "When you email or call, you speak with the people who built the platform.",
+                    desc: "When you email or call, you speak with the people who built the platform. info@excelbees.com.au",
                   },
                   {
                     icon: TrendingUp,
-                    title: "Pricing in AUD",
-                    desc: "Transparent Australian dollar pricing with no currency conversion surprises.",
+                    title: "Free for ExcelBees Clients",
+                    desc: "RCRM is always free for all ExcelBees digital marketing and web design clients. No exceptions.",
                   },
                 ].map((item, i) => (
                   <div

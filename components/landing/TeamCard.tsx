@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Linkedin, Twitter } from "lucide-react";
+import { Linkedin } from "lucide-react";
 
 interface TeamCardProps {
   name: string;
@@ -9,9 +9,13 @@ interface TeamCardProps {
   bio: string;
   initials: string;
   index: number;
+  socialLinks?: {
+    linkedin?: string;
+    twitter?: string;
+  };
 }
 
-export function TeamCard({ name, role, bio, initials, index }: TeamCardProps) {
+export function TeamCard({ name, role, bio, initials, index, socialLinks }: TeamCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -30,20 +34,18 @@ export function TeamCard({ name, role, bio, initials, index }: TeamCardProps) {
         </div>
       </div>
       <p className="mb-4 text-xs leading-relaxed text-muted-foreground">{bio}</p>
-      <div className="flex gap-2">
-        <button
+      {socialLinks?.linkedin && socialLinks.linkedin !== "#" && (
+        <a
+          href={socialLinks.linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
           aria-label={`${name} on LinkedIn`}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-enterprise-amber transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-enterprise-amber transition-colors"
         >
           <Linkedin className="h-3.5 w-3.5" />
-        </button>
-        <button
-          aria-label={`${name} on Twitter`}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:text-enterprise-amber transition-colors"
-        >
-          <Twitter className="h-3.5 w-3.5" />
-        </button>
-      </div>
+          LinkedIn Profile
+        </a>
+      )}
     </motion.div>
   );
 }
