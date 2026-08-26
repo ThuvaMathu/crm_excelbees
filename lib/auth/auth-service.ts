@@ -88,12 +88,21 @@ export async function signInWithGoogle() {
     // additionalUserInfo.isNewUser is true on first Google sign-in
     const isNewUser: boolean =
       (result as any)._tokenResponse?.isNewUser ?? false;
+    logger.info("Google sign-in successful", { module: "auth", action: "sign-in-google", userId: result.user.uid });
     return { user: result.user, isNewUser, error: null };
   } catch (error) {
-    if ((error as { code?: string }).code === "auth/popup-closed-by-user") {
+    const code = (error as { code?: string }).code ?? "unknown";
+    if (code === "auth/popup-closed-by-user") {
       return { user: null, isNewUser: false, error: null }; // user dismissed — silent
     }
-    logger.warn("Google sign-in failed", { module: "auth", action: "sign-in-google", error });
+    // Log the exact Firebase error code — visible in browser console and helps
+    // diagnose auth/unauthorized-domain, auth/popup-blocked, auth/cancelled-popup-request etc.
+    logger.warn("Google sign-in failed", {
+      module: "auth",
+      action: "sign-in-google",
+      metadata: { errorCode: code },
+      error,
+    });
     const message = error instanceof Error ? error.message : String(error);
     return { user: null, isNewUser: false, error: message };
   }
