@@ -28,13 +28,14 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { AITextarea } from "@/components/ui/ai-textarea";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { createDeal } from "@/lib/firestore/deals";
 import { getCompanies } from "@/lib/firestore/companies";
 import { getContacts } from "@/lib/firestore/contacts";
-import { dealSchema, type DealFormData } from "@/lib/validations/deal";
+import { dealSchema, type DealFormData, type DealFormInput } from "@/lib/validations/deal";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgStore } from "@/store/org";
 import type { Company, Contact, DealStage } from "@/types/crm";
 import { toast } from "sonner";
 import { Timestamp } from "firebase/firestore";
@@ -43,6 +44,7 @@ interface CreateDealDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSuccess?: () => void;
+    defaultCompanyId?: string;
 }
 
 const DEAL_STAGES: DealStage[] = [
@@ -54,17 +56,27 @@ const DEAL_STAGES: DealStage[] = [
     "Lost",
 ];
 
+// Form field values may hold a native Date or (when seeded from an existing
+// record) a Firestore Timestamp — both are valid pre-validation input for
+// the coerceTimestamp* schema helpers.
+function toDate(value: Date | { toDate: () => Date }): Date {
+    return value instanceof Date ? value : value.toDate();
+}
+
 export function CreateDealDialog({
     open,
     onOpenChange,
     onSuccess,
+    defaultCompanyId,
 }: CreateDealDialogProps) {
     const { user } = useAuth();
+    const { currentOrg } = useOrgStore();
+    const organizationId = currentOrg?.id;
     const [loading, setLoading] = useState(false);
     const [companies, setCompanies] = useState<Company[]>([]);
     const [contacts, setContacts] = useState<Contact[]>([]);
 
-    const form = useForm<DealFormData>({
+    const form = useForm<DealFormInput, any, DealFormData>({
         resolver: zodResolver(dealSchema),
         defaultValues: {
             title: "",
@@ -72,10 +84,24 @@ export function CreateDealDialog({
             value: 0,
             probability: 50,
             contactIds: [],
+            companyId: defaultCompanyId,
             description: "",
             notes: "",
         },
     });
+
+    const watchedTitle     = form.watch("title");
+    const watchedStage     = form.watch("stage");
+    const watchedValue     = form.watch("value");
+    const watchedCompanyId = form.watch("companyId");
+    const dealContext: Record<string, string> = {};
+    if (watchedTitle)     dealContext["Deal Title"]   = watchedTitle;
+    if (watchedStage)     dealContext["Stage"]        = watchedStage;
+    if (watchedValue)     dealContext["Value"]        = `$${watchedValue.toLocaleString()}`;
+    if (watchedCompanyId) {
+        const c = companies.find(c => c.id === watchedCompanyId);
+        if (c) dealContext["Company"] = c.name;
+    }
 
     useEffect(() => {
         if (open) {
@@ -84,28 +110,26 @@ export function CreateDealDialog({
     }, [open]);
 
     const fetchCompaniesAndContacts = async () => {
-        console.log("Fetching companies and contacts...");
         const [companiesResult, contactsResult] = await Promise.all([
-            getCompanies(),
-            getContacts(),
+            getCompanies(organizationId),
+            getContacts(organizationId),
         ]);
-
-        console.log("Companies result:", companiesResult);
-        console.log("Contacts result:", contactsResult);
 
         if (companiesResult.companies) {
             setCompanies(companiesResult.companies);
-            console.log("Set companies:", companiesResult.companies.length);
         }
         if (contactsResult.contacts) {
             setContacts(contactsResult.contacts);
-            console.log("Set contacts:", contactsResult.contacts.length);
         }
     };
 
     const onSubmit = async (data: DealFormData) => {
         if (!user) {
             toast.error("You must be logged in to create a deal");
+            return;
+        }
+        if (!organizationId) {
+            toast.error("No organization selected");
             return;
         }
 
@@ -131,7 +155,7 @@ export function CreateDealDialog({
             notes: data.notes,
         };
 
-        const { success, error } = await createDeal(dealData, user.uid);
+        const { success, error } = await createDeal(dealData, user.uid, organizationId);
 
         setLoading(false);
 
@@ -254,10 +278,11 @@ export function CreateDealDialog({
                                         <FormControl>
                                             <Input
                                                 type="date"
+                                                min={new Date().toISOString().split("T")[0]}
                                                 {...field}
                                                 value={
                                                     field.value
-                                                        ? new Date(field.value).toISOString().split("T")[0]
+                                                        ? toDate(field.value).toISOString().split("T")[0]
                                                         : ""
                                                 }
                                                 onChange={(e) =>
@@ -305,9 +330,10 @@ export function CreateDealDialog({
                                 <FormItem>
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
-                                        <Textarea
+                                        <AITextarea
                                             placeholder="Brief description of the deal..."
                                             rows={3}
+                                            context={dealContext}
                                             {...field}
                                         />
                                     </FormControl>
@@ -323,9 +349,10 @@ export function CreateDealDialog({
                                 <FormItem>
                                     <FormLabel>Notes</FormLabel>
                                     <FormControl>
-                                        <Textarea
+                                        <AITextarea
                                             placeholder="Additional notes..."
                                             rows={2}
+                                            context={dealContext}
                                             {...field}
                                         />
                                     </FormControl>

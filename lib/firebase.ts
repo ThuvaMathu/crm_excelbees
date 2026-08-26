@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { logger } from "@/lib/logger/client";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,35 +13,37 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Debug: Log Firebase configuration (without sensitive data)
-console.log("🔥 Firebase Initialization:");
-console.log("  - Project ID:", firebaseConfig.projectId || "❌ MISSING");
-console.log("  - Auth Domain:", firebaseConfig.authDomain || "❌ MISSING");
-console.log("  - API Key:", firebaseConfig.apiKey ? "✅ Set" : "❌ MISSING");
-console.log("  - App ID:", firebaseConfig.appId ? "✅ Set" : "❌ MISSING");
-
 // Check if all required config values are present
 const missingConfig = Object.entries(firebaseConfig)
   .filter(([_, value]) => !value)
   .map(([key]) => key);
 
 if (missingConfig.length > 0) {
-  console.error("❌ Missing Firebase configuration:", missingConfig);
-  console.error("Please check your .env.local file!");
+  logger.error("Missing Firebase configuration", {
+    module: "firebase",
+    action: "client-init",
+    metadata: { missingConfig },
+  });
 }
 
 // Initialize Firebase
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-console.log("✅ Firebase app initialized:", app.name);
+const isNewApp = getApps().length === 0;
+const app = isNewApp ? initializeApp(firebaseConfig) : getApp();
+
+if (missingConfig.length === 0) {
+  logger.info(isNewApp ? "Firebase client SDK initialized" : "Firebase client SDK reused existing app", {
+    module: "firebase",
+    action: "client-init",
+    metadata: {
+      projectId: firebaseConfig.projectId,
+      authDomain: firebaseConfig.authDomain,
+    },
+  });
+}
 
 // Initialize services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-
-console.log("✅ Firebase services initialized:");
-console.log("  - Auth:", auth ? "Ready" : "Failed");
-console.log("  - Firestore:", db ? "Ready" : "Failed");
-console.log("  - Storage:", storage ? "Ready" : "Failed");
 
 export default app;

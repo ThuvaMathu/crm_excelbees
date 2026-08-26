@@ -1,0 +1,22 @@
+D:\Excel bees\Projects\crm_excelbees\lib\firestore\projects.ts
+D:\Excel bees\Projects\crm_excelbees\lib\firestore\tasks.ts
+D:\Excel bees\Projects\crm_excelbees\lib\firestore\users.ts
+D:\Excel bees\Projects\crm_excelbees\lib\firestore\utils.ts
+D:\Excel bees\Projects\crm_excelbees\lib\gemini\client.ts
+D:\Excel bees\Projects\crm_excelbees\lib\gemini\config.ts
+D:\Excel bees\Projects\crm_excelbees\lib\gemini\guard.ts
+D:\Excel bees\Projects\crm_excelbees\lib\gemini\parse.ts
+D:\Excel bees\Projects\crm_excelbees\lib\gemini\prompts.ts
+D:\Excel bees\Projects\crm_excelbees\lib\logger.ts
+D:\Excel bees\Projects\crm_excelbees\lib\pdf\invoice-generator copy.ts
+D:\Excel bees\Projects\crm_excelbees\lib\pdf\invoice-generator.ts
+D:\Excel bees\Projects\crm_excelbees\lib\permissions\index.ts
+D:\Excel bees\Projects\crm_excelbees\lib\rate-limit.ts
+D:\Excel bees\Projects\crm_excelbees\lib\redis.ts
+D:\Excel bees\Projects\crm_excelbees\lib\services\project-financials.ts
+D:\Excel bees\Projects\crm_excelbees\lib\storage\attachments.ts
+D:\Excel bees\Projects\crm_excelbees\lib\storage\upload.ts
+D:\Excel bees\Projects\crm_excelbees\lib\storage\users.ts
+D:\Excel bees\Projects\crm_excelbees\lib\utils.ts
+D:\Excel bees\Projects\crm_excelbees\lib\validations\auth.ts
+D:\Excel bees\Projects\crm_excelbees\lib\validations\company.ts

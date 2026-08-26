@@ -1,217 +1,153 @@
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  QueryConstraint,
+  collection, doc, getDoc, getDocs, addDoc, updateDoc,
+  query, where, orderBy, Timestamp, QueryConstraint,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { redis } from "../redis";
+import { companySchema } from "../validations/company";
+import { hasPermission, canEditRecord } from "../auth/permission-utils";
+import { sanitizeData } from "./utils";
 import type { Company, CompanyInput, CompanyFilters, Address } from "@/types/crm";
 
 const COLLECTION_NAME = "companies";
 
-// Create a new company
-export async function createCompany(data: CompanyInput, userId: string): Promise<{
-  success: boolean;
-  id: string | null;
-  error: string | null;
+function orgCacheKey(orgId: string, suffix: string) { return `companies:${orgId}:${suffix}`; }
+function cacheKey(orgId: string | undefined, suffix: string) {
+  return orgId ? orgCacheKey(orgId, suffix) : "companies:list:all";
+}
+
+export async function createCompany(data: CompanyInput, userId: string, organizationId: string): Promise<{
+  success: boolean; id: string | null; error: string | null;
 }> {
   try {
-    const companyData = {
-      ...data,
-      ownerId: userId,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    };
+    if (!organizationId) {
+      return { success: false, id: null, error: "organizationId is required to create a company" };
+    }
+    const permCheck = await hasPermission(userId, organizationId, "companies", "create");
+    if (!permCheck.allowed) {
+      return { success: false, id: null, error: permCheck.reason || "You do not have permission to create companies" };
+    }
+    const parsed = companySchema.safeParse(data);
+    if (!parsed.success) {
+      return { success: false, id: null, error: parsed.error.issues.map((i) => i.message).join(", ") };
+    }
 
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), companyData);
-    
-    return {
-      success: true,
-      id: docRef.id,
-      error: null,
-    };
+    const companyData: any = { ...data, organizationId, ownerId: userId, createdAt: Timestamp.now(), updatedAt: Timestamp.now() };
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), sanitizeData(companyData));
+    await redis.del(orgCacheKey(organizationId, "list:all"));
+    if (userId) await redis.del(`dashboard:stats:${organizationId}:${userId}`);
+    return { success: true, id: docRef.id, error: null };
   } catch (error: any) {
-    return {
-      success: false,
-      id: null,
-      error: error.message,
-    };
+    return { success: false, id: null, error: error.message };
   }
 }
 
-// Get all companies with optional filters
-export async function getCompanies(filters?: CompanyFilters): Promise<{
-  companies: Company[];
-  error: string | null;
+export async function getCompanies(organizationId?: string | CompanyFilters, filters?: CompanyFilters): Promise<{
+  companies: Company[]; error: string | null;
 }> {
+  if (typeof organizationId === "object") { filters = organizationId as any; organizationId = undefined; }
   try {
-    console.log("Fetching companies with filters:", filters);
     const constraints: QueryConstraint[] = [];
+    if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+    if (filters?.industry) constraints.push(where("industry", "==", filters.industry));
+    if (filters?.size) constraints.push(where("size", "==", filters.size));
+    if (filters?.ownerId) constraints.push(where("ownerId", "==", filters.ownerId));
+    if (constraints.length > 0) constraints.push(orderBy("createdAt", "desc"));
 
-    // Apply filters
-    if (filters?.industry) {
-      constraints.push(where("industry", "==", filters.industry));
-    }
-    if (filters?.size) {
-      constraints.push(where("size", "==", filters.size));
-    }
-    if (filters?.ownerId) {
-      constraints.push(where("ownerId", "==", filters.ownerId));
+    const q = query(collection(db, COLLECTION_NAME), ...constraints);
+    const isUnfiltered = !filters || Object.keys(filters).length === 0 || (Object.keys(filters).length === 1 && filters.search === "");
+    const key = cacheKey(organizationId, "list:all");
+
+    if (isUnfiltered) {
+      const cached = await redis.get<Company[]>(key);
+      if (cached) {
+        const hydrated = cached.map((c: any) => ({
+          ...c,
+          createdAt: c.createdAt ? new Timestamp(c.createdAt.seconds || 0, c.createdAt.nanoseconds || 0) : null,
+          updatedAt: c.updatedAt ? new Timestamp(c.updatedAt.seconds || 0, c.updatedAt.nanoseconds || 0) : null,
+        }));
+        return { companies: hydrated, error: null };
+      }
     }
 
-    // Only add ordering if we have filters (to avoid index requirements)
-    if (constraints.length > 0) {
-      constraints.push(orderBy("createdAt", "desc"));
-    }
-
-    const q = constraints.length > 0
-      ? query(collection(db, COLLECTION_NAME), ...constraints)
-      : collection(db, COLLECTION_NAME);
-      
     const querySnapshot = await getDocs(q);
-    console.log("Companies fetched:", querySnapshot.size);
-
     const companies: Company[] = [];
     querySnapshot.forEach((doc) => {
-      companies.push({ id: doc.id, ...doc.data() } as Company);
+      const data = doc.data();
+      if (data.isDeleted) return;
+      companies.push({ id: doc.id, ...data } as Company);
     });
+    if (companies.length > 0 && isUnfiltered) await redis.set(key, companies, { ex: 300 });
 
-    // Sort by createdAt on client side
-    companies.sort((a, b) => {
-      const aTime = a.createdAt?.toMillis?.() || 0;
-      const bTime = b.createdAt?.toMillis?.() || 0;
-      return bTime - aTime;
-    });
+    companies.sort((a, b) => { const aT = a.createdAt?.toMillis?.() || 0; const bT = b.createdAt?.toMillis?.() || 0; return bT - aT; });
 
-    // Apply client-side search filter if provided
-    let filteredCompanies = companies;
+    let filtered = companies;
     if (filters?.search) {
-      const searchLower = filters.search.toLowerCase();
-      filteredCompanies = companies.filter(
-        (company) =>
-          company.name.toLowerCase().includes(searchLower) ||
-          company.domain?.toLowerCase().includes(searchLower) ||
-          company.industry?.toLowerCase().includes(searchLower)
+      const s = filters.search.toLowerCase();
+      filtered = companies.filter((c) =>
+        c.name?.toLowerCase().includes(s) || c.domain?.toLowerCase().includes(s) ||
+        c.industry?.toLowerCase().includes(s) || c.email?.toLowerCase().includes(s) ||
+        c.phone?.toLowerCase().includes(s)
       );
     }
-
-    return {
-      companies: filteredCompanies,
-      error: null,
-    };
+    return { companies: filtered, error: null };
   } catch (error: any) {
-    console.error("Error in getCompanies:", error);
-    return {
-      companies: [],
-      error: error.message,
-    };
+    return { companies: [], error: error.message };
   }
 }
 
-// Get a single company by ID
-export async function getCompany(id: string): Promise<{
-  company: Company | null;
-  error: string | null;
-}> {
+export async function getCompany(id: string): Promise<{ company: Company | null; error: string | null }> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
     const docSnap = await getDoc(docRef);
+    if (docSnap.exists() && !docSnap.data().isDeleted) return { company: { id: docSnap.id, ...docSnap.data() } as Company, error: null };
+    return { company: null, error: "Company not found" };
+  } catch (error: any) { return { company: null, error: error.message }; }
+}
 
-    if (docSnap.exists()) {
-      return {
-        company: { id: docSnap.id, ...docSnap.data() } as Company,
-        error: null,
-      };
-    } else {
-      return {
-        company: null,
-        error: "Company not found",
-      };
+export async function updateCompany(id: string, data: Partial<CompanyInput>, userId: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Company not found" };
+    const existing = docSnap.data();
+    const permCheck = await canEditRecord(userId, existing.organizationId, "companies", existing.ownerId);
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to edit this company" };
     }
-  } catch (error: any) {
-    return {
-      company: null,
-      error: error.message,
-    };
-  }
+    await updateDoc(docRef, sanitizeData({ ...data, updatedAt: Timestamp.now() }));
+    if (existing.organizationId) await redis.del(orgCacheKey(existing.organizationId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Update a company
-export async function updateCompany(id: string, data: Partial<CompanyInput>): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+// Soft delete: marks the company as deleted rather than removing the
+// document, preserving referential integrity and allowing recovery.
+export async function deleteCompany(id: string, userId: string): Promise<{ success: boolean; error: string | null }> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, {
-      ...data,
-      updatedAt: Timestamp.now(),
-    });
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    const docSnap = await getDoc(docRef);
+    if (!docSnap.exists()) return { success: false, error: "Company not found" };
+    const existing = docSnap.data();
+    const permCheck = await hasPermission(userId, existing.organizationId, "companies", "delete");
+    if (!permCheck.allowed) {
+      return { success: false, error: permCheck.reason || "You do not have permission to delete this company" };
+    }
+    const orgId = existing.organizationId;
+    await updateDoc(docRef, { isDeleted: true, deletedAt: Timestamp.now(), updatedAt: Timestamp.now() });
+    if (orgId) await redis.del(orgCacheKey(orgId, "list:all"));
+    return { success: true, error: null };
+  } catch (error: any) { return { success: false, error: error.message }; }
 }
 
-// Delete a company
-export async function deleteCompany(id: string): Promise<{
-  success: boolean;
-  error: string | null;
-}> {
+export async function getCompanyContacts(organizationId: string | undefined, companyId: string) {
   try {
-    const docRef = doc(db, COLLECTION_NAME, id);
-    await deleteDoc(docRef);
-
-    return {
-      success: true,
-      error: null,
-    };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
-}
-
-// Get contacts for a company
-export async function getCompanyContacts(companyId: string) {
-  try {
-    const q = query(
-      collection(db, "contacts"),
-      where("companyId", "==", companyId)
-    );
-
+    const constraints: any[] = [where("companyId", "==", companyId)];
+    if (organizationId) constraints.push(where("organizationId", "==", organizationId));
+    const q = query(collection(db, "contacts"), ...constraints);
     const querySnapshot = await getDocs(q);
     const contacts: any[] = [];
-
-    querySnapshot.forEach((doc) => {
-      contacts.push({ id: doc.id, ...doc.data() });
-    });
-
-    return {
-      contacts,
-      error: null,
-    };
-  } catch (error: any) {
-    return {
-      contacts: [],
-      error: error.message,
-    };
-  }
+    querySnapshot.forEach((doc) => { contacts.push({ id: doc.id, ...doc.data() }); });
+    return { contacts, error: null };
+  } catch (error: any) { return { contacts: [], error: error.message }; }
 }

@@ -1,0 +1,454 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================================
+    // HELPER FUNCTIONS
+    // ============================================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ============================================================================
+    // MULTI-TENANT: Check organization membership
+    // Member doc ID is composed as "{orgId}_{userId}" for O(1) lookup.
+    // ============================================================================
+
+    function getMemberDoc(orgId) {
+      return get(/databases/$(database)/documents/organization_members/$(orgId + "_" + request.auth.uid));
+    }
+
+    function isMemberOf(orgId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/organization_members/$(orgId + "_" + request.auth.uid)) &&
+        getMemberDoc(orgId).data.status == "active";
+    }
+
+    function getOrgRole(orgId) {
+      return getMemberDoc(orgId).data.role;
+    }
+
+    function isOrgAdmin(orgId) {
+      return isMemberOf(orgId) && getOrgRole(orgId) == "admin";
+    }
+
+    function isOrgManager(orgId) {
+      return isMemberOf(orgId) && (getOrgRole(orgId) == "manager" || getOrgRole(orgId) == "admin");
+    }
+
+    function isOrgMember(orgId) {
+      return isMemberOf(orgId);
+    }
+
+    // Validate that an existing document's organizationId matches and user is a member
+    function belongsToOrg(orgId) {
+      return isAuthenticated() &&
+        resource.data.organizationId == orgId &&
+        isMemberOf(orgId);
+    }
+
+    // Validate that an incoming document's organizationId is set and user is a member
+    function incomingBelongsToOrg(orgId) {
+      return isAuthenticated() &&
+        request.resource.data.organizationId == orgId &&
+        isMemberOf(orgId);
+    }
+
+    // Ensure organizationId cannot be changed after creation
+    function orgIdUnchanged() {
+      return request.resource.data.organizationId == resource.data.organizationId;
+    }
+
+    // Enforce ownerId integrity: creator must be the authenticated user
+    function ownerIsCurrentUser() {
+      return request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // True if the current user owns the existing record
+    function isRecordOwner() {
+      return resource.data.ownerId == request.auth.uid;
+    }
+
+    // ============================================================================
+    // GRANULAR CUSTOM PERMISSIONS
+    // organization_members/{orgId}_{uid}.permissions holds each member's actual
+    // UserPermissions (types/crm.ts) — seeded from ROLE_DEFAULTS[role] at
+    // creation, then freely overridable per-user by an admin via
+    // MemberPermissionsModal (any flag, for any role, including granting a
+    // "team" member editAll/delete on a module). These flags are therefore the
+    // SOLE authority for module CRUD access — role (isOrgManager/isOrgAdmin)
+    // only matters for the org-management surface (organization_members,
+    // organizations, teams, quotes — modules with no ModulePermission entry).
+    // Do not AND role checks on top of these; that would silently ignore a
+    // legitimate admin-granted override.
+    //
+    // Fail-open when the field/key is absent (hypothetically malformed data —
+    // every member doc the app creates always has a full permissions map, via
+    // addOrganizationMember / updateMemberPermissionsAction): absent data means
+    // "nothing configured", so we don't lock out access over a schema gap.
+    function hasCustomPermission(orgId, module, action) {
+      let member = getMemberDoc(orgId).data;
+      return !("permissions" in member) ||
+             !(module in member.permissions) ||
+             !(action in member.permissions[module]) ||
+             member.permissions[module][action] == true;
+    }
+
+    // Read is allowed unless the caller's custom permissions explicitly
+    // disable `read` for this module (e.g. team member with invoices.read = false).
+    function canReadModule(orgId, module) {
+      return hasCustomPermission(orgId, module, "read");
+    }
+
+    // Create is allowed unless custom permissions explicitly disable `create`.
+    function canCreateModule(orgId, module) {
+      return hasCustomPermission(orgId, module, "create");
+    }
+
+    // Edit is allowed if: caller owns the record and has `edit`, OR caller has
+    // `editAll` (which, per the type model, is a blanket "any record" grant —
+    // not itself gated by role, since it can be granted to any role).
+    function canEditRecordWithPerms(orgId, module) {
+      return (isRecordOwner() && hasCustomPermission(orgId, module, "edit")) ||
+             hasCustomPermission(orgId, module, "editAll");
+    }
+
+    // Delete is a single flat capability per module (no own-vs-all distinction
+    // in the type model) — governed purely by the `delete` flag.
+    function canDeleteRecordWithPerms(orgId, module) {
+      return hasCustomPermission(orgId, module, "delete");
+    }
+
+    // ============================================================================
+    // LEGACY USER HELPERS (kept for backwards compat during migration)
+    // ============================================================================
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'admin';
+    }
+
+    function isManager() {
+      return isAuthenticated() && (getUserData().role == 'manager' || getUserData().role == 'admin');
+    }
+
+    function isApproved() {
+      let data = getUserData();
+      return isAuthenticated() && (
+        data.role == 'admin' ||
+        data.role == 'manager' ||
+        (data.isApproved == true && data.isActive != false)
+      );
+    }
+
+    // ============================================================================
+    // ORGANIZATIONS COLLECTION
+    // ============================================================================
+
+    match /organizations/{orgId} {
+      // Any authenticated user can read org metadata (needed for slug uniqueness
+      // check during creation and for the org picker listing).
+      allow read: if isAuthenticated();
+
+      // Any authenticated user can create an org (they become owner+admin via the app)
+      allow create: if isAuthenticated();
+
+      // Only org admins can update org metadata
+      allow update: if isOrgAdmin(orgId);
+
+      // Only org admins can delete
+      allow delete: if isOrgAdmin(orgId);
+    }
+
+    // ============================================================================
+    // ORGANIZATION MEMBERS COLLECTION
+    // Doc ID format: "{orgId}_{userId}"
+    // ============================================================================
+
+    match /organization_members/{memberId} {
+      // Users can read their own member docs (needed for getUserOrganizations).
+      // Members can also read the member list of their org (for users/teams pages).
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isMemberOf(resource.data.organizationId)
+      );
+
+      // Allow creation by org admins or self-create (for onboarding flow)
+      allow create: if isAuthenticated() && (
+        isOrgAdmin(request.resource.data.organizationId) ||
+        request.resource.data.userId == request.auth.uid
+      );
+
+      // Only org admin can update roles/permissions; members can update own non-sensitive fields
+      allow update: if isAuthenticated() && (
+        isOrgAdmin(resource.data.organizationId) ||
+        (resource.data.userId == request.auth.uid &&
+          !request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasAny(['role', 'permissions', 'status', 'organizationId', 'userId']))
+      );
+
+      allow delete: if isOrgAdmin(resource.data.organizationId);
+    }
+
+    // ============================================================================
+    // USERS COLLECTION (global — kept for auth profile)
+    // ============================================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isManager();
+
+      // Self-signup: any authenticated user may create their own profile document
+      // once (doc must not exist yet). Admin-created accounts are also allowed.
+      allow create: if (
+        isAuthenticated() &&
+        isOwner(userId) &&
+        !exists(/databases/$(database)/documents/users/$(userId))
+      ) || (isAuthenticated() && isAdmin());
+
+      allow update: if
+        isAdmin() ||
+        (isManager() &&
+          isOwner(userId) == false &&
+          resource.data.role == 'team' &&
+          !request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasAny(['role', 'isApproved', 'isActive', 'permissions', 'createdBy'])) ||
+        (isOwner(userId) &&
+          !request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasAny(['role', 'isApproved', 'isActive', 'permissions', 'createdBy'])) ||
+        (isOwner(userId) &&
+          request.resource.data.diff(resource.data)
+            .affectedKeys()
+            .hasOnly(['isFirstLogin', 'passwordChangedAt', 'updatedAt', 'lastLoginAt']) &&
+          request.resource.data.isFirstLogin == false);
+
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================================
+    // CRM CORE COLLECTIONS
+    // All require org membership + organizationId match.
+    // Create: must be an active member and set ownerId to themselves.
+    // Update: manager+ can edit any record; team members can only edit their own.
+    // Delete: manager+ only (admins also always included via isOrgManager).
+    // ============================================================================
+
+    match /leads/{leadId} {
+      allow read:   if belongsToOrg(resource.data.organizationId)
+                    && canReadModule(resource.data.organizationId, "leads");
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId)
+                    && ownerIsCurrentUser()
+                    && canCreateModule(request.resource.data.organizationId, "leads");
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && canEditRecordWithPerms(resource.data.organizationId, "leads")
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && canDeleteRecordWithPerms(resource.data.organizationId, "leads");
+    }
+
+    match /contacts/{contactId} {
+      allow read:   if belongsToOrg(resource.data.organizationId)
+                    && canReadModule(resource.data.organizationId, "contacts");
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId)
+                    && ownerIsCurrentUser()
+                    && canCreateModule(request.resource.data.organizationId, "contacts");
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && canEditRecordWithPerms(resource.data.organizationId, "contacts")
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && canDeleteRecordWithPerms(resource.data.organizationId, "contacts");
+    }
+
+    match /companies/{companyId} {
+      allow read:   if belongsToOrg(resource.data.organizationId)
+                    && canReadModule(resource.data.organizationId, "companies");
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId)
+                    && ownerIsCurrentUser()
+                    && canCreateModule(request.resource.data.organizationId, "companies");
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && canEditRecordWithPerms(resource.data.organizationId, "companies")
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && canDeleteRecordWithPerms(resource.data.organizationId, "companies");
+    }
+
+    match /deals/{dealId} {
+      allow read:   if belongsToOrg(resource.data.organizationId)
+                    && canReadModule(resource.data.organizationId, "deals");
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId)
+                    && ownerIsCurrentUser()
+                    && canCreateModule(request.resource.data.organizationId, "deals");
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && canEditRecordWithPerms(resource.data.organizationId, "deals")
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && canDeleteRecordWithPerms(resource.data.organizationId, "deals");
+    }
+
+    match /invoices/{invoiceId} {
+      // Team role has no invoice access at all per ROLE_DEFAULTS
+      // (types/crm.ts) and CRM-UseCase.md §2.2 — team's default `read` flag is
+      // false, enforced the same way as every other module (canReadModule).
+      allow read:   if belongsToOrg(resource.data.organizationId)
+                    && canReadModule(resource.data.organizationId, "invoices");
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId)
+                    && ownerIsCurrentUser()
+                    && canCreateModule(request.resource.data.organizationId, "invoices");
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && canEditRecordWithPerms(resource.data.organizationId, "invoices")
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && canDeleteRecordWithPerms(resource.data.organizationId, "invoices");
+    }
+
+    match /activities/{activityId} {
+      allow read:   if belongsToOrg(resource.data.organizationId);
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId);
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && (isOrgManager(resource.data.organizationId) ||
+                        resource.data.performedBy == request.auth.uid)
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && (isOrgAdmin(resource.data.organizationId) ||
+                        resource.data.performedBy == request.auth.uid);
+    }
+
+    match /emails/{emailId} {
+      allow read:   if belongsToOrg(resource.data.organizationId);
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId);
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && (isOrgManager(resource.data.organizationId) ||
+                        resource.data.userId == request.auth.uid)
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && (isOrgAdmin(resource.data.organizationId) ||
+                        resource.data.userId == request.auth.uid);
+    }
+
+    match /emailTemplates/{templateId} {
+      // Legacy templates may not have organizationId — allow read if authenticated
+      // and either org-scoped or globally shared (isShared == true or no orgId yet).
+      allow read: if isAuthenticated() && (
+        !("organizationId" in resource.data) ||
+        resource.data.organizationId == null ||
+        belongsToOrg(resource.data.organizationId)
+      );
+      allow create: if isAuthenticated() &&
+        incomingBelongsToOrg(request.resource.data.organizationId);
+      allow update, delete: if isAuthenticated() && (
+        !("organizationId" in resource.data) ||
+        resource.data.organizationId == null ||
+        (belongsToOrg(resource.data.organizationId) &&
+         isOrgManager(resource.data.organizationId))
+      );
+    }
+
+    match /projects/{projectId} {
+      allow read:   if belongsToOrg(resource.data.organizationId)
+                    && canReadModule(resource.data.organizationId, "projects");
+      // Team role's default `create` flag is false per ROLE_DEFAULTS
+      // (types/crm.ts) and CRM-UseCase.md §11 — enforced via canCreateModule,
+      // same as every other module (an admin can still override per-user).
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId)
+                    && ownerIsCurrentUser()
+                    && canCreateModule(request.resource.data.organizationId, "projects");
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && canEditRecordWithPerms(resource.data.organizationId, "projects")
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && canDeleteRecordWithPerms(resource.data.organizationId, "projects");
+    }
+
+    match /tasks/{taskId} {
+      allow read:   if belongsToOrg(resource.data.organizationId)
+                    && canReadModule(resource.data.organizationId, "tasks");
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId)
+                    && ownerIsCurrentUser()
+                    && canCreateModule(request.resource.data.organizationId, "tasks");
+      // Assignees may always update task status/fields regardless of the
+      // edit/editAll flags — assignment itself is the authorization signal,
+      // matching the app's task-detail UI (updateTaskStatus is available to
+      // whoever the task is assigned to).
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && (canEditRecordWithPerms(resource.data.organizationId, "tasks") ||
+                        resource.data.assigneeId == request.auth.uid)
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && canDeleteRecordWithPerms(resource.data.organizationId, "tasks");
+    }
+
+    match /notes/{noteId} {
+      allow read:   if belongsToOrg(resource.data.organizationId);
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId)
+                    && ownerIsCurrentUser();
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && (isOrgManager(resource.data.organizationId) ||
+                        resource.data.ownerId == request.auth.uid)
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && (isOrgAdmin(resource.data.organizationId) ||
+                        resource.data.ownerId == request.auth.uid);
+    }
+
+    match /quotes/{quoteId} {
+      allow read:   if belongsToOrg(resource.data.organizationId);
+      allow create: if incomingBelongsToOrg(request.resource.data.organizationId)
+                    && isOrgManager(request.resource.data.organizationId)
+                    && ownerIsCurrentUser();
+      allow update: if belongsToOrg(resource.data.organizationId)
+                    && isOrgManager(resource.data.organizationId)
+                    && orgIdUnchanged();
+      allow delete: if belongsToOrg(resource.data.organizationId)
+                    && isOrgAdmin(resource.data.organizationId);
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        isMemberOf(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        isMemberOf(request.resource.data.organizationId);
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        orgIdUnchanged();
+      allow delete: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid ||
+          isOrgAdmin(resource.data.organizationId));
+    }
+
+    match /audit_logs/{logId} {
+      // Only org admins can read audit logs
+      allow read: if isAuthenticated() &&
+        isOrgAdmin(resource.data.organizationId);
+      allow create: if isAuthenticated() &&
+        isMemberOf(request.resource.data.organizationId);
+      // Immutable — no updates or deletes
+      allow update, delete: if false;
+    }
+
+    match /teams/{teamId} {
+      allow read:   if isMemberOf(resource.data.organizationId);
+      allow create: if isOrgManager(request.resource.data.organizationId);
+      allow update: if isOrgManager(resource.data.organizationId) && orgIdUnchanged();
+      allow delete: if isOrgAdmin(resource.data.organizationId);
+    }
+
+    // Org invite tokens — token itself is the secret, so public read is safe.
+    // Writes go through Admin SDK server actions only.
+    match /org_invites/{token} {
+      allow read:                if true;
+      allow create, update, delete: if false;
+    }
+
+  }
+}

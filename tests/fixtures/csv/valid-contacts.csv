@@ -1,0 +1,3 @@
+firstName,lastName,email,phone,companyName,jobTitle
+E2E,CsvImportOne,e2e.csv.one@playwright.test,+15551230001,CSV Import Co,Manager
+E2E,CsvImportTwo,e2e.csv.two@playwright.test,+15551230002,CSV Import Co,Analyst

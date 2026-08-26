@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE/Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  /* Chrome/Safari/Opera */
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -10,58 +23,58 @@
     --card-foreground: 222.2 47.4% 11.2%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
-    /* Excel Bees Amber/Orange */
+    /* Enterprise Amber - True Amber/Yellow */
     --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
-    /* Deep Blue-Gray */
-    --secondary: 217 33% 17%;
+    /* Enterprise Midnight Blue */
+    --secondary: 215 25% 9%;
     --secondary-foreground: 0 0% 100%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    /* Orange Accent */
-    --accent: 24 95% 53%;
+    /* Amber Accent */
+    --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 38 92% 50%;
+    --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-    --chart-1: 38 92% 50%;
-    --chart-2: 24 95% 53%;
-    --chart-3: 217 33% 17%;
-    --chart-4: 142 76% 36%;
-    --chart-5: 0 84% 60%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 340 75% 55%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 160 60% 45%;
   }
 
   .dark {
-    /* Deep Blue-Gray Background */
-    --background: 222 47% 11%;
+    /* Enterprise Midnight Background */
+    --background: 215 25% 9%;
     --foreground: 210 40% 98%;
-    --card: 217 33% 17%;
+    --card: 215 25% 12%;
     --card-foreground: 210 40% 98%;
-    --popover: 217 33% 17%;
+    --popover: 215 25% 12%;
     --popover-foreground: 210 40% 98%;
-    /* Amber/Orange Primary */
+    /* Enterprise Amber Primary */
     --primary: 38 92% 50%;
     --primary-foreground: 0 0% 100%;
-    /* Darker Blue-Gray */
-    --secondary: 222 47% 11%;
+    /* Enterprise Slate */
+    --secondary: 215 25% 9%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20.2% 65.1%;
-    /* Orange Accent */
-    --accent: 24 95% 53%;
+    --muted: 215 20% 20%;
+    --muted-foreground: 215 15% 65%;
+    /* Amber Accent */
+    --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    --border: 215 20% 25%;
+    --input: 215 20% 20%;
     --ring: 38 92% 50%;
     --chart-1: 38 92% 50%;
-    --chart-2: 24 95% 53%;
+    --chart-2: 25 95% 53%;
     --chart-3: 142 76% 36%;
-    --chart-4: 217 91% 60%;
+    --chart-4: 215 91% 60%;
     --chart-5: 0 84% 60%;
   }
 }
@@ -70,7 +83,207 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Dark mode input borders for better visibility */
+  .dark input[type="text"],
+  .dark input[type="email"],
+  .dark input[type="number"],
+  .dark input[type="date"],
+  .dark input[type="search"],
+  .dark textarea,
+  .dark select {
+    @apply border-slate-600 bg-slate-800/50;
+  }
+
+  .dark input[type="text"]:focus,
+  .dark input[type="email"]:focus,
+  .dark input[type="number"]:focus,
+  .dark input[type="date"]:focus,
+  .dark input[type="search"]:focus,
+  .dark textarea:focus,
+  .dark select:focus {
+    @apply border-primary ring-1 ring-primary/50;
+  }
+}
+
+/* React Big Calendar Overrides */
+@layer components {
+  .rbc-calendar {
+    @apply font-sans text-foreground p-2;
+  }
+
+  /* Header & Grid Borders */
+  .rbc-header,
+  .rbc-month-view,
+  .rbc-time-view,
+  .rbc-agenda-view,
+  .rbc-month-row,
+  .rbc-day-bg,
+  .rbc-time-header-content {
+    @apply border-border;
+  }
+
+  .rbc-header {
+    @apply p-3 font-semibold text-xs uppercase tracking-wider text-muted-foreground bg-muted/40 border-b border-border;
+  }
+
+  .rbc-header+.rbc-header {
+    @apply border-l border-border;
+  }
+
+  /* Month View Cells */
+  .rbc-day-bg+.rbc-day-bg {
+    @apply border-l border-border;
+  }
+
+  .rbc-month-row+.rbc-month-row {
+    @apply border-t border-border;
+  }
+
+  .rbc-date-cell {
+    @apply p-2 text-sm text-muted-foreground font-medium transition-colors;
+    padding-right: 8px;
+    /* Alignment fix */
+  }
+
+  .rbc-off-range-bg {
+    @apply bg-muted/20;
+    /* Subtle distinction for off-month dates */
+  }
+
+  /* Today Highlight */
+  .rbc-today {
+    @apply bg-primary/10;
+    /* Low opacity primary for today background */
+  }
+
+  .rbc-now {
+    @apply text-primary font-bold;
+  }
+
+  /* Events */
+  .rbc-event {
+    @apply rounded-md shadow-sm border-0 transition-opacity hover:opacity-90 focus:ring-2 focus:ring-primary focus:ring-offset-2 outline-none;
+    max-height: 100%;
+    /* Prevent overflow */
+  }
+
+  .rbc-event-content {
+    @apply text-xs font-semibold px-1 truncate;
+  }
+
+  .rbc-event-label {
+    @apply hidden;
+    /* Hide default label to save space */
+  }
+
+  /* Time View (Week/Day) */
+  .rbc-time-view {
+    @apply bg-card rounded-md overflow-hidden;
+  }
+
+  .rbc-time-header {
+    @apply border-b border-border;
+  }
+
+  .rbc-time-header.rbc-overflowing-header {
+    @apply border-border;
+  }
+
+  .rbc-time-content {
+    @apply border-t-0;
+  }
+
+  .rbc-timeslot-group {
+    @apply border-b border-border bg-card;
+  }
+
+  .rbc-day-slot {
+    @apply border-l border-border;
+  }
+
+  .rbc-time-slot {
+    @apply text-xs text-muted-foreground/40;
+  }
+
+  .rbc-label {
+    @apply text-xs text-muted-foreground font-medium py-1 px-2;
+  }
+
+  .rbc-current-time-indicator {
+    @apply bg-primary h-[2px];
+  }
+
+  /* Agenda View */
+  .rbc-agenda-view table.rbc-agenda-table {
+    @apply w-full border border-border rounded-lg bg-card text-sm border-spacing-0;
+  }
+
+  .rbc-agenda-view table.rbc-agenda-table thead>tr>th {
+    @apply border-b border-border p-3 text-left font-semibold text-muted-foreground bg-muted/20;
+  }
+
+  .rbc-agenda-view table.rbc-agenda-table tbody>tr>td {
+    @apply p-4 border-b border-border align-middle text-foreground;
+  }
+
+  .rbc-agenda-date-cell {
+    @apply font-medium whitespace-nowrap text-muted-foreground;
+  }
+
+  .rbc-agenda-time-cell {
+    @apply text-xs uppercase tracking-wide text-muted-foreground;
+  }
+
+  .rbc-agenda-event-cell {
+    @apply font-medium text-foreground;
+  }
+
+  /* Overwrite inline styles from library that might conflict with dark mode */
+  .rbc-off-range {
+    @apply text-muted-foreground/30;
+  }
+
+  /* Selected slot highlight */
+  .rbc-slot-selection {
+    @apply bg-primary/20 text-foreground;
+  }
+}
+
+/* cmdk Command Palette Styles */
+[cmdk-dialog] {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+
+[cmdk-overlay] {
+  display: none;
+}
+
+[cmdk-dialog] [cmdk-input] {
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+[cmdk-item] {
+  cursor: pointer;
+  user-select: none;
+}
+
+[cmdk-item][data-selected="true"] {
+  @apply bg-accent text-accent-foreground;
+}
+
+[cmdk-group-heading] {
+  @apply px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider;
+}
+
+[cmdk-separator] {
+  @apply h-px bg-border;
 }

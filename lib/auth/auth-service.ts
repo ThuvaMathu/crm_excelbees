@@ -3,28 +3,34 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
-  GoogleAuthProvider,
-  signInWithPopup,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { auth } from "../firebase";
+import { logger } from "@/lib/logger/client";
 
 // Sign in with email and password
 export async function signInWithEmail(email: string, password: string) {
-  console.log("🔐 Attempting email sign-in for:", email);
+  logger.debug("Attempting email sign-in", { module: "auth", action: "sign-in" });
   try {
     const userCredential = await signInWithEmailAndPassword(
       auth,
       email,
       password
     );
-    console.log("✅ Sign-in successful:", userCredential.user.uid);
+    logger.info("Sign-in successful", {
+      module: "auth",
+      action: "sign-in",
+      userId: userCredential.user.uid,
+    });
     return { user: userCredential.user, error: null };
-  } catch (error: any) {
-    console.error("❌ Sign-in failed:", error.code, error.message);
-    return { user: null, error: error.message };
+  } catch (error) {
+    logger.warn("Sign-in failed", { module: "auth", action: "sign-in", error });
+    const message = error instanceof Error ? error.message : String(error);
+    return { user: null, error: message };
   }
 }
 
@@ -34,77 +40,108 @@ export async function signUpWithEmail(
   password: string,
   displayName: string
 ) {
-  console.log("📝 Attempting sign-up for:", email);
+  logger.debug("Attempting sign-up", { module: "auth", action: "sign-up" });
   try {
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
       password
     );
-    console.log("✅ User created:", userCredential.user.uid);
+    logger.info("User created", {
+      module: "auth",
+      action: "sign-up",
+      userId: userCredential.user.uid,
+    });
 
     // Update profile with display name
     if (userCredential.user) {
-      console.log("📝 Updating profile with display name:", displayName);
+      logger.debug("Updating profile with display name", {
+        module: "auth",
+        action: "sign-up",
+        userId: userCredential.user.uid,
+      });
       await updateProfile(userCredential.user, { displayName });
-      console.log("✅ Profile updated");
+      logger.info("Profile updated", {
+        module: "auth",
+        action: "sign-up",
+        userId: userCredential.user.uid,
+      });
     }
 
     return { user: userCredential.user, error: null };
-  } catch (error: any) {
-    console.error("❌ Sign-up failed:", error.code, error.message);
-    return { user: null, error: error.message };
+  } catch (error) {
+    logger.warn("Sign-up failed", { module: "auth", action: "sign-up", error });
+    const message = error instanceof Error ? error.message : String(error);
+    return { user: null, error: message };
   }
 }
 
-// Sign in with Google (using popup)
+
+
+// Sign in / sign up with Google
 export async function signInWithGoogle() {
-  console.log("🔐 Attempting Google sign-in with popup");
+  const provider = new GoogleAuthProvider();
+  provider.addScope("email");
+  provider.addScope("profile");
   try {
-    const provider = new GoogleAuthProvider();
-    const userCredential = await signInWithPopup(auth, provider);
-    console.log("✅ Google sign-in successful:", userCredential.user.uid);
-    return { user: userCredential.user, error: null };
-  } catch (error: any) {
-    console.error("❌ Google sign-in failed:", error.code, error.message);
-    return { user: null, error: error.message };
+    const result = await signInWithPopup(auth, provider);
+    // additionalUserInfo.isNewUser is true on first Google sign-in
+    const isNewUser: boolean =
+      (result as any)._tokenResponse?.isNewUser ?? false;
+    return { user: result.user, isNewUser, error: null };
+  } catch (error) {
+    if ((error as { code?: string }).code === "auth/popup-closed-by-user") {
+      return { user: null, isNewUser: false, error: null }; // user dismissed — silent
+    }
+    logger.warn("Google sign-in failed", { module: "auth", action: "sign-in-google", error });
+    const message = error instanceof Error ? error.message : String(error);
+    return { user: null, isNewUser: false, error: message };
   }
 }
 
 // Sign out
 export async function signOut() {
-  console.log("🚪 Signing out user");
+  logger.debug("Signing out user", { module: "auth", action: "sign-out" });
   try {
     await firebaseSignOut(auth);
-    console.log("✅ Sign-out successful");
+    logger.info("Sign-out successful", { module: "auth", action: "sign-out" });
     return { error: null };
-  } catch (error: any) {
-    console.error("❌ Sign-out failed:", error.message);
-    return { error: error.message };
+  } catch (error) {
+    logger.error("Sign-out failed", { module: "auth", action: "sign-out", error });
+    const message = error instanceof Error ? error.message : String(error);
+    return { error: message };
   }
 }
 
 // Send password reset email
 export async function sendPasswordReset(email: string) {
-  console.log("📧 Sending password reset email to:", email);
+  logger.debug("Sending password reset email", { module: "auth", action: "password-reset" });
   try {
     await sendPasswordResetEmail(auth, email);
-    console.log("✅ Password reset email sent");
+    logger.info("Password reset email sent", { module: "auth", action: "password-reset" });
     return { error: null };
-  } catch (error: any) {
-    console.error("❌ Password reset failed:", error.code, error.message);
-    return { error: error.message };
+  } catch (error) {
+    logger.warn("Password reset failed", { module: "auth", action: "password-reset", error });
+    const message = error instanceof Error ? error.message : String(error);
+    return { error: message };
   }
 }
 
 // Listen to auth state changes
 export function onAuthStateChanged(callback: (user: User | null) => void) {
-  console.log("👂 Setting up auth state listener");
+  logger.debug("Setting up auth state listener", { module: "auth", action: "auth-state-listener" });
   return firebaseOnAuthStateChanged(auth, (user) => {
     if (user) {
-      console.log("👤 Auth state changed: User logged in -", user.uid);
+      logger.debug("Auth state changed: user logged in", {
+        module: "auth",
+        action: "auth-state-listener",
+        userId: user.uid,
+      });
     } else {
-      console.log("👤 Auth state changed: User logged out");
+      logger.debug("Auth state changed: user logged out", {
+        module: "auth",
+        action: "auth-state-listener",
+      });
     }
     callback(user);
   });
