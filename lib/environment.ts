@@ -3,8 +3,12 @@
  * Provides safe access to environment variables with proper validation
  */
 
+import { isDev } from "@/lib/env";
+
 export const isDevelopment = process.env.NODE_ENV === 'development';
-export const isProduction = process.env.NODE_ENV === 'production' || process.env.IS_PRODUCTION === 'true';
+// "Production-like" now means anything other than APP_ENVIRONMENT=dev — both
+// prd and maintenance require real config (e.g. NEXT_PUBLIC_APP_URL) to be set.
+export const isProduction = !isDev;
 export const isTest = process.env.NODE_ENV === 'test';
 
 /**

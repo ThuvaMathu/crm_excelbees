@@ -44,17 +44,7 @@ export const metadata: Metadata = {
   authors: [{ name: "ExcelBees", url: "https://excelbees.com" }],
   creator: "ExcelBees",
   publisher: "ExcelBees Australia",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  // robots is set centrally in app/layout.tsx based on APP_ENVIRONMENT.
   openGraph: {
     type: "website",
     locale: "en_AU",

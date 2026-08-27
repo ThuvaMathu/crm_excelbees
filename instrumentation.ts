@@ -10,6 +10,7 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
 
   const { logger } = await import("@/lib/logger");
+  const { appEnvironment } = await import("@/lib/env");
 
   // ─── Result collector ─────────────────────────────────────────────────────
   type CheckResult = { label: string; ok: boolean; detail: string };
@@ -27,7 +28,7 @@ export async function register() {
     action: "startup",
     metadata: {
       nodeEnv: process.env.NODE_ENV,
-      isProduction: process.env.IS_PRODUCTION,
+      appEnvironment,
       appUrl: process.env.NEXT_PUBLIC_APP_URL,
       nodeVersion: process.version,
     },
