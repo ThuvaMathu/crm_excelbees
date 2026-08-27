@@ -1,16 +1,16 @@
 # Graph Report - crm_excelbees  (2026-08-26)
 
 ## Corpus Check
-- 497 files · ~477,540 words
+- 497 files · ~477,582 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5880 nodes · 9124 edges · 443 communities (382 shown, 61 thin omitted)
+- 5880 nodes · 9124 edges · 444 communities (383 shown, 61 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 117 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `25828ee8`
+- Built from commit: `3af0a7a5`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -449,6 +449,7 @@
 - [[_COMMUNITY_Community 436|Community 436]]
 - [[_COMMUNITY_Community 437|Community 437]]
 - [[_COMMUNITY_Community 438|Community 438]]
+- [[_COMMUNITY_Community 443|Community 443]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `useOrgStore` - 87 edges
@@ -474,19 +475,19 @@
 - `getQuote()` --calls--> `getDoc()`  [INFERRED]
   lib/firestore/quotes.ts → tests/helpers/admin.ts
 
-## Communities (443 total, 61 thin omitted)
+## Communities (444 total, 61 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.03
-Nodes (76): signInWithEmail(), signInWithGoogle(), signOut(), signUpWithEmail(), AuthGate(), PUBLIC_ROUTES, AuthProvider(), logPermissionDenial() (+68 more)
+Cohesion: 0.04
+Nodes (67): apiDelete(), apiFetch(), apiGet(), apiPost(), apiPut(), ApiRequestInit, useApi(), AuthGate() (+59 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.04
-Nodes (67): AnalyticsPage(), isManager(), canEditAll(), FeatureGate(), FeatureGateProps, PermissionGate(), PermissionGateProps, RBACGuard() (+59 more)
+Nodes (66): AnalyticsPage(), isManager(), canEditAll(), FeatureGate(), FeatureGateProps, PermissionGate(), PermissionGateProps, RBACGuard() (+58 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.04
-Nodes (73): apiDelete(), apiFetch(), apiGet(), apiPost(), apiPut(), ApiRequestInit, useApi(), ProfilePage() (+65 more)
+Nodes (64): ProfilePage(), ProfilePage(), ImportCSVDialog(), ImportCSVDialogProps, ParsedContact, clsx, OrgDashboardPage(), addOrganizationMember() (+56 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.05
@@ -497,8 +498,8 @@ Cohesion: 0.06
 Nodes (69): canEditRecord(), getUserPermissionsWithCache(), hasPermission(), validateProjectPermission(), validateTaskPermission(), deleteActivity(), archiveDeal(), cacheKey() (+61 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.05
-Nodes (50): DashboardStats, getCachedDashboardStats(), ActivityTimeline(), ActivityTimelineProps, smartSearch(), Activity, ActivityInput, ActivityType (+42 more)
+Cohesion: 0.06
+Nodes (47): DashboardStats, getCachedDashboardStats(), ActivityTimeline(), ActivityTimelineProps, smartSearch(), Activity, ActivityInput, ActivityType (+39 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.04
@@ -693,8 +694,8 @@ Cohesion: 0.08
 Nodes (25): Accessibility, Archival, Asset Approval Checklist, Automation Support, Color Compliance, Common Issues & Fixes, Content Accessibility, Content Quality (+17 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.15
-Nodes (18): deleteNotification(), getNotifications(), getUnreadCount(), markAllAsRead(), markAsRead(), Header(), buildAdminNav(), buildCrmNav() (+10 more)
+Cohesion: 0.05
+Nodes (40): signInWithEmail(), signInWithGoogle(), signOut(), signUpWithEmail(), deleteNotification(), getNotifications(), getUnreadCount(), markAllAsRead() (+32 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.08
@@ -733,12 +734,12 @@ Cohesion: 0.10
 Nodes (19): 3.2 AI Feature Catalog (10 Features), code:ts (export async function scoreLead(leadId: string): Promise<AIR), code:ts (export async function analyzeDeal(dealId: string): Promise<A), code:ts (export async function draftEmail(params: {), code:ts (export async function rewriteText(params: {), code:ts (export async function getFollowUpSuggestions(userId: string)), code:ts (export async function summarizeMeeting(notes: string): Promi), code:ts (export async function prioritizeTasks(userId: string): Promi) (+11 more)
 
 ### Community 64 - "Community 64"
-Cohesion: 0.10
-Nodes (21): TailwindConfigGenerator.add_breakpoints, TailwindConfigGenerator.add_colors, TailwindConfigGenerator.add_plugins, TailwindConfigGenerator._generate_typescript, functions, excluded_lines, executed_lines, missing_lines (+13 more)
+Cohesion: 0.12
+Nodes (16): TailwindConfigGenerator.add_breakpoints, TailwindConfigGenerator.add_colors, TailwindConfigGenerator._generate_typescript, functions, excluded_lines, executed_lines, missing_lines, summary (+8 more)
 
 ### Community 65 - "Community 65"
 Cohesion: 0.10
-Nodes (21): TestShadcnInstaller.test_add_components_already_installed, TestShadcnInstaller.test_add_components_no_config, TestShadcnInstaller.test_get_installed_components_empty, TestShadcnInstaller.test_get_installed_components_no_config, functions, excluded_lines, executed_lines, missing_lines (+13 more)
+Nodes (21): TestShadcnInstaller.test_add_components_already_installed, TestShadcnInstaller.test_check_shadcn_config_exists, TestShadcnInstaller.test_get_installed_components_no_config, TestShadcnInstaller.test_get_installed_components_with_files, functions, excluded_lines, executed_lines, missing_lines (+13 more)
 
 ### Community 66 - "Community 66"
 Cohesion: 0.10
@@ -1185,8 +1186,8 @@ Cohesion: 0.18
 Nodes (11): Activities (`/activities/{activityId}`), Collection-Specific Rules, Companies (`/companies/{companyId}`), Contacts (`/contacts/{contactId}`), Deals (`/deals/{dealId}`), Invoices (`/invoices/{invoiceId}`), Leads (`/leads/{leadId}`), Notifications (`/notifications/{notificationId}`) (+3 more)
 
 ### Community 178 - "Community 178"
-Cohesion: 0.18
-Nodes (10): AI Features, Backend (Firestore & Types), code:text (Platform), Executive Summary, Final Architecture, Frontend (Next.js), Future Roadmap, Integrations (+2 more)
+Cohesion: 0.20
+Nodes (9): code:text (/org/[orgId]/analytics), code:text (Platform), code:text (/), code:text (crm.excelbees.com/), CRM Workspace Routes, Executive Summary, Final Architecture, Public Website Structure (+1 more)
 
 ### Community 179 - "Community 179"
 Cohesion: 0.18
@@ -1210,19 +1211,19 @@ Nodes (11): code:html (<!-- Vertical on mobile, horizontal on desktop -->), code
 
 ### Community 184 - "Community 184"
 Cohesion: 0.18
-Nodes (11): ShadcnInstaller.add_all_components, TestShadcnInstaller.test_init_default_project_root, excluded_lines, executed_lines, missing_lines, summary, covered_lines, excluded_lines (+3 more)
+Nodes (11): ShadcnInstaller.add_all_components, TailwindConfigGenerator.__init__, excluded_lines, executed_lines, missing_lines, summary, covered_lines, excluded_lines (+3 more)
 
 ### Community 185 - "Community 185"
 Cohesion: 0.18
-Nodes (11): ShadcnInstaller.__init__, TailwindConfigGenerator.generate_config_string, excluded_lines, executed_lines, missing_lines, summary, percent_covered, excluded_lines (+3 more)
+Nodes (11): ShadcnInstaller.__init__, TestShadcnInstaller.test_add_components_with_overwrite, excluded_lines, executed_lines, missing_lines, summary, percent_covered, excluded_lines (+3 more)
 
 ### Community 186 - "Community 186"
 Cohesion: 0.18
-Nodes (11): ShadcnInstaller.list_installed, TailwindConfigGenerator._default_content_paths, excluded_lines, executed_lines, missing_lines, summary, num_statements, excluded_lines (+3 more)
+Nodes (11): ShadcnInstaller.list_installed, TailwindConfigGenerator._generate_javascript, excluded_lines, executed_lines, missing_lines, summary, num_statements, excluded_lines (+3 more)
 
 ### Community 187 - "Community 187"
 Cohesion: 0.18
-Nodes (11): ShadcnInstaller.add_components, TailwindConfigGenerator.__init__, excluded_lines, executed_lines, missing_lines, summary, excluded_lines, excluded_lines (+3 more)
+Nodes (11): ShadcnInstaller.add_components, TailwindConfigGenerator.add_plugins, excluded_lines, executed_lines, missing_lines, summary, excluded_lines, excluded_lines (+3 more)
 
 ### Community 188 - "Community 188"
 Cohesion: 0.18
@@ -1746,7 +1747,7 @@ Nodes (5): TailwindConfigGenerator._format_plugins, excluded_lines, executed_lin
 
 ### Community 323 - "Community 323"
 Cohesion: 0.40
-Nodes (5): TailwindConfigGenerator._generate_javascript, excluded_lines, executed_lines, missing_lines, summary
+Nodes (5): TailwindConfigGenerator._default_content_paths, excluded_lines, executed_lines, missing_lines, summary
 
 ### Community 324 - "Community 324"
 Cohesion: 0.40
@@ -1766,11 +1767,11 @@ Nodes (5): TestShadcnInstaller.test_add_components_no_components, excluded_lines
 
 ### Community 328 - "Community 328"
 Cohesion: 0.40
-Nodes (5): TestShadcnInstaller.test_add_components_with_overwrite, excluded_lines, executed_lines, missing_lines, summary
+Nodes (5): TailwindConfigGenerator.generate_config_string, excluded_lines, executed_lines, missing_lines, summary
 
 ### Community 329 - "Community 329"
 Cohesion: 0.40
-Nodes (5): TestShadcnInstaller.test_check_shadcn_config_exists, excluded_lines, executed_lines, missing_lines, summary
+Nodes (5): TestShadcnInstaller.test_add_components_no_config, excluded_lines, executed_lines, missing_lines, summary
 
 ### Community 330 - "Community 330"
 Cohesion: 0.40
@@ -1778,7 +1779,7 @@ Nodes (5): TestShadcnInstaller.test_check_shadcn_config_not_exists, excluded_lin
 
 ### Community 331 - "Community 331"
 Cohesion: 0.40
-Nodes (5): TestShadcnInstaller.test_get_installed_components_with_files, excluded_lines, executed_lines, missing_lines, summary
+Nodes (5): TestShadcnInstaller.test_get_installed_components_empty, excluded_lines, executed_lines, missing_lines, summary
 
 ### Community 332 - "Community 332"
 Cohesion: 0.40
@@ -1929,16 +1930,16 @@ Cohesion: 0.67
 Nodes (3): code:text (crm.excelbees.com/org), code:text (My Organizations), Organization Management
 
 ### Community 371 - "Community 371"
-Cohesion: 0.67
-Nodes (3): code:text (/org/[orgId]/analytics), CRM Workspace Routes, Updated Route Structure
+Cohesion: 0.40
+Nodes (5): TestShadcnInstaller.test_init_default_project_root, excluded_lines, executed_lines, missing_lines, summary
 
 ### Community 372 - "Community 372"
 Cohesion: 0.67
 Nodes (3): code:text (crm.excelbees.com), Multi-Tenant SaaS Platform, Target Architecture
 
 ### Community 373 - "Community 373"
-Cohesion: 0.67
-Nodes (3): code:text (/), code:text (crm.excelbees.com/), Public Website Structure
+Cohesion: 0.50
+Nodes (4): Backend (Firestore & Types), Frontend (Next.js), Migration Checklist, Security
 
 ### Community 375 - "Community 375"
 Cohesion: 0.67
@@ -1968,6 +1969,10 @@ Nodes (3): code:html (<div class="p-18">Custom padding</div>), code:css (@theme 
 Cohesion: 0.67
 Nodes (3): code:css (@import "tailwindcss";), code:html (<div class="bg-brand-500 font-display shadow-glow rounded-la), @theme Directive
 
+### Community 443 - "Community 443"
+Cohesion: 0.67
+Nodes (3): AI Features, Future Roadmap, Integrations
+
 ## Knowledge Gaps
 - **2910 isolated node(s):** `PreToolUse`, `allow`, `additionalDirectories`, `When to Use`, `code:bash (node scripts/inject-brand-context.cjs)` (+2905 more)
   These have ≤1 connection - possible missing edges or undocumented components.
@@ -1976,17 +1981,17 @@ Nodes (3): code:css (@import "tailwindcss";), code:html (<div class="bg-brand-50
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `getDoc()` connect `Community 4` to `Community 0`, `Community 2`, `Community 3`, `Community 100`, `Community 5`, `Community 14`, `Community 49`, `Community 118`, `Community 24`, `Community 58`, `Community 125`?**
-  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+- **Why does `getDoc()` connect `Community 4` to `Community 0`, `Community 2`, `Community 3`, `Community 100`, `Community 5`, `Community 14`, `Community 49`, `Community 118`, `Community 54`, `Community 24`, `Community 58`, `Community 125`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **Why does `test` connect `Community 13` to `Community 66`, `Community 133`, `Community 134`, `Community 7`, `Community 168`, `Community 169`, `Community 105`, `Community 170`, `Community 14`, `Community 143`, `Community 20`, `Community 85`, `Community 125`, `Community 154`, `Community 124`, `Community 93`, `Community 190`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **Why does `cn()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 36`, `Community 4`, `Community 6`, `Community 5`, `Community 40`, `Community 238`, `Community 49`, `Community 54`, `Community 86`, `Community 248`, `Community 58`, `Community 247`, `Community 126`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+- **Why does `cn()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 36`, `Community 4`, `Community 6`, `Community 40`, `Community 238`, `Community 49`, `Community 54`, `Community 86`, `Community 248`, `Community 58`, `Community 247`, `Community 126`?**
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **What connects `PreToolUse`, `allow`, `additionalDirectories` to the rest of the system?**
   _3070 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.03136507936507937 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.03685417034032799 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.04358974358974359 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.044736341138397105 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.039405940594059406 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0442002442002442 - nodes in this community are weakly interconnected._
