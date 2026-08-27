@@ -1,16 +1,16 @@
 # Graph Report - crm_excelbees  (2026-08-27)
 
 ## Corpus Check
-- 498 files · ~478,607 words
+- 502 files · ~479,339 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 5894 nodes · 9137 edges · 444 communities (384 shown, 60 thin omitted)
+- 5904 nodes · 9161 edges · 449 communities (389 shown, 60 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 117 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a55e6edb`
+- Built from commit: `c52db1ac`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -324,6 +324,7 @@
 - [[_COMMUNITY_Community 307|Community 307]]
 - [[_COMMUNITY_Community 308|Community 308]]
 - [[_COMMUNITY_Community 309|Community 309]]
+- [[_COMMUNITY_Community 310|Community 310]]
 - [[_COMMUNITY_Community 311|Community 311]]
 - [[_COMMUNITY_Community 312|Community 312]]
 - [[_COMMUNITY_Community 313|Community 313]]
@@ -449,6 +450,11 @@
 - [[_COMMUNITY_Community 437|Community 437]]
 - [[_COMMUNITY_Community 438|Community 438]]
 - [[_COMMUNITY_Community 443|Community 443]]
+- [[_COMMUNITY_Community 444|Community 444]]
+- [[_COMMUNITY_Community 445|Community 445]]
+- [[_COMMUNITY_Community 446|Community 446]]
+- [[_COMMUNITY_Community 447|Community 447]]
+- [[_COMMUNITY_Community 448|Community 448]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `useOrgStore` - 87 edges
@@ -463,6 +469,8 @@
 10. `percent_covered` - 43 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `deleteUserByAdmin()` --calls--> `deleteDoc()`  [INFERRED]
+  lib/firestore/admin-users.ts → tests/helpers/admin.ts
 - `getTemplate()` --calls--> `getDoc()`  [INFERRED]
   lib/firestore/email-templates.ts → tests/helpers/admin.ts
 - `getEmail()` --calls--> `getDoc()`  [INFERRED]
@@ -471,54 +479,52 @@
   lib/firestore/notes.ts → tests/helpers/admin.ts
 - `getQuote()` --calls--> `getDoc()`  [INFERRED]
   lib/firestore/quotes.ts → tests/helpers/admin.ts
-- `getTask()` --calls--> `getDoc()`  [INFERRED]
-  lib/firestore/tasks.ts → tests/helpers/admin.ts
 
-## Communities (444 total, 60 thin omitted)
+## Communities (449 total, 60 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.06
-Nodes (51): logPermissionDenial(), AuditActions, createAuditLog(), getAllAuditLogs(), getAuditLogsForUser(), approveUser(), deleteUser(), getUserProfile() (+43 more)
+Cohesion: 0.05
+Nodes (40): PipelineChart(), PipelineChartProps, PipelineDataPoint, STAGE_COLORS, KanbanCard(), KanbanCardProps, KanbanColumn(), KanbanColumnProps (+32 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.05
-Nodes (44): FeatureGate(), FeatureGateProps, PermissionGate(), PermissionGateProps, RBACGuard(), RBACGuardProps, RoleGate(), RoleGateProps (+36 more)
+Cohesion: 0.04
+Nodes (81): AnalyticsPage(), ProfilePage(), ProfilePage(), isManager(), canEditAll(), FeatureGate(), FeatureGateProps, PermissionGate() (+73 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.03
-Nodes (70): ProfilePage(), AuthProvider(), addOrganizationMember(), countActiveAdmins(), createOrganization(), deleteOrganization(), generateSlug(), generateUniqueOrgSlug() (+62 more)
+Cohesion: 0.04
+Nodes (56): ActivityTimeline(), ActivityTimelineProps, AuthGate(), PUBLIC_ROUTES, AuthProvider(), logPermissionDenial(), permissionCache, Activity (+48 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.04
-Nodes (60): ActivityTimeline(), ActivityTimelineProps, AIEmailAssistant(), AIEmailAssistantProps, QUICK_ACTIONS, EmailComposeModalProps, RecipientInput(), STATIC_TEMPLATES (+52 more)
+Cohesion: 0.05
+Nodes (71): CreateCompanyDialogProps, EditCompanyDialog(), EditCompanyDialogProps, CreateContactDialogProps, EditContactDialogProps, CreateDealDialogProps, DEAL_STAGES, DEAL_STAGES (+63 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.05
-Nodes (65): canEditRecord(), getUserPermissionsWithCache(), hasPermission(), permissionCache, validateProjectPermission(), validateTaskPermission(), CreateCompanyDialog(), CreateCompanyDialogProps (+57 more)
+Cohesion: 0.06
+Nodes (67): canEditRecord(), getUserPermissionsWithCache(), hasPermission(), validateProjectPermission(), validateTaskPermission(), archiveDeal(), cacheKey(), createDeal() (+59 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.07
-Nodes (33): ActivityInput, ActivityType, createActivity(), getOrganizationActivities(), logStatusChange(), cacheKey(), convertLeadToContact(), convertLeadToDeal() (+25 more)
+Nodes (41): DashboardStats, getCachedDashboardStats(), OrgDashboardPage(), ActivityInput, ActivityType, createActivity(), getOrganizationActivities(), logStatusChange() (+33 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.06
-Nodes (45): createNotification(), archiveTask(), cacheKey(), canEditTask(), createTask(), deleteTask(), getTask(), getTasksByProject() (+37 more)
+Cohesion: 0.07
+Nodes (30): ArchivedTasksDialog(), ArchivedTasksDialogProps, CreateTaskDialog(), CreateTaskDialogProps, TASK_PRIORITIES, TASK_STATUSES, TASK_TYPES, DetailItemProps (+22 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.04
 Nodes (40): dialog, stageSelect, statusSelect, contacts, convertBtn, dialog, fillCreateContactForm(), firstCheckbox (+32 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.06
-Nodes (41): POST(), cleanObject(), exportToCSV(), exportToICS(), filterPlansByDateRange(), formatPlanDate(), generateCalendarId(), generatePlanId() (+33 more)
+Cohesion: 0.18
+Nodes (8): exportToCSV(), exportToICS(), getNextOccurrence(), getStatusColor(), isRecurringPlan(), POST(), ExportOptions, RecurringConfig
 
 ### Community 9 - "Community 9"
 Cohesion: 0.03
 Nodes (58): dependencies, class-variance-authority, clsx, cmdk, date-fns, @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities (+50 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.10
-Nodes (38): setClientLogLevel(), stripKnownFields(), isLevelEnabled(), isLogLevel(), LEVEL_WEIGHT, LOG_LEVELS, resolveClientLogLevel(), resolveLogLevel() (+30 more)
+Cohesion: 0.08
+Nodes (41): configuredLevel, consoleMethod, levelWeight, setClientLogLevel(), stripKnownFields(), isLevelEnabled(), isLogLevel(), LEVEL_WEIGHT (+33 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.06
@@ -530,11 +536,11 @@ Nodes (49): CRM Error Report — Complete Issue Register, ERR-001: Lead Detail P
 
 ### Community 13 - "Community 13"
 Cohesion: 0.05
-Nodes (30): aiBtn, analyzeBtn, descField, dialog, loginPage, emailInput, loginPage, aiInput (+22 more)
+Nodes (31): aiBtn, analyzeBtn, descField, dialog, aiInput, aiToggle, result, searchInput (+23 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.06
-Nodes (39): loginPage, orgAId, orgId, ROLE_VALUES, TestUser, UserRole, createDoc(), createEphemeralUser() (+31 more)
+Cohesion: 0.08
+Nodes (30): loginPage, orgAId, orgId, createDoc(), createEphemeralUser(), deleteEphemeralUser(), docExists(), getAdmin() (+22 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.04
@@ -545,8 +551,8 @@ Cohesion: 0.04
 Nodes (45): Banner Design (Built-in), Banner: Design Rules, Banner: Quick Size Reference, Banner: Top Art Styles, Banner: Workflow, CIP Design (Built-in), CIP: Generate Brief, CIP: Generate Mockups (+37 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.09
-Nodes (23): createInviteAction(), generateToken(), resolveOrgName(), revokeInviteAction(), verifyCallerIsOrgAdmin(), Session, SessionUser, register() (+15 more)
+Cohesion: 0.13
+Nodes (13): register(), adminAuth, adminStorage, getAdminApp(), getAdminAuth(), getAdminDb(), getAdminStorage(), logger (+5 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.04
@@ -557,12 +563,12 @@ Cohesion: 0.04
 Nodes (44): code:block1 (Professional logo design for [brand/industry]:), code:block10 (Healthcare medical logo, clean professional design, cross or), code:block11 (Restaurant logo, warm inviting colors, appetizing feel, vint), code:block12 (Fashion brand logo, elegant sophisticated wordmark, luxury a), code:block13 (Eco-friendly sustainable brand logo, organic natural element), code:block14 (vector-style, scalable at any size, clear silhouette,), code:block15 (works on light and dark backgrounds, single color version po), code:block16 (professional quality, print-ready, high resolution,) (+36 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.10
-Nodes (9): dashboard, UrlKey, URLS, assertPermissionDenied(), login(), waitForApp(), waitForLoadingSpinner(), waitForToast() (+1 more)
+Cohesion: 0.17
+Nodes (3): UrlKey, URLS, BasePage
 
 ### Community 21 - "Community 21"
-Cohesion: 0.21
-Nodes (28): analyzeDeal(), serializeDeal(), draftEmail(), suggestSubjectLines(), getFollowUpSuggestions(), generateContent(), PRESET_INSTRUCTIONS, scoreLead() (+20 more)
+Cohesion: 0.08
+Nodes (62): analyzeDeal(), serializeDeal(), draftEmail(), suggestSubjectLines(), getFollowUpSuggestions(), generateContent(), PRESET_INSTRUCTIONS, scoreLead() (+54 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.05
@@ -573,8 +579,8 @@ Cohesion: 0.08
 Nodes (36): format_context(), format_result(), main(), Format a single search result for display, Format contextual recommendations for display., BM25, calculate_pattern_break(), detect_domain() (+28 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.13
-Nodes (16): isValidEmail(), mergeFieldCategories, parseEmailString(), validateEmail(), MergeFieldDropdown(), MergeFieldDropdownProps, RecipientInputProps, EmailAttachment (+8 more)
+Cohesion: 0.09
+Nodes (24): GET(), isSafeRedirectUrl(), isValidEmail(), mergeFieldCategories, parseEmailString(), validateEmail(), MergeFieldDropdown(), MergeFieldDropdownProps (+16 more)
 
 ### Community 25 - "Community 25"
 Cohesion: 0.08
@@ -621,16 +627,16 @@ Cohesion: 0.06
 Nodes (33): Accessibility, Accessibility Requirements, ARIA States, code:css (/* Standard transition for interactive elements */), code:css (/* Standard focus ring */), code:css (/* Container focus when child is focused */), code:css (.disabled {), code:css (.loading {) (+25 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.07
-Nodes (28): SmartFollowUps(), SmartFollowUpsProps, TYPE_URLS, URGENCY_CONFIG, AIWriteBody(), AIWriteBodyProps, htmlToPlainText(), PRESETS (+20 more)
+Cohesion: 0.10
+Nodes (20): InvoiceBasicInfo(), InvoiceLineItems(), InvoiceSettings(), InvoiceFormProps, CreateProjectDialogProps, PROJECT_PRIORITIES, PROJECT_STATUSES, InvoiceStatus (+12 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.06
 Nodes (32): Absolute Don'ts, Approved Backgrounds, Before Using Logo, Clear Space, Co-branding, code:block1 (┌─────────────────────────────┐), code:block2 (WRONG: Stretched      WRONG: Rotated       WRONG: Wrong colo), code:block3 (Option A: Side by side with divider) (+24 more)
 
 ### Community 38 - "Community 38"
-Cohesion: 0.15
-Nodes (24): isRateLimited(), POST(), redis, schema, getResolvedTransporter(), getTransporter(), maskSecret(), ResolvedTransporter (+16 more)
+Cohesion: 0.10
+Nodes (26): robots(), sendPasswordReset(), isRateLimited(), POST(), redis, schema, getResolvedTransporter(), getTransporter() (+18 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.06
@@ -673,16 +679,16 @@ Cohesion: 0.07
 Nodes (26): Banner Design Tasks, Brand Identity Tasks, code:block1 (1. brand → Define identity), code:block2 (1. brand → Audit existing), code:block3 (1. design-system → Reference specs), code:block4 (brand), code:bash (node .claude/skills/brand/scripts/inject-brand-context.cjs), code:bash (node .claude/skills/design-system/scripts/generate-tokens.cj) (+18 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.10
-Nodes (40): AnalyticsPage(), hasFeature(), isAdmin(), isManager(), canEditAll(), CompaniesPageContent(), DealsPageContent(), EmailComposeModal() (+32 more)
+Cohesion: 0.11
+Nodes (17): getOrganization(), updateInvoiceSettings(), updateOrganization(), COLORS, downloadInvoicePDF(), formatCurrency(), generateInvoicePDF(), getInvoicePDFBlob() (+9 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.08
 Nodes (26): 6.10 Lead List — Filter by Source, 6.11 Lead List — Pagination, 6.12 Lead List — Value Hidden for Team Role, 6.13 Lead List — Value Visible for Admin/Manager, 6.14 View Lead Detail, 6.15 Update Lead Status, 6.16 Lead Detail — No Edit Button (Known Issue), 6.17 Convert Lead to Contact (+18 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.10
-Nodes (19): 25.1 Network Failure During Lead Creation, 25.2 Server Error on Save, 25.3 Page Refresh During Form Fill, 25.4 Concurrent Edit Conflict, 25.5 Firebase Offline Mode, 25.6 Error Boundary Catch, 25.7 404 Page, 25. Error Recovery (+11 more)
+Cohesion: 0.08
+Nodes (23): 19.1 View Integrations Page, 19.2 Configure SMTP as Admin, 19.3 Configure Custom SMTP, 19.4 View Existing SMTP Config, 19.5 SMTP — Manager Cannot Access, 19. Integrations, 28.1 Data Isolation Between Orgs, 28.2 User Belongs to Multiple Orgs (+15 more)
 
 ### Community 52 - "Community 52"
 Cohesion: 0.08
@@ -694,7 +700,7 @@ Nodes (25): Accessibility, Archival, Asset Approval Checklist, Automation Suppor
 
 ### Community 54 - "Community 54"
 Cohesion: 0.09
-Nodes (17): acceptInviteAction(), verifyInviteAction(), signInWithEmail(), signInWithGoogle(), signUpWithEmail(), createUserProfile(), analytics, EventData (+9 more)
+Nodes (17): checkAuthAvailability(), inter, metadata, viewport, signInWithEmail(), signInWithGoogle(), analytics, EventData (+9 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.08
@@ -709,8 +715,8 @@ Cohesion: 0.09
 Nodes (7): randomName(), loginPage, onboarding, registerFreshUser(), signup, OnboardingPage, SignupPage
 
 ### Community 58 - "Community 58"
-Cohesion: 0.07
-Nodes (32): ProfilePage(), createNote(), deleteNote(), getNote(), getNotes(), NoteInput, orgCacheKey(), toggleNotePin() (+24 more)
+Cohesion: 0.12
+Nodes (19): createQuote(), deleteQuote(), generateQuoteNumber(), getQuote(), getQuotes(), orgCacheKey(), QuoteFilters, QuoteInput (+11 more)
 
 ### Community 59 - "Community 59"
 Cohesion: 0.09
@@ -738,15 +744,15 @@ Nodes (16): TailwindConfigGenerator.add_breakpoints, TailwindConfigGenerator.add
 
 ### Community 65 - "Community 65"
 Cohesion: 0.10
-Nodes (21): TestShadcnInstaller.test_add_components_already_installed, TestShadcnInstaller.test_add_components_with_overwrite, TestShadcnInstaller.test_get_installed_components_no_config, TestShadcnInstaller.test_get_installed_components_with_files, functions, excluded_lines, executed_lines, missing_lines (+13 more)
+Nodes (21): TestShadcnInstaller.test_add_components_already_installed, TestShadcnInstaller.test_check_shadcn_config_exists, TestShadcnInstaller.test_get_installed_components_with_files, TestShadcnInstaller.test_init_default_project_root, functions, excluded_lines, executed_lines, missing_lines (+13 more)
 
 ### Community 66 - "Community 66"
 Cohesion: 0.10
 Nodes (6): ProfilePage, SettingsPage, dialog, emailToggle, profile, settings
 
 ### Community 67 - "Community 67"
-Cohesion: 0.09
-Nodes (26): CreateDealDialogProps, DEAL_STAGES, DEAL_STAGES, EditDealDialog(), EditDealDialogProps, KanbanCard(), KanbanCardProps, KanbanColumn() (+18 more)
+Cohesion: 0.12
+Nodes (14): PRE_BUILT_TEMPLATES, ActivityLogEntry, AIGenerateRequest, Attachment, CalendarPurpose, CalendarSettings, CalendarTemplate, CalendarView (+6 more)
 
 ### Community 68 - "Community 68"
 Cohesion: 0.10
@@ -826,7 +832,7 @@ Nodes (12): AboutSection, BlogSection, metadata, TestimonialsSection, Feature, f
 
 ### Community 87 - "Community 87"
 Cohesion: 0.11
-Nodes (19): `activities`, code:typescript ({), code:typescript ({), code:typescript ({), code:typescript ({), code:typescript ({), code:typescript ({), code:typescript ({) (+11 more)
+Nodes (18): 3. Data Model (Schema Design), `activities`, code:typescript ({), code:typescript ({), code:typescript ({), code:typescript ({), code:typescript ({), code:typescript ({) (+10 more)
 
 ### Community 88 - "Community 88"
 Cohesion: 0.11
@@ -857,8 +863,8 @@ Cohesion: 0.16
 Nodes (10): metadata, organizationSchema, team, TeamMember, AboutPageContent(), milestones, stats, values (+2 more)
 
 ### Community 95 - "Community 95"
-Cohesion: 0.05
-Nodes (37): 8.1 Performance Optimization, 8.2 Security, 8.3 Error Handling, 8.4 Accessibility (a11y), 8.5 Testing, 8.6 Deployment, API Error Handling, API Routes (+29 more)
+Cohesion: 0.12
+Nodes (17): 8.1 Performance Optimization, 8.4 Accessibility (a11y), 8.5 Testing, ARIA Attributes, Bundle Size, code:tsx (<Suspense fallback={<LeadsTableSkeleton />}>), code:typescript (const [leads, users] = await Promise.all([), Color Contrast (+9 more)
 
 ### Community 96 - "Community 96"
 Cohesion: 0.12
@@ -881,8 +887,8 @@ Cohesion: 0.23
 Nodes (15): adminCreateActivity(), adminUpdateEmailStatus(), gatherMergeFieldData(), generatePlainText(), injectTrackingPixel(), logEmailToTimeline(), rewriteLinksForTracking(), scheduleEmail() (+7 more)
 
 ### Community 101 - "Community 101"
-Cohesion: 0.18
-Nodes (8): protectedRoute(), ProtectedRouteConfig, requireAdmin(), requireAuth(), requireManager(), ApiAuthResult, AuthenticatedUser, hasPermission()
+Cohesion: 0.19
+Nodes (11): acceptInviteAction(), createInviteAction(), generateToken(), resolveOrgName(), revokeInviteAction(), verifyCallerIsOrgAdmin(), verifyInviteAction(), signUpWithEmail() (+3 more)
 
 ### Community 102 - "Community 102"
 Cohesion: 0.12
@@ -899,6 +905,10 @@ Nodes (17): main, ShadcnInstaller.check_shadcn_config, ShadcnInstaller.get_insta
 ### Community 105 - "Community 105"
 Cohesion: 0.12
 Nodes (8): bodyEditor, deleteItem, dialog, emails, row, saveDraftBtn, templatesSelector, EmailsPage
+
+### Community 106 - "Community 106"
+Cohesion: 0.07
+Nodes (9): loginPage, emailInput, loginPage, assertPermissionDenied(), login(), waitForApp(), waitForLoadingSpinner(), waitForToast() (+1 more)
 
 ### Community 107 - "Community 107"
 Cohesion: 0.12
@@ -945,12 +955,12 @@ Cohesion: 0.12
 Nodes (15): 1. Completed: Marketing Removal, 2. Current Architecture, 5. Priority Execution Order, 6. Deployment Checklist, AI Feature Verification, CRM Modules, Deleted (42+ directories/files), Dependencies Removed (to be selectively re-added) (+7 more)
 
 ### Community 118 - "Community 118"
-Cohesion: 0.19
-Nodes (13): GET(), isSafeRedirectUrl(), createEmail(), getEmail(), getEmails(), saveDraft(), trackEmailClick(), trackEmailOpen() (+5 more)
+Cohesion: 0.10
+Nodes (22): AIEmailAssistant(), EmailComposeModalProps, RecipientInput(), RecipientInputProps, TemplateSelector(), deleteActivity(), createTemplate(), deleteTemplate() (+14 more)
 
 ### Community 119 - "Community 119"
-Cohesion: 0.20
-Nodes (13): checkLoginRateLimit(), POST(), POST(), verifyApiRequest(), generateInvoiceEmailHtml(), safeFormatDate(), checkRateLimit(), limits (+5 more)
+Cohesion: 0.10
+Nodes (21): checkLoginRateLimit(), protectedRoute(), ProtectedRouteConfig, requireAdmin(), requireAuth(), requireManager(), POST(), POST() (+13 more)
 
 ### Community 120 - "Community 120"
 Cohesion: 0.20
@@ -973,8 +983,8 @@ Cohesion: 0.12
 Nodes (6): adminDash, dashboard, loginPage, teamDash, viewAllLink, DashboardPage
 
 ### Community 125 - "Community 125"
-Cohesion: 0.13
-Nodes (8): setDocWithId(), UsersPage, createdAt, dialog, expiresAt, makeInvite(), roleSelect, usersPage
+Cohesion: 0.10
+Nodes (14): UsersPage, adminEditBtn, adminRow, dialog, editBtn, loginPage, ownRow, resetBtn (+6 more)
 
 ### Community 126 - "Community 126"
 Cohesion: 0.15
@@ -1097,8 +1107,8 @@ Cohesion: 0.15
 Nodes (13): code:bash (python3 skills/ui-ux-pro-max/scripts/search.py "<keyword>" -), code:bash (python3 skills/ui-ux-pro-max/scripts/search.py "<keyword>" -), code:bash (python3 skills/ui-ux-pro-max/scripts/search.py "<product_typ), code:bash (python3 skills/ui-ux-pro-max/scripts/search.py "beauty spa w), code:bash (python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --d), code:bash (python3 skills/ui-ux-pro-max/scripts/search.py "<query>" --d), code:block9 (I am building the [Page Name] page. Please read design-syste), How to Use This Skill (+5 more)
 
 ### Community 156 - "Community 156"
-Cohesion: 0.11
-Nodes (19): 4.1 Projects Module (`app/(dashboard)/projects`), 4.2 Tasks & Calendar (`app/(dashboard)/tasks`), Activity Timeline, Automated Reminders, Create Project Modal, Create Task Drawer, Files Section, Filters (+11 more)
+Cohesion: 0.17
+Nodes (12): 4.1 Projects Module (`app/(dashboard)/projects`), Activity Timeline, Create Project Modal, Files Section, Filters, Gantt Chart, Overview Section, Phase 4: Operations (Projects & Tasks) (+4 more)
 
 ### Community 157 - "Community 157"
 Cohesion: 0.17
@@ -1117,8 +1127,8 @@ Cohesion: 0.17
 Nodes (12): code:html (<div class="block">Block</div>), code:html (<div class="grid gap-4">All sides</div>), code:html (<div class="static">Static (default)</div>), code:html (<div class="z-0">z-index: 0</div>), code:html (<div class="grid grid-cols-1">1 column</div>), code:html (<div class="grid grid-rows-3">3 rows</div>), code:html (<div class="col-span-2">Span 2 columns</div>), Display (+4 more)
 
 ### Community 161 - "Community 161"
-Cohesion: 0.24
-Nodes (9): apiError(), apiForbidden(), apiNotFound(), apiRateLimited(), apiUnauthorized(), apiValidationError(), ErrorResponse, auth() (+1 more)
+Cohesion: 0.31
+Nodes (7): apiError(), apiForbidden(), apiNotFound(), apiRateLimited(), apiUnauthorized(), apiValidationError(), ErrorResponse
 
 ### Community 162 - "Community 162"
 Cohesion: 0.17
@@ -1210,7 +1220,7 @@ Nodes (11): code:html (<!-- Vertical on mobile, horizontal on desktop -->), code
 
 ### Community 184 - "Community 184"
 Cohesion: 0.18
-Nodes (11): ShadcnInstaller.add_all_components, TailwindConfigGenerator.validate_config, excluded_lines, executed_lines, missing_lines, summary, covered_lines, excluded_lines (+3 more)
+Nodes (11): ShadcnInstaller.add_all_components, TailwindConfigGenerator.write_config, excluded_lines, executed_lines, missing_lines, summary, covered_lines, excluded_lines (+3 more)
 
 ### Community 185 - "Community 185"
 Cohesion: 0.18
@@ -1293,12 +1303,12 @@ Cohesion: 0.20
 Nodes (10): code:tsx (import { Label } from "@/components/ui/label"), code:tsx (import { FormDescription, FormMessage } from "@/components/u), code:tsx (<FormField), code:tsx (<Label htmlFor="name">), code:tsx (<fieldset>), Error Handling, Fieldset and Legend, Form Accessibility (+2 more)
 
 ### Community 205 - "Community 205"
-Cohesion: 0.08
-Nodes (29): apiDelete(), apiFetch(), apiGet(), apiPost(), apiPut(), ApiRequestInit, useApi(), signOut() (+21 more)
+Cohesion: 0.05
+Nodes (59): signOut(), ChangePasswordPage(), EditContactDialog(), ImportCSVDialog(), ImportCSVDialogProps, ParsedContact, generateSlug(), generateUniqueOrgSlug() (+51 more)
 
 ### Community 206 - "Community 206"
-Cohesion: 0.20
-Nodes (9): 1. Project Overview & Vision, 2. Tech Stack & Architecture, 3. Data Model (Schema Design), 7. Next Steps, Backend & Data, Frontend, Production-Ready CRM: Detailed Master Implementation Plan, Targeted UI Reference (+1 more)
+Cohesion: 0.22
+Nodes (8): 1. Project Overview & Vision, 2. Tech Stack & Architecture, 7. Next Steps, Backend & Data, Frontend, Production-Ready CRM: Detailed Master Implementation Plan, Targeted UI Reference, Test Credentials
 
 ### Community 207 - "Community 207"
 Cohesion: 0.22
@@ -1409,8 +1419,8 @@ Cohesion: 0.25
 Nodes (8): 12.1 Task Board, 12.2 Create Task, 12.3 Task Detail Sheet, 12.4 Task Calendar, 12.5 Archived Tasks, 12.6 AI Task Priority, 12. Task Management, Use Case: User manages tasks
 
 ### Community 234 - "Community 234"
-Cohesion: 0.11
-Nodes (21): CreateContactDialog(), CreateContactDialogProps, EditContactDialog(), EditContactDialogProps, ImportCSVDialog(), ImportCSVDialogProps, ParsedContact, ContactsPageContent() (+13 more)
+Cohesion: 0.29
+Nodes (9): createNote(), deleteNote(), getNote(), getNotes(), NoteInput, orgCacheKey(), toggleNotePin(), updateNote() (+1 more)
 
 ### Community 235 - "Community 235"
 Cohesion: 0.25
@@ -1425,8 +1435,8 @@ Cohesion: 0.25
 Nodes (8): 4.1 Firestore Rules Cleanup, 4.2 Middleware → Proxy Migration, 4.3 Edge Auth Enforcement, 4.4 `.env.example` Creation, 4.5 Secret Exposure in `next.config.ts`, 4.6 Re-add `GEMINI_API_KEY` Securely, code:env (# App), P0 — Critical (Must fix before deployment)
 
 ### Community 238 - "Community 238"
-Cohesion: 0.25
-Nodes (7): Breadcrumb, BreadcrumbEllipsis(), BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator()
+Cohesion: 0.33
+Nodes (7): POST(), cleanObject(), generateCalendarId(), DELETE(), GET(), PUT(), Calendar
 
 ### Community 239 - "Community 239"
 Cohesion: 0.25
@@ -1442,7 +1452,7 @@ Nodes (8): code:bash (python3 skills/ui-ux-pro-max/scripts/search.py "AI search 
 
 ### Community 242 - "Community 242"
 Cohesion: 0.24
-Nodes (15): DashboardStats, getCachedDashboardStats(), SearchResult, smartSearch(), getCompanies(), getContacts(), getDeals(), getInvoices() (+7 more)
+Nodes (6): formatPlanDate(), getPlanIcon(), getPriorityColor(), getWeekNumber(), CalendarDayViewProps, CalendarWeekViewProps
 
 ### Community 243 - "Community 243"
 Cohesion: 0.29
@@ -1474,7 +1484,7 @@ Nodes (7): 11. Invoice Management, FT-INV-001: Create Invoice (Draft), FT-INV-00
 
 ### Community 252 - "Community 252"
 Cohesion: 0.29
-Nodes (6): 4. Multi-Tenancy Issues, CRM Issue Report — Phase 3 Audit, ISS-020: getUsers() — Cross-Org Data Exposure, ISS-021: Organization ID Not Always Set, Issue Distribution by Module, Issue Summary
+Nodes (6): 9. Configuration & Environment Issues, CRM Issue Report — Phase 3 Audit, ISS-031: Redis init — Module-Level Instantiation, ISS-032: Firestore Rules — No Index Definitions, Issue Distribution by Module, Issue Summary
 
 ### Community 253 - "Community 253"
 Cohesion: 0.29
@@ -1589,8 +1599,8 @@ Cohesion: 0.33
 Nodes (6): 13.1 Create a Proposal, 13.2 View Proposal List, 13.3 Edit Proposal, 13.4 Delete Proposal, 13.5 New Proposal Button Not Visible for Team, 13. Quotes & Proposals
 
 ### Community 282 - "Community 282"
-Cohesion: 0.33
-Nodes (6): 19.1 View Integrations Page, 19.2 Configure SMTP as Admin, 19.3 Configure Custom SMTP, 19.4 View Existing SMTP Config, 19.5 SMTP — Manager Cannot Access, 19. Integrations
+Cohesion: 0.22
+Nodes (9): 8.2 Security, API Routes, code:javascript (match /leads/{leadId} {), code:javascript (allow create: if request.resource.data.keys().hasAll(['first), code:javascript (allow write: if request.resource.contentType.matches('image/), code:javascript (allow write: if request.resource.size < 5 * 1024 * 1024;), Environment Variables, Firestore Security Rules (+1 more)
 
 ### Community 283 - "Community 283"
 Cohesion: 0.33
@@ -1621,8 +1631,8 @@ Cohesion: 0.33
 Nodes (6): Accessibility, Interaction, Layout, Light/Dark Mode, Pre-Delivery Checklist, Visual Quality
 
 ### Community 290 - "Community 290"
-Cohesion: 0.40
-Nodes (3): inter, metadata, viewport
+Cohesion: 0.39
+Nodes (7): apiDelete(), apiFetch(), apiGet(), apiPost(), apiPut(), ApiRequestInit, useApi()
 
 ### Community 291 - "Community 291"
 Cohesion: 0.25
@@ -1633,8 +1643,8 @@ Cohesion: 0.40
 Nodes (5): code:html (<div class="w-full">100%</div>), code:html (<div class="h-full">100%</div>), Height, Width, Width & Height
 
 ### Community 293 - "Community 293"
-Cohesion: 0.33
-Nodes (6): 29.1 Activity Logged on Lead Creation, 29.2 Activity Logged on Status Change, 29.3 Activity Logged on Lead Conversion, 29.4 Activity Logged on Deal Stage Change, 29.5 View Organization Activities, 29. Activity Timeline
+Cohesion: 0.25
+Nodes (8): 25.1 Network Failure During Lead Creation, 25.2 Server Error on Save, 25.3 Page Refresh During Form Fill, 25.4 Concurrent Edit Conflict, 25.5 Firebase Offline Mode, 25.6 Error Boundary Catch, 25.7 404 Page, 25. Error Recovery
 
 ### Community 294 - "Community 294"
 Cohesion: 0.40
@@ -1749,12 +1759,12 @@ Cohesion: 0.40
 Nodes (5): TailwindConfigGenerator._default_content_paths, excluded_lines, executed_lines, missing_lines, summary
 
 ### Community 324 - "Community 324"
-Cohesion: 0.40
-Nodes (5): TestShadcnInstaller.test_check_shadcn_config_exists, excluded_lines, executed_lines, missing_lines, summary
+Cohesion: 0.29
+Nodes (7): 4.2 Tasks & Calendar (`app/(dashboard)/tasks`), Automated Reminders, Create Task Drawer, Filters, Task Detail Drawer, Tasks Page, View Modes
 
 ### Community 325 - "Community 325"
-Cohesion: 0.40
-Nodes (5): TailwindConfigGenerator.write_config, excluded_lines, executed_lines, missing_lines, summary
+Cohesion: 0.47
+Nodes (5): filterPlansByDateRange(), generatePlanId(), GET(), POST(), Plan
 
 ### Community 326 - "Community 326"
 Cohesion: 0.40
@@ -1917,8 +1927,8 @@ Cohesion: 0.67
 Nodes (3): 7. Middleware & Routing Issues, ISS-027: Legacy Dashboard Layout — Redundant AuthProvider + AuthGate, ISS-028: Admin Route Protection — Inconsistent
 
 ### Community 368 - "Community 368"
-Cohesion: 0.67
-Nodes (3): 9. Configuration & Environment Issues, ISS-031: Redis init — Module-Level Instantiation, ISS-032: Firestore Rules — No Index Definitions
+Cohesion: 0.33
+Nodes (6): 8.3 Error Handling, API Error Handling, code:typescript (try {), Empty States, Global Error Boundary, Loading States
 
 ### Community 369 - "Community 369"
 Cohesion: 0.67
@@ -1930,11 +1940,15 @@ Nodes (3): code:text (crm.excelbees.com/org), code:text (My Organizations), Orga
 
 ### Community 371 - "Community 371"
 Cohesion: 0.40
-Nodes (5): TestShadcnInstaller.test_init_default_project_root, excluded_lines, executed_lines, missing_lines, summary
+Nodes (5): 8.6 Deployment, Backup & Disaster Recovery, Firebase Configuration, Monitoring & Analytics, Vercel Deployment
 
 ### Community 372 - "Community 372"
 Cohesion: 0.67
 Nodes (3): code:text (crm.excelbees.com), Multi-Tenant SaaS Platform, Target Architecture
+
+### Community 373 - "Community 373"
+Cohesion: 0.40
+Nodes (5): TailwindConfigGenerator.validate_config, excluded_lines, executed_lines, missing_lines, summary
 
 ### Community 375 - "Community 375"
 Cohesion: 0.67
@@ -1972,25 +1986,41 @@ Nodes (3): code:text (/org/[orgId]/analytics), CRM Workspace Routes, Updated Rou
 Cohesion: 0.67
 Nodes (3): code:text (/), code:text (crm.excelbees.com/), Public Website Structure
 
+### Community 444 - "Community 444"
+Cohesion: 0.40
+Nodes (5): TestShadcnInstaller.test_add_components_with_overwrite, excluded_lines, executed_lines, missing_lines, summary
+
+### Community 445 - "Community 445"
+Cohesion: 0.40
+Nodes (5): TestShadcnInstaller.test_get_installed_components_no_config, excluded_lines, executed_lines, missing_lines, summary
+
+### Community 446 - "Community 446"
+Cohesion: 0.83
+Nodes (3): DELETE(), GET(), PUT()
+
+### Community 447 - "Community 447"
+Cohesion: 0.67
+Nodes (3): 4. Multi-Tenancy Issues, ISS-020: getUsers() — Cross-Org Data Exposure, ISS-021: Organization ID Not Always Set
+
 ## Knowledge Gaps
-- **2921 isolated node(s):** `Problem`, `Goal`, `Non-goals`, `code:ts (export type AppEnvironment = "dev" | "prd" | "maintenance";)`, `Client-side mirror` (+2916 more)
+- **2923 isolated node(s):** `FEATURES`, `signupSchema`, `SignupFormData`, `HIGHLIGHTS`, `inter` (+2918 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **60 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `getDoc()` connect `Community 4` to `Community 0`, `Community 2`, `Community 3`, `Community 67`, `Community 100`, `Community 5`, `Community 6`, `Community 234`, `Community 14`, `Community 118`, `Community 54`, `Community 58`, `Community 125`?**
-  _High betweenness centrality (0.028) - this node is a cross-community bridge._
-- **Why does `test` connect `Community 13` to `Community 66`, `Community 133`, `Community 134`, `Community 7`, `Community 168`, `Community 169`, `Community 105`, `Community 170`, `Community 14`, `Community 143`, `Community 20`, `Community 85`, `Community 125`, `Community 154`, `Community 124`, `Community 93`, `Community 190`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **Why does `cn()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 36`, `Community 4`, `Community 6`, `Community 40`, `Community 9`, `Community 234`, `Community 205`, `Community 238`, `Community 49`, `Community 86`, `Community 247`, `Community 58`, `Community 126`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **What connects `Problem`, `Goal`, `Non-goals` to the rest of the system?**
-  _3081 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `getDoc()` connect `Community 4` to `Community 2`, `Community 3`, `Community 100`, `Community 5`, `Community 234`, `Community 14`, `Community 49`, `Community 118`, `Community 24`, `Community 58`?**
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+- **Why does `test` connect `Community 13` to `Community 66`, `Community 133`, `Community 134`, `Community 7`, `Community 168`, `Community 169`, `Community 106`, `Community 105`, `Community 170`, `Community 14`, `Community 143`, `Community 85`, `Community 125`, `Community 154`, `Community 124`, `Community 93`, `Community 190`?**
+  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+- **Why does `cn()` connect `Community 205` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 6`, `Community 40`, `Community 9`, `Community 49`, `Community 21`, `Community 86`, `Community 247`, `Community 58`, `Community 126`?**
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+- **What connects `FEATURES`, `signupSchema`, `SignupFormData` to the rest of the system?**
+  _3083 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
-  _Cohesion score 0.06041986687147977 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05429864253393665 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.04803312629399586 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0436761811023622 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.033120859892513434 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0412280701754386 - nodes in this community are weakly interconnected._
