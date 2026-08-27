@@ -18,6 +18,8 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { createUserProfile } from "@/lib/firestore/users";
 import { signInWithGoogle } from "@/lib/auth/auth-service";
+import { checkAuthAvailability } from "@/app/actions/check-auth-availability";
+import { isMaintenanceClient } from "@/lib/env";
 import { Mail, Lock, Eye, EyeOff, User, ChevronLeft, Zap, Users2, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -51,6 +53,12 @@ export default function SignupPage() {
 
     const onSubmit = async (data: SignupFormData) => {
         setLoading(true);
+        const { allowed } = await checkAuthAvailability();
+        if (!allowed) {
+            toast.error("Sign-up is temporarily unavailable while we perform maintenance.");
+            setLoading(false);
+            return;
+        }
         try {
             const credential = await createUserWithEmailAndPassword(auth, data.email, data.password);
             await updateProfile(credential.user, { displayName: data.displayName });
@@ -75,6 +83,12 @@ export default function SignupPage() {
 
     const handleGoogle = async () => {
         setGoogleLoading(true);
+        const { allowed } = await checkAuthAvailability();
+        if (!allowed) {
+            toast.error("Sign-up is temporarily unavailable while we perform maintenance.");
+            setGoogleLoading(false);
+            return;
+        }
         const { user, isNewUser, error } = await signInWithGoogle();
         if (error) { toast.error("Google sign-up failed. Please try again."); setGoogleLoading(false); return; }
         if (!user) { setGoogleLoading(false); return; }
@@ -124,123 +138,131 @@ export default function SignupPage() {
                     <p className="mt-1.5 text-muted-foreground">Sign up and get 30 days free</p>
                 </div>
 
-                {/* Google Button */}
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11 gap-3 font-medium border-border hover:bg-muted/50 mb-6"
-                    onClick={handleGoogle}
-                    disabled={googleLoading || loading}
-                >
-                    {googleLoading ? <LoadingSpinner size="sm" /> : <GoogleIcon />}
-                    Continue with Google
-                </Button>
-
-                {/* Divider */}
-                <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-border" />
+                {isMaintenanceClient ? (
+                    <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                        Sign-up is temporarily unavailable while we perform maintenance. Please check back shortly.
                     </div>
-                    <div className="relative flex justify-center text-xs">
-                        <span className="bg-white dark:bg-[hsl(215,25%,9%)] px-3 text-muted-foreground">
-                            or sign up with email
-                        </span>
-                    </div>
-                </div>
-
-                {/* Form */}
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="displayName"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Full name</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input placeholder="John Smith" className="pl-10 h-11" disabled={loading} {...field} />
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input type="email" placeholder="you@company.com" className="pl-10 h-11" disabled={loading} {...field} />
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Password</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                type={showPassword ? "text" : "password"}
-                                                placeholder="Min. 8 characters"
-                                                className="pl-10 pr-10 h-11"
-                                                disabled={loading}
-                                                {...field}
-                                            />
-                                            <button
-                                                type="button"
-                                                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                            >
-                                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                            </button>
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="confirmPassword"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Confirm password</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input type="password" placeholder="Repeat your password" className="pl-10 h-11" disabled={loading} {...field} />
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
+                ) : (
+                    <>
+                        {/* Google Button */}
                         <Button
-                            type="submit"
-                            className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold mt-2"
-                            disabled={loading || googleLoading}
+                            type="button"
+                            variant="outline"
+                            className="w-full h-11 gap-3 font-medium border-border hover:bg-muted/50 mb-6"
+                            onClick={handleGoogle}
+                            disabled={googleLoading || loading}
                         >
-                            {loading ? <LoadingSpinner size="sm" className="mx-auto" /> : "Create Account"}
+                            {googleLoading ? <LoadingSpinner size="sm" /> : <GoogleIcon />}
+                            Continue with Google
                         </Button>
-                    </form>
-                </Form>
+
+                        {/* Divider */}
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-border" />
+                            </div>
+                            <div className="relative flex justify-center text-xs">
+                                <span className="bg-white dark:bg-[hsl(215,25%,9%)] px-3 text-muted-foreground">
+                                    or sign up with email
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Form */}
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="displayName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Full name</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                    <Input placeholder="John Smith" className="pl-10 h-11" disabled={loading} {...field} />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Email</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                    <Input type="email" placeholder="you@company.com" className="pl-10 h-11" disabled={loading} {...field} />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Password</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                    <Input
+                                                        type={showPassword ? "text" : "password"}
+                                                        placeholder="Min. 8 characters"
+                                                        className="pl-10 pr-10 h-11"
+                                                        disabled={loading}
+                                                        {...field}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                    >
+                                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                    </button>
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="confirmPassword"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Confirm password</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                    <Input type="password" placeholder="Repeat your password" className="pl-10 h-11" disabled={loading} {...field} />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <Button
+                                    type="submit"
+                                    className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold mt-2"
+                                    disabled={loading || googleLoading}
+                                >
+                                    {loading ? <LoadingSpinner size="sm" className="mx-auto" /> : "Create Account"}
+                                </Button>
+                            </form>
+                        </Form>
+                    </>
+                )}
 
                 <p className="mt-4 text-center text-xs text-muted-foreground">
                     By creating an account you agree to our{" "}

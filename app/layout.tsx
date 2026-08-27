@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
+import { EnvironmentBanner } from "@/components/system/EnvironmentBanner";
+import { isDev } from "@/lib/env";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -18,6 +20,23 @@ export const metadata: Metadata = {
         icon: "/favicon.ico",
         apple: "/logo.png",
     },
+    robots: isDev
+        ? {
+              index: false,
+              follow: false,
+              googleBot: { index: false, follow: false },
+          }
+        : {
+              index: true,
+              follow: true,
+              googleBot: {
+                  index: true,
+                  follow: true,
+                  "max-video-preview": -1,
+                  "max-image-preview": "large",
+                  "max-snippet": -1,
+              },
+          },
 };
 
 export const viewport: Viewport = {
@@ -38,6 +57,7 @@ export default function RootLayout({
     return (
         <html lang="en-AU" suppressHydrationWarning>
             <body className={inter.className} suppressHydrationWarning>
+                <EnvironmentBanner />
                 <ThemeProvider
                     attribute="class"
                     defaultTheme="system"

@@ -716,7 +716,8 @@ Email drafting, text rewriting, meeting summarization, and NL search are NOT cac
 ```env
 # App
 NEXT_PUBLIC_APP_URL=https://your-domain.com
-IS_PRODUCTION=true
+APP_ENVIRONMENT=prd
+NEXT_PUBLIC_APP_ENVIRONMENT=prd
 
 # Gemini AI (Server-only — never prefix with NEXT_PUBLIC_)
 GEMINI_API_KEY=

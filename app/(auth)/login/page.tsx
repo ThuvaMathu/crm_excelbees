@@ -15,10 +15,12 @@ import {
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { signInWithEmail, signInWithGoogle } from "@/lib/auth/auth-service";
 import { checkLoginRateLimit } from "@/app/actions/login-rate-limit";
+import { checkAuthAvailability } from "@/app/actions/check-auth-availability";
 import { createUserProfile } from "@/lib/firestore/users";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { analytics } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
+import { isMaintenanceClient } from "@/lib/env";
 import { Mail, Lock, Eye, EyeOff, ChevronLeft, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -70,10 +72,14 @@ export default function LoginPage() {
 
     const onSubmit = async (data: LoginFormData) => {
         setLoading(true);
-        const { allowed, resetIn } = await checkLoginRateLimit(data.email);
+        const { allowed, resetIn, reason } = await checkLoginRateLimit(data.email);
         if (!allowed) {
-            const minutes = Math.max(1, Math.ceil(resetIn / 60));
-            toast.error(`Too many attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`);
+            if (reason === "maintenance") {
+                toast.error("Sign-in is temporarily unavailable while we perform maintenance.");
+            } else {
+                const minutes = Math.max(1, Math.ceil(resetIn / 60));
+                toast.error(`Too many attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`);
+            }
             setLoading(false);
             return;
         }
@@ -92,6 +98,12 @@ export default function LoginPage() {
 
     const handleGoogle = async () => {
         setGoogleLoading(true);
+        const { allowed } = await checkAuthAvailability();
+        if (!allowed) {
+            toast.error("Sign-in is temporarily unavailable while we perform maintenance.");
+            setGoogleLoading(false);
+            return;
+        }
         const { user: authUser, isNewUser, error } = await signInWithGoogle();
         if (error) { toast.error("Google sign-in failed. Please try again."); setGoogleLoading(false); return; }
         if (!authUser) { setGoogleLoading(false); return; }
@@ -140,108 +152,116 @@ export default function LoginPage() {
                     <p className="mt-1.5 text-muted-foreground">Sign in to your CRM account</p>
                 </div>
 
-                {/* Google Button */}
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11 gap-3 font-medium border-border hover:bg-muted/50 mb-6"
-                    onClick={handleGoogle}
-                    disabled={googleLoading || loading}
-                >
-                    {googleLoading ? (
-                        <LoadingSpinner size="sm" />
-                    ) : (
-                        <GoogleIcon />
-                    )}
-                    Continue with Google
-                </Button>
-
-                {/* Divider */}
-                <div className="relative mb-6">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-border" />
+                {isMaintenanceClient ? (
+                    <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                        Sign-in is temporarily unavailable while we perform maintenance. Please check back shortly.
                     </div>
-                    <div className="relative flex justify-center text-xs">
-                        <span className="bg-white dark:bg-[hsl(215,25%,9%)] px-3 text-muted-foreground">
-                            or sign in with email
-                        </span>
-                    </div>
-                </div>
-
-                {/* Email / Password Form */}
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                type="email"
-                                                placeholder="you@company.com"
-                                                className="pl-10 h-11"
-                                                disabled={loading}
-                                                {...field}
-                                            />
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <div className="flex items-center justify-between">
-                                        <FormLabel>Password</FormLabel>
-                                        <Link
-                                            href="/forgot-password"
-                                            className="text-xs text-primary hover:underline font-medium"
-                                        >
-                                            Forgot password?
-                                        </Link>
-                                    </div>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                type={showPassword ? "text" : "password"}
-                                                placeholder="••••••••"
-                                                className="pl-10 pr-10 h-11"
-                                                disabled={loading}
-                                                {...field}
-                                            />
-                                            <button
-                                                type="button"
-                                                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                                                onClick={() => setShowPassword(!showPassword)}
-                                                aria-label={showPassword ? "Hide password" : "Show password"}
-                                            >
-                                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                            </button>
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
+                ) : (
+                    <>
+                        {/* Google Button */}
                         <Button
-                            type="submit"
-                            className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold mt-2"
-                            disabled={loading || googleLoading}
+                            type="button"
+                            variant="outline"
+                            className="w-full h-11 gap-3 font-medium border-border hover:bg-muted/50 mb-6"
+                            onClick={handleGoogle}
+                            disabled={googleLoading || loading}
                         >
-                            {loading ? <LoadingSpinner size="sm" className="mx-auto" /> : "Sign In"}
+                            {googleLoading ? (
+                                <LoadingSpinner size="sm" />
+                            ) : (
+                                <GoogleIcon />
+                            )}
+                            Continue with Google
                         </Button>
-                    </form>
-                </Form>
+
+                        {/* Divider */}
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-border" />
+                            </div>
+                            <div className="relative flex justify-center text-xs">
+                                <span className="bg-white dark:bg-[hsl(215,25%,9%)] px-3 text-muted-foreground">
+                                    or sign in with email
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Email / Password Form */}
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Email</FormLabel>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                    <Input
+                                                        type="email"
+                                                        placeholder="you@company.com"
+                                                        className="pl-10 h-11"
+                                                        disabled={loading}
+                                                        {...field}
+                                                    />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <div className="flex items-center justify-between">
+                                                <FormLabel>Password</FormLabel>
+                                                <Link
+                                                    href="/forgot-password"
+                                                    className="text-xs text-primary hover:underline font-medium"
+                                                >
+                                                    Forgot password?
+                                                </Link>
+                                            </div>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                                    <Input
+                                                        type={showPassword ? "text" : "password"}
+                                                        placeholder="••••••••"
+                                                        className="pl-10 pr-10 h-11"
+                                                        disabled={loading}
+                                                        {...field}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                                    >
+                                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                    </button>
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <Button
+                                    type="submit"
+                                    className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold mt-2"
+                                    disabled={loading || googleLoading}
+                                >
+                                    {loading ? <LoadingSpinner size="sm" className="mx-auto" /> : "Sign In"}
+                                </Button>
+                            </form>
+                        </Form>
+                    </>
+                )}
 
                 {/* Sign up link */}
                 <p className="mt-6 text-center text-sm text-muted-foreground">

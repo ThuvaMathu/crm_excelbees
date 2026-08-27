@@ -1,10 +1,9 @@
 
-// Verification script for robots.ts logic
-const mockRobots = (isProduction, appUrl) => {
-  const isProductionValue = isProduction === 'true';
+// Verification script for app/robots.ts logic
+const mockRobots = (appEnvironment, appUrl) => {
   const baseUrl = appUrl || 'https://excelbees.com';
 
-  if (!isProductionValue) {
+  if (appEnvironment === 'dev') {
     return {
       rules: {
         userAgent: '*',
@@ -14,6 +13,7 @@ const mockRobots = (isProduction, appUrl) => {
     };
   }
 
+  // prd and maintenance both stay indexable
   return {
     rules: {
       userAgent: '*',
@@ -23,11 +23,14 @@ const mockRobots = (isProduction, appUrl) => {
   };
 };
 
-console.log("--- Test: Non-Production ---");
-console.log(JSON.stringify(mockRobots('false', 'https://dev.crm.excelbees.com'), null, 2));
+console.log("--- Test: dev ---");
+console.log(JSON.stringify(mockRobots('dev', 'https://dev.crm.excelbees.com'), null, 2));
 
-console.log("\n--- Test: Production ---");
-console.log(JSON.stringify(mockRobots('true', 'https://crm.excelbees.com'), null, 2));
+console.log("\n--- Test: prd ---");
+console.log(JSON.stringify(mockRobots('prd', 'https://crm.excelbees.com'), null, 2));
+
+console.log("\n--- Test: maintenance ---");
+console.log(JSON.stringify(mockRobots('maintenance', 'https://crm.excelbees.com'), null, 2));
 
 console.log("\n--- Test: Default appUrl ---");
-console.log(JSON.stringify(mockRobots('true', undefined), null, 2));
+console.log(JSON.stringify(mockRobots('prd', undefined), null, 2));
