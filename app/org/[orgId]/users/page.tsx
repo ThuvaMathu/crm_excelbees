@@ -25,7 +25,8 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { AddMemberModal } from "@/components/team/AddMemberModal";
 import { MemberPermissionsModal } from "@/components/team/MemberPermissionsModal";
-import { getOrganizationMembers } from "@/lib/firestore/organizations";
+import { getOrganizationMembers, removeOrganizationMember } from "@/lib/firestore/organizations";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { toJsDate } from "@/lib/utils";
 import { useOrgStore } from "@/store/org";
 import type { OrganizationMember, UserRole } from "@/types/crm";
@@ -36,6 +37,7 @@ import {
     Users,
     MoreHorizontal,
     ShieldCheck,
+    Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -59,6 +61,7 @@ function UsersPageContent() {
     const [loading,            setLoading]           = useState(true);
     const [addModalOpen,       setAddModalOpen]      = useState(false);
     const [permTarget,         setPermTarget]        = useState<OrganizationMember | null>(null);
+    const { confirm, ConfirmDialog } = useConfirm();
 
     const callerRole  = (currentMember?.role ?? "team") as UserRole;
     const isAdmin     = callerRole === "admin";
@@ -77,6 +80,21 @@ function UsersPageContent() {
     };
 
     useEffect(() => { fetchMembers(); }, []);
+
+    const handleRemoveMember = async (target: OrganizationMember) => {
+        const targetName = target.displayName || target.email || "this member";
+        if (!(await confirm({ title: "Remove Member", message: `Are you sure you want to remove ${targetName} from the team?`, confirmLabel: "Remove", destructive: true }))) {
+            return;
+        }
+
+        const { success, error } = await removeOrganizationMember(orgId, target.userId);
+        if (success) {
+            toast.success("Member removed successfully");
+            fetchMembers();
+        } else {
+            toast.error(error || "Failed to remove member");
+        }
+    };
 
     // Decide whether a caller can open the permissions modal for a given member.
     function canEditMember(target: OrganizationMember): boolean {
@@ -188,15 +206,28 @@ function UsersPageContent() {
                                             {canManage && (
                                                 <TableCell className="text-right">
                                                     {canEditThis ? (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="gap-1.5 text-muted-foreground hover:text-foreground"
-                                                            onClick={() => setPermTarget(m)}
-                                                        >
-                                                            <ShieldCheck className="h-4 w-4" />
-                                                            <span className="hidden sm:inline">Edit</span>
-                                                        </Button>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                                    <MoreHorizontal className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => setPermTarget(m)}>
+                                                                    <ShieldCheck className="h-4 w-4 mr-2" />
+                                                                    Edit Permissions
+                                                                </DropdownMenuItem>
+                                                                {isAdmin && (
+                                                                    <>
+                                                                        <DropdownMenuSeparator />
+                                                                        <DropdownMenuItem onClick={() => handleRemoveMember(m)} className="text-destructive focus:text-destructive">
+                                                                            <Trash2 className="h-4 w-4 mr-2" />
+                                                                            Remove Member
+                                                                        </DropdownMenuItem>
+                                                                    </>
+                                                                )}
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     ) : (
                                                         /* Render empty cell to keep table aligned */
                                                         <span className="text-xs text-muted-foreground/40 pr-2">—</span>
@@ -211,6 +242,7 @@ function UsersPageContent() {
                     </div>
                 )}
             </Card>
+            <ConfirmDialog />
 
             {/* RBAC legend for managers */}
             {isManager && (
