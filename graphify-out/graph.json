@@ -4,6 +4,7 @@
   "graph": {},
   "nodes": [
     {
+<<<<<<< HEAD
       "label": "components.json",
       "file_type": "code",
       "source_file": "components.json",
@@ -7321,12 +7322,18 @@
       "norm_label": "forgotpasswordpage()"
     },
     {
+=======
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "label": "page.tsx",
       "file_type": "code",
       "source_file": "app/(auth)/login/page.tsx",
       "source_location": "L1",
       "id": "app_auth_login_page_tsx",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "page.tsx"
     },
     {
@@ -7335,7 +7342,11 @@
       "source_file": "app/(auth)/login/page.tsx",
       "source_location": "L27",
       "id": "login_page_features",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "features"
     },
     {
@@ -7344,7 +7355,11 @@
       "source_file": "app/(auth)/login/page.tsx",
       "source_location": "L34",
       "id": "login_page_loginpage",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "loginpage()"
     },
     {
@@ -7353,7 +7368,11 @@
       "source_file": "app/(auth)/login/page.tsx",
       "source_location": "L315",
       "id": "login_page_googleicon",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "googleicon()"
     },
     {
@@ -7362,7 +7381,11 @@
       "source_file": "app/(auth)/signup/page.tsx",
       "source_location": "L1",
       "id": "app_auth_signup_page_tsx",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "page.tsx"
     },
     {
@@ -7371,7 +7394,11 @@
       "source_file": "app/(auth)/signup/page.tsx",
       "source_location": "L26",
       "id": "signup_page_signupschema",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "signupschema"
     },
     {
@@ -7380,7 +7407,11 @@
       "source_file": "app/(auth)/signup/page.tsx",
       "source_location": "L35",
       "id": "signup_page_signupformdata",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "signupformdata"
     },
     {
@@ -7389,7 +7420,11 @@
       "source_file": "app/(auth)/signup/page.tsx",
       "source_location": "L37",
       "id": "signup_page_highlights",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "highlights"
     },
     {
@@ -7398,7 +7433,11 @@
       "source_file": "app/(auth)/signup/page.tsx",
       "source_location": "L43",
       "id": "signup_page_signuppage",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "signuppage()"
     },
     {
@@ -7407,6 +7446,7 @@
       "source_file": "app/(auth)/signup/page.tsx",
       "source_location": "L332",
       "id": "signup_page_googleicon",
+<<<<<<< HEAD
       "community": 205,
       "norm_label": "googleicon()"
     },
@@ -7690,12 +7730,22 @@
       "norm_label": "setuseractiveaction()"
     },
     {
+=======
+      "community": 2,
+      "norm_label": "googleicon()"
+    },
+    {
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "label": "check-auth-availability.ts",
       "file_type": "code",
       "source_file": "app/actions/check-auth-availability.ts",
       "source_location": "L1",
       "id": "app_actions_check_auth_availability_ts",
+<<<<<<< HEAD
       "community": 205,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "check-auth-availability.ts"
     },
     {
@@ -7704,6 +7754,7 @@
       "source_file": "app/actions/check-auth-availability.ts",
       "source_location": "L15",
       "id": "actions_check_auth_availability_checkauthavailability",
+<<<<<<< HEAD
       "community": 205,
       "norm_label": "checkauthavailability()"
     },
@@ -7825,12 +7876,22 @@
       "norm_label": "revokeinviteaction()"
     },
     {
+=======
+      "community": 2,
+      "norm_label": "checkauthavailability()"
+    },
+    {
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "label": "login-rate-limit.ts",
       "file_type": "code",
       "source_file": "app/actions/login-rate-limit.ts",
       "source_location": "L1",
       "id": "app_actions_login_rate_limit_ts",
+<<<<<<< HEAD
       "community": 281,
+=======
+      "community": 2,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "login-rate-limit.ts"
     },
     {
@@ -7839,6 +7900,7 @@
       "source_file": "app/actions/login-rate-limit.ts",
       "source_location": "L15",
       "id": "actions_login_rate_limit_checkloginratelimit",
+<<<<<<< HEAD
       "community": 281,
       "norm_label": "checkloginratelimit()"
     },
@@ -12557,6 +12619,127 @@
       "id": "skeletons_pageskeletons_dashboardskeleton",
       "community": 2,
       "norm_label": "dashboardskeleton()"
+=======
+      "community": 2,
+      "norm_label": "checkloginratelimit()"
+    },
+    {
+      "label": "layout.tsx",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L1",
+      "id": "app_layout_tsx",
+      "community": 3,
+      "norm_label": "layout.tsx"
+    },
+    {
+      "label": "inter",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L9",
+      "id": "app_layout_inter",
+      "community": 3,
+      "norm_label": "inter"
+    },
+    {
+      "label": "metadata",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L11",
+      "id": "app_layout_metadata",
+      "community": 3,
+      "norm_label": "metadata"
+    },
+    {
+      "label": "viewport",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L42",
+      "id": "app_layout_viewport",
+      "community": 3,
+      "norm_label": "viewport"
+    },
+    {
+      "label": "RootLayout()",
+      "file_type": "code",
+      "source_file": "app/layout.tsx",
+      "source_location": "L52",
+      "id": "app_layout_rootlayout",
+      "community": 3,
+      "norm_label": "rootlayout()"
+    },
+    {
+      "label": "page.tsx",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L1",
+      "id": "app_page_tsx",
+      "community": 9,
+      "norm_label": "page.tsx"
+    },
+    {
+      "label": "TestimonialsSection",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L7",
+      "id": "app_page_testimonialssection",
+      "community": 9,
+      "norm_label": "testimonialssection"
+    },
+    {
+      "label": "AboutSection",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L11",
+      "id": "app_page_aboutsection",
+      "community": 9,
+      "norm_label": "aboutsection"
+    },
+    {
+      "label": "BlogSection",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L15",
+      "id": "app_page_blogsection",
+      "community": 9,
+      "norm_label": "blogsection"
+    },
+    {
+      "label": "metadata",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L21",
+      "id": "app_page_metadata",
+      "community": 9,
+      "norm_label": "metadata"
+    },
+    {
+      "label": "Home()",
+      "file_type": "code",
+      "source_file": "app/page.tsx",
+      "source_location": "L78",
+      "id": "app_page_home",
+      "community": 9,
+      "norm_label": "home()"
+    },
+    {
+      "label": "robots.ts",
+      "file_type": "code",
+      "source_file": "app/robots.ts",
+      "source_location": "L1",
+      "id": "app_robots_ts",
+      "community": 3,
+      "norm_label": "robots.ts"
+    },
+    {
+      "label": "robots()",
+      "file_type": "code",
+      "source_file": "app/robots.ts",
+      "source_location": "L5",
+      "id": "app_robots_robots",
+      "community": 3,
+      "norm_label": "robots()"
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "label": "EnvironmentBanner.tsx",
@@ -12564,7 +12747,11 @@
       "source_file": "components/system/EnvironmentBanner.tsx",
       "source_location": "L1",
       "id": "components_system_environmentbanner_tsx",
+<<<<<<< HEAD
       "community": 54,
+=======
+      "community": 3,
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "norm_label": "environmentbanner.tsx"
     },
     {
@@ -12573,6 +12760,7 @@
       "source_file": "components/system/EnvironmentBanner.tsx",
       "source_location": "L3",
       "id": "system_environmentbanner_environmentbanner",
+<<<<<<< HEAD
       "community": 54,
       "norm_label": "environmentbanner()"
     },
@@ -54625,12 +54813,18 @@
       "norm_label": "license"
     },
     {
+=======
+      "community": 3,
+      "norm_label": "environmentbanner()"
+    },
+    {
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "label": "2026-08-27-app-environment-design.md",
       "file_type": "document",
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L1",
       "id": "docs_superpowers_specs_2026_08_27_app_environment_design_md",
-      "community": 266,
+      "community": 6,
       "norm_label": "2026-08-27-app-environment-design.md"
     },
     {
@@ -54639,7 +54833,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L1",
       "id": "specs_2026_08_27_app_environment_design_app_environment_design_spec",
-      "community": 266,
+      "community": 6,
       "norm_label": "app_environment \u2014 design spec"
     },
     {
@@ -54648,7 +54842,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L5",
       "id": "specs_2026_08_27_app_environment_design_problem",
-      "community": 266,
+      "community": 6,
       "norm_label": "problem"
     },
     {
@@ -54657,7 +54851,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L9",
       "id": "specs_2026_08_27_app_environment_design_goal",
-      "community": 266,
+      "community": 6,
       "norm_label": "goal"
     },
     {
@@ -54666,7 +54860,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L13",
       "id": "specs_2026_08_27_app_environment_design_non_goals",
-      "community": 266,
+      "community": 6,
       "norm_label": "non-goals"
     },
     {
@@ -54675,7 +54869,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L18",
       "id": "specs_2026_08_27_app_environment_design_central_config_lib_env_ts_new",
-      "community": 266,
+      "community": 6,
       "norm_label": "central config: `lib/env.ts` (new)"
     },
     {
@@ -54684,7 +54878,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L20",
       "id": "specs_2026_08_27_app_environment_design_codeblock_1",
-      "community": 266,
+      "community": 6,
       "norm_label": "code:ts (export type appenvironment = \"dev\" | \"prd\" | \"maintenance\";)"
     },
     {
@@ -54693,7 +54887,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L40",
       "id": "specs_2026_08_27_app_environment_design_client_side_mirror",
-      "community": 266,
+      "community": 6,
       "norm_label": "client-side mirror"
     },
     {
@@ -54702,7 +54896,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L46",
       "id": "specs_2026_08_27_app_environment_design_seo_app_robots_ts_new_app_layout_tsx",
-      "community": 266,
+      "community": 6,
       "norm_label": "seo \u2014 `app/robots.ts` (new) + `app/layout.tsx`"
     },
     {
@@ -54711,7 +54905,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L53",
       "id": "specs_2026_08_27_app_environment_design_banner_components_system_environmentbanner_tsx_new",
-      "community": 266,
+      "community": 6,
       "norm_label": "banner \u2014 `components/system/environmentbanner.tsx` (new)"
     },
     {
@@ -54720,7 +54914,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L61",
       "id": "specs_2026_08_27_app_environment_design_maintenance_auth_block",
-      "community": 266,
+      "community": 6,
       "norm_label": "maintenance auth block"
     },
     {
@@ -54729,7 +54923,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L74",
       "id": "specs_2026_08_27_app_environment_design_middleware",
-      "community": 266,
+      "community": 6,
       "norm_label": "middleware"
     },
     {
@@ -54738,7 +54932,7 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L78",
       "id": "specs_2026_08_27_app_environment_design_files_touched",
-      "community": 266,
+      "community": 6,
       "norm_label": "files touched"
     },
     {
@@ -54747,10 +54941,11 @@
       "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
       "source_location": "L96",
       "id": "specs_2026_08_27_app_environment_design_testing",
-      "community": 266,
+      "community": 6,
       "norm_label": "testing"
     },
     {
+<<<<<<< HEAD
       "label": "imagelist.md",
       "file_type": "document",
       "source_file": "lib/constants/blog/imagelist.md",
@@ -54911,9 +55106,1534 @@
       "id": "blog_imagelist_summary",
       "community": 88,
       "norm_label": "summary"
+=======
+      "label": "instrumentation.ts",
+      "file_type": "code",
+      "source_file": "instrumentation.ts",
+      "source_location": "L1",
+      "id": "instrumentation_ts",
+      "community": 3,
+      "norm_label": "instrumentation.ts"
+    },
+    {
+      "label": "register()",
+      "file_type": "code",
+      "source_file": "instrumentation.ts",
+      "source_location": "L8",
+      "id": "crm_excelbees_instrumentation_register",
+      "community": 3,
+      "norm_label": "register()"
+    },
+    {
+      "label": "auth-service.ts",
+      "file_type": "code",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L1",
+      "id": "lib_auth_auth_service_ts",
+      "community": 2,
+      "norm_label": "auth-service.ts"
+    },
+    {
+      "label": "signInWithEmail()",
+      "file_type": "code",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L16",
+      "id": "auth_auth_service_signinwithemail",
+      "community": 2,
+      "norm_label": "signinwithemail()"
+    },
+    {
+      "label": "signUpWithEmail()",
+      "file_type": "code",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L38",
+      "id": "auth_auth_service_signupwithemail",
+      "community": 2,
+      "norm_label": "signupwithemail()"
+    },
+    {
+      "label": "signInWithGoogle()",
+      "file_type": "code",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L82",
+      "id": "auth_auth_service_signinwithgoogle",
+      "community": 2,
+      "norm_label": "signinwithgoogle()"
+    },
+    {
+      "label": "signOut()",
+      "file_type": "code",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L112",
+      "id": "auth_auth_service_signout",
+      "community": 2,
+      "norm_label": "signout()"
+    },
+    {
+      "label": "sendPasswordReset()",
+      "file_type": "code",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L126",
+      "id": "auth_auth_service_sendpasswordreset",
+      "community": 2,
+      "norm_label": "sendpasswordreset()"
+    },
+    {
+      "label": "onAuthStateChanged()",
+      "file_type": "code",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L140",
+      "id": "auth_auth_service_onauthstatechanged",
+      "community": 2,
+      "norm_label": "onauthstatechanged()"
+    },
+    {
+      "label": "env.ts",
+      "file_type": "code",
+      "source_file": "lib/env.ts",
+      "source_location": "L1",
+      "id": "lib_env_ts",
+      "community": 3,
+      "norm_label": "env.ts"
+    },
+    {
+      "label": "AppEnvironment",
+      "file_type": "code",
+      "source_file": "lib/env.ts",
+      "source_location": "L13",
+      "id": "lib_env_appenvironment",
+      "community": 3,
+      "norm_label": "appenvironment"
+    },
+    {
+      "label": "parseAppEnvironment()",
+      "file_type": "code",
+      "source_file": "lib/env.ts",
+      "source_location": "L15",
+      "id": "lib_env_parseappenvironment",
+      "community": 3,
+      "norm_label": "parseappenvironment()"
+    },
+    {
+      "label": "appEnvironmentClient",
+      "file_type": "code",
+      "source_file": "lib/env.ts",
+      "source_location": "L27",
+      "id": "lib_env_appenvironmentclient",
+      "community": 3,
+      "norm_label": "appenvironmentclient"
+    },
+    {
+      "label": "environment.ts",
+      "file_type": "code",
+      "source_file": "lib/environment.ts",
+      "source_location": "L1",
+      "id": "lib_environment_ts",
+      "community": 3,
+      "norm_label": "environment.ts"
+    },
+    {
+      "label": "getAppUrl()",
+      "file_type": "code",
+      "source_file": "lib/environment.ts",
+      "source_location": "L19",
+      "id": "lib_environment_getappurl",
+      "community": 3,
+      "norm_label": "getappurl()"
+    },
+    {
+      "label": "requireEnvVar()",
+      "file_type": "code",
+      "source_file": "lib/environment.ts",
+      "source_location": "L35",
+      "id": "lib_environment_requireenvvar",
+      "community": 3,
+      "norm_label": "requireenvvar()"
+    },
+    {
+      "label": "getEnvVar()",
+      "file_type": "code",
+      "source_file": "lib/environment.ts",
+      "source_location": "L46",
+      "id": "lib_environment_getenvvar",
+      "community": 3,
+      "norm_label": "getenvvar()"
+    },
+    {
+      "label": "getEnvVarNumber()",
+      "file_type": "code",
+      "source_file": "lib/environment.ts",
+      "source_location": "L54",
+      "id": "lib_environment_getenvvarnumber",
+      "community": 3,
+      "norm_label": "getenvvarnumber()"
+    },
+    {
+      "label": "getEnvVarBoolean()",
+      "file_type": "code",
+      "source_file": "lib/environment.ts",
+      "source_location": "L65",
+      "id": "lib_environment_getenvvarboolean",
+      "community": 3,
+      "norm_label": "getenvvarboolean()"
+    },
+    {
+      "label": "verify-robots.js",
+      "file_type": "code",
+      "source_file": "scripts/verify-robots.js",
+      "source_location": "L1",
+      "id": "scripts_verify_robots_js",
+      "community": 11,
+      "norm_label": "verify-robots.js"
+    },
+    {
+      "label": "mockRobots()",
+      "file_type": "code",
+      "source_file": "scripts/verify-robots.js",
+      "source_location": "L3",
+      "id": "scripts_verify_robots_mockrobots",
+      "community": 11,
+      "norm_label": "mockrobots()"
+    },
+    {
+      "label": "ship-to-prd.md",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L1",
+      "id": "ship_to_prd_md",
+      "community": 0,
+      "norm_label": "ship-to-prd.md"
+    },
+    {
+      "label": "ExcelBees CRM \u2014 Ship to Production Roadmap",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L1",
+      "id": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "community": 0,
+      "norm_label": "excelbees crm \u2014 ship to production roadmap"
+    },
+    {
+      "label": "Table of Contents",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L10",
+      "id": "crm_excelbees_ship_to_prd_table_of_contents",
+      "community": 0,
+      "norm_label": "table of contents"
+    },
+    {
+      "label": "1. Completed: Marketing Removal",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L21",
+      "id": "crm_excelbees_ship_to_prd_1_completed_marketing_removal",
+      "community": 0,
+      "norm_label": "1. completed: marketing removal"
+    },
+    {
+      "label": "Deleted (42+ directories/files)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L25",
+      "id": "crm_excelbees_ship_to_prd_deleted_42_directories_files",
+      "community": 0,
+      "norm_label": "deleted (42+ directories/files)"
+    },
+    {
+      "label": "Files Modified",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L39",
+      "id": "crm_excelbees_ship_to_prd_files_modified",
+      "community": 0,
+      "norm_label": "files modified"
+    },
+    {
+      "label": "Dependencies Removed (to be selectively re-added)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L59",
+      "id": "crm_excelbees_ship_to_prd_dependencies_removed_to_be_selectively_re_added",
+      "community": 0,
+      "norm_label": "dependencies removed (to be selectively re-added)"
+    },
+    {
+      "label": "2. Current Architecture",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L67",
+      "id": "crm_excelbees_ship_to_prd_2_current_architecture",
+      "community": 0,
+      "norm_label": "2. current architecture"
+    },
+    {
+      "label": "Tech Stack",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L69",
+      "id": "crm_excelbees_ship_to_prd_tech_stack",
+      "community": 0,
+      "norm_label": "tech stack"
+    },
+    {
+      "label": "CRM Modules",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L80",
+      "id": "crm_excelbees_ship_to_prd_crm_modules",
+      "community": 0,
+      "norm_label": "crm modules"
+    },
+    {
+      "label": "Key Patterns",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L98",
+      "id": "crm_excelbees_ship_to_prd_key_patterns",
+      "community": 0,
+      "norm_label": "key patterns"
+    },
+    {
+      "label": "3. Gemini AI Integration Plan",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L107",
+      "id": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
+      "community": 8,
+      "norm_label": "3. gemini ai integration plan"
+    },
+    {
+      "label": "3.0 Design Principles",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L109",
+      "id": "crm_excelbees_ship_to_prd_3_0_design_principles",
+      "community": 8,
+      "norm_label": "3.0 design principles"
+    },
+    {
+      "label": "3.1 Foundation Layer",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L117",
+      "id": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
+      "community": 5,
+      "norm_label": "3.1 foundation layer"
+    },
+    {
+      "label": "3.1.1 Re-add Dependency",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L119",
+      "id": "crm_excelbees_ship_to_prd_3_1_1_re_add_dependency",
+      "community": 5,
+      "norm_label": "3.1.1 re-add dependency"
+    },
+    {
+      "label": "code:bash (npm install @google/generative-ai react-markdown)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L120",
+      "id": "crm_excelbees_ship_to_prd_codeblock_1",
+      "community": 5,
+      "norm_label": "code:bash (npm install @google/generative-ai react-markdown)"
+    },
+    {
+      "label": "3.1.2 Gemini Client \u2014 `lib/gemini/client.ts` (new)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L124",
+      "id": "crm_excelbees_ship_to_prd_3_1_2_gemini_client_lib_gemini_client_ts_new",
+      "community": 5,
+      "norm_label": "3.1.2 gemini client \u2014 `lib/gemini/client.ts` (new)"
+    },
+    {
+      "label": "code:block2 (lib/gemini/)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L128",
+      "id": "crm_excelbees_ship_to_prd_codeblock_2",
+      "community": 5,
+      "norm_label": "code:block2 (lib/gemini/)"
+    },
+    {
+      "label": "code:ts (import { GoogleGenerativeAI } from \"@google/generative-ai\";)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L146",
+      "id": "crm_excelbees_ship_to_prd_codeblock_3",
+      "community": 5,
+      "norm_label": "code:ts (import { googlegenerativeai } from \"@google/generative-ai\";)"
+    },
+    {
+      "label": "code:ts (export function aiGuard<T>(fallback: T) {)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L164",
+      "id": "crm_excelbees_ship_to_prd_codeblock_4",
+      "community": 5,
+      "norm_label": "code:ts (export function aiguard<t>(fallback: t) {)"
+    },
+    {
+      "label": "3.1.3 Environment Variable",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L171",
+      "id": "crm_excelbees_ship_to_prd_3_1_3_environment_variable",
+      "community": 5,
+      "norm_label": "3.1.3 environment variable"
+    },
+    {
+      "label": "code:ts (GEMINI_API_KEY: process.env.GEMINI_API_KEY,)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L173",
+      "id": "crm_excelbees_ship_to_prd_codeblock_5",
+      "community": 5,
+      "norm_label": "code:ts (gemini_api_key: process.env.gemini_api_key,)"
+    },
+    {
+      "label": "code:block6 (GEMINI_API_KEY=)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L179",
+      "id": "crm_excelbees_ship_to_prd_codeblock_6",
+      "community": 5,
+      "norm_label": "code:block6 (gemini_api_key=)"
+    },
+    {
+      "label": "3.1.4 Types \u2014 `types/gemini.ts` (new)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L183",
+      "id": "crm_excelbees_ship_to_prd_3_1_4_types_types_gemini_ts_new",
+      "community": 5,
+      "norm_label": "3.1.4 types \u2014 `types/gemini.ts` (new)"
+    },
+    {
+      "label": "code:ts (export interface AIResult<T> {)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L185",
+      "id": "crm_excelbees_ship_to_prd_codeblock_7",
+      "community": 5,
+      "norm_label": "code:ts (export interface airesult<t> {)"
+    },
+    {
+      "label": "3.1.5 AI Permission Toggle",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L257",
+      "id": "crm_excelbees_ship_to_prd_3_1_5_ai_permission_toggle",
+      "community": 5,
+      "norm_label": "3.1.5 ai permission toggle"
+    },
+    {
+      "label": "code:ts (export interface UserPermissions {)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L261",
+      "id": "crm_excelbees_ship_to_prd_codeblock_8",
+      "community": 5,
+      "norm_label": "code:ts (export interface userpermissions {)"
+    },
+    {
+      "label": "3.2 AI Feature Catalog (10 Features)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L279",
+      "id": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "community": 1,
+      "norm_label": "3.2 ai feature catalog (10 features)"
+    },
+    {
+      "label": "Feature 1: Natural Language Search",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L285",
+      "id": "crm_excelbees_ship_to_prd_feature_1_natural_language_search",
+      "community": 1,
+      "norm_label": "feature 1: natural language search"
+    },
+    {
+      "label": "code:ts (export async function parseSearchIntent(query: string): Prom)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L301",
+      "id": "crm_excelbees_ship_to_prd_codeblock_9",
+      "community": 1,
+      "norm_label": "code:ts (export async function parsesearchintent(query: string): prom)"
+    },
+    {
+      "label": "Feature 2: Lead Intelligence Scoring",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L319",
+      "id": "crm_excelbees_ship_to_prd_feature_2_lead_intelligence_scoring",
+      "community": 1,
+      "norm_label": "feature 2: lead intelligence scoring"
+    },
+    {
+      "label": "code:ts (export async function scoreLead(leadId: string): Promise<AIR)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L330",
+      "id": "crm_excelbees_ship_to_prd_codeblock_10",
+      "community": 1,
+      "norm_label": "code:ts (export async function scorelead(leadid: string): promise<air)"
+    },
+    {
+      "label": "Feature 3: Predictive Deal Insights",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L350",
+      "id": "crm_excelbees_ship_to_prd_feature_3_predictive_deal_insights",
+      "community": 1,
+      "norm_label": "feature 3: predictive deal insights"
+    },
+    {
+      "label": "code:ts (export async function analyzeDeal(dealId: string): Promise<A)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L361",
+      "id": "crm_excelbees_ship_to_prd_codeblock_11",
+      "community": 1,
+      "norm_label": "code:ts (export async function analyzedeal(dealid: string): promise<a)"
+    },
+    {
+      "label": "Feature 4: Smart Email Drafting",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L379",
+      "id": "crm_excelbees_ship_to_prd_feature_4_smart_email_drafting",
+      "community": 1,
+      "norm_label": "feature 4: smart email drafting"
+    },
+    {
+      "label": "code:ts (export async function draftEmail(params: {)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L389",
+      "id": "crm_excelbees_ship_to_prd_codeblock_12",
+      "community": 1,
+      "norm_label": "code:ts (export async function draftemail(params: {)"
+    },
+    {
+      "label": "Feature 5: AI Textarea (Restore + Improve)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L429",
+      "id": "crm_excelbees_ship_to_prd_feature_5_ai_textarea_restore_improve",
+      "community": 1,
+      "norm_label": "feature 5: ai textarea (restore + improve)"
+    },
+    {
+      "label": "code:ts (export async function rewriteText(params: {)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L439",
+      "id": "crm_excelbees_ship_to_prd_codeblock_13",
+      "community": 1,
+      "norm_label": "code:ts (export async function rewritetext(params: {)"
+    },
+    {
+      "label": "Feature 6: Smart Follow-up Suggestions",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L463",
+      "id": "crm_excelbees_ship_to_prd_feature_6_smart_follow_up_suggestions",
+      "community": 1,
+      "norm_label": "feature 6: smart follow-up suggestions"
+    },
+    {
+      "label": "code:ts (export async function getFollowUpSuggestions(userId: string))",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L473",
+      "id": "crm_excelbees_ship_to_prd_codeblock_14",
+      "community": 1,
+      "norm_label": "code:ts (export async function getfollowupsuggestions(userid: string))"
+    },
+    {
+      "label": "Feature 7: Communication Sentiment Analysis",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L492",
+      "id": "crm_excelbees_ship_to_prd_feature_7_communication_sentiment_analysis",
+      "community": 1,
+      "norm_label": "feature 7: communication sentiment analysis"
+    },
+    {
+      "label": "code:ts (export async function analyzeCommunication()",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L502",
+      "id": "crm_excelbees_ship_to_prd_codeblock_15",
+      "community": 1,
+      "norm_label": "code:ts (export async function analyzecommunication()"
+    },
+    {
+      "label": "Feature 8: Meeting Notes Summarizer",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L526",
+      "id": "crm_excelbees_ship_to_prd_feature_8_meeting_notes_summarizer",
+      "community": 1,
+      "norm_label": "feature 8: meeting notes summarizer"
+    },
+    {
+      "label": "code:ts (export async function summarizeMeeting(notes: string): Promi)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L536",
+      "id": "crm_excelbees_ship_to_prd_codeblock_16",
+      "community": 1,
+      "norm_label": "code:ts (export async function summarizemeeting(notes: string): promi)"
+    },
+    {
+      "label": "Feature 9: Smart Task Prioritization",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L555",
+      "id": "crm_excelbees_ship_to_prd_feature_9_smart_task_prioritization",
+      "community": 1,
+      "norm_label": "feature 9: smart task prioritization"
+    },
+    {
+      "label": "code:ts (export async function prioritizeTasks(userId: string): Promi)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L565",
+      "id": "crm_excelbees_ship_to_prd_codeblock_17",
+      "community": 1,
+      "norm_label": "code:ts (export async function prioritizetasks(userid: string): promi)"
+    },
+    {
+      "label": "Feature 10: Report Insights (Restore + Improve)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L582",
+      "id": "crm_excelbees_ship_to_prd_feature_10_report_insights_restore_improve",
+      "community": 1,
+      "norm_label": "feature 10: report insights (restore + improve)"
+    },
+    {
+      "label": "code:ts (export async function generateReportInsight()",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L592",
+      "id": "crm_excelbees_ship_to_prd_codeblock_18",
+      "community": 1,
+      "norm_label": "code:ts (export async function generatereportinsight()"
+    },
+    {
+      "label": "3.3 AI Feature Summary Matrix",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L614",
+      "id": "crm_excelbees_ship_to_prd_3_3_ai_feature_summary_matrix",
+      "community": 8,
+      "norm_label": "3.3 ai feature summary matrix"
+    },
+    {
+      "label": "3.4 AI Architecture Diagram",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L629",
+      "id": "crm_excelbees_ship_to_prd_3_4_ai_architecture_diagram",
+      "community": 8,
+      "norm_label": "3.4 ai architecture diagram"
+    },
+    {
+      "label": "code:block19 (\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L631",
+      "id": "crm_excelbees_ship_to_prd_codeblock_19",
+      "community": 8,
+      "norm_label": "code:block19 (\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510)"
+    },
+    {
+      "label": "3.5 AI Feature Gating",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L666",
+      "id": "crm_excelbees_ship_to_prd_3_5_ai_feature_gating",
+      "community": 8,
+      "norm_label": "3.5 ai feature gating"
+    },
+    {
+      "label": "3.6 Caching Strategy for AI",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L675",
+      "id": "crm_excelbees_ship_to_prd_3_6_caching_strategy_for_ai",
+      "community": 8,
+      "norm_label": "3.6 caching strategy for ai"
+    },
+    {
+      "label": "4. Production Readiness Gaps",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L694",
+      "id": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
+      "community": 4,
+      "norm_label": "4. production readiness gaps"
+    },
+    {
+      "label": "P0 \u2014 Critical (Must fix before deployment)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L696",
+      "id": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
+      "community": 7,
+      "norm_label": "p0 \u2014 critical (must fix before deployment)"
+    },
+    {
+      "label": "4.1 Firestore Rules Cleanup",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L698",
+      "id": "crm_excelbees_ship_to_prd_4_1_firestore_rules_cleanup",
+      "community": 7,
+      "norm_label": "4.1 firestore rules cleanup"
+    },
+    {
+      "label": "4.2 Middleware \u2192 Proxy Migration",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L703",
+      "id": "crm_excelbees_ship_to_prd_4_2_middleware_proxy_migration",
+      "community": 7,
+      "norm_label": "4.2 middleware \u2192 proxy migration"
+    },
+    {
+      "label": "4.3 Edge Auth Enforcement",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L708",
+      "id": "crm_excelbees_ship_to_prd_4_3_edge_auth_enforcement",
+      "community": 7,
+      "norm_label": "4.3 edge auth enforcement"
+    },
+    {
+      "label": "4.4 `.env.example` Creation",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L713",
+      "id": "crm_excelbees_ship_to_prd_4_4_env_example_creation",
+      "community": 7,
+      "norm_label": "4.4 `.env.example` creation"
+    },
+    {
+      "label": "code:env (# App)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L716",
+      "id": "crm_excelbees_ship_to_prd_codeblock_20",
+      "community": 7,
+      "norm_label": "code:env (# app)"
+    },
+    {
+      "label": "4.5 Secret Exposure in `next.config.ts`",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L748",
+      "id": "crm_excelbees_ship_to_prd_4_5_secret_exposure_in_next_config_ts",
+      "community": 7,
+      "norm_label": "4.5 secret exposure in `next.config.ts`"
+    },
+    {
+      "label": "4.6 Re-add `GEMINI_API_KEY` Securely",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L753",
+      "id": "crm_excelbees_ship_to_prd_4_6_re_add_gemini_api_key_securely",
+      "community": 7,
+      "norm_label": "4.6 re-add `gemini_api_key` securely"
+    },
+    {
+      "label": "P1 \u2014 High Priority (Fix before production users)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L760",
+      "id": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
+      "community": 4,
+      "norm_label": "p1 \u2014 high priority (fix before production users)"
+    },
+    {
+      "label": "4.7 Structured Logging",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L762",
+      "id": "crm_excelbees_ship_to_prd_4_7_structured_logging",
+      "community": 4,
+      "norm_label": "4.7 structured logging"
+    },
+    {
+      "label": "4.8 Rate Limiting (Including AI)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L771",
+      "id": "crm_excelbees_ship_to_prd_4_8_rate_limiting_including_ai",
+      "community": 4,
+      "norm_label": "4.8 rate limiting (including ai)"
+    },
+    {
+      "label": "4.9 API Input Validation",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L787",
+      "id": "crm_excelbees_ship_to_prd_4_9_api_input_validation",
+      "community": 4,
+      "norm_label": "4.9 api input validation"
+    },
+    {
+      "label": "4.10 Database Indexing",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L792",
+      "id": "crm_excelbees_ship_to_prd_4_10_database_indexing",
+      "community": 4,
+      "norm_label": "4.10 database indexing"
+    },
+    {
+      "label": "code:json ({)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L796",
+      "id": "crm_excelbees_ship_to_prd_codeblock_21",
+      "community": 4,
+      "norm_label": "code:json ({)"
+    },
+    {
+      "label": "4.11 Security Headers",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L816",
+      "id": "crm_excelbees_ship_to_prd_4_11_security_headers",
+      "community": 4,
+      "norm_label": "4.11 security headers"
+    },
+    {
+      "label": "code:ts (async headers() {)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L819",
+      "id": "crm_excelbees_ship_to_prd_codeblock_22",
+      "community": 4,
+      "norm_label": "code:ts (async headers() {)"
+    },
+    {
+      "label": "4.12 Error Handling Standardization",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L835",
+      "id": "crm_excelbees_ship_to_prd_4_12_error_handling_standardization",
+      "community": 4,
+      "norm_label": "4.12 error handling standardization"
+    },
+    {
+      "label": "P2 \u2014 Medium Priority (Stabilize post-launch)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L846",
+      "id": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
+      "community": 10,
+      "norm_label": "p2 \u2014 medium priority (stabilize post-launch)"
+    },
+    {
+      "label": "4.13 Error Reporting Integration",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L848",
+      "id": "crm_excelbees_ship_to_prd_4_13_error_reporting_integration",
+      "community": 10,
+      "norm_label": "4.13 error reporting integration"
+    },
+    {
+      "label": "4.14 Health Check Endpoint",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L853",
+      "id": "crm_excelbees_ship_to_prd_4_14_health_check_endpoint",
+      "community": 10,
+      "norm_label": "4.14 health check endpoint"
+    },
+    {
+      "label": "4.15 Cleanup Stale Documents",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L858",
+      "id": "crm_excelbees_ship_to_prd_4_15_cleanup_stale_documents",
+      "community": 10,
+      "norm_label": "4.15 cleanup stale documents"
+    },
+    {
+      "label": "4.16 Performance Optimization",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L862",
+      "id": "crm_excelbees_ship_to_prd_4_16_performance_optimization",
+      "community": 10,
+      "norm_label": "4.16 performance optimization"
+    },
+    {
+      "label": "4.17 Gemini Error Resilience",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L869",
+      "id": "crm_excelbees_ship_to_prd_4_17_gemini_error_resilience",
+      "community": 10,
+      "norm_label": "4.17 gemini error resilience"
+    },
+    {
+      "label": "P3 \u2014 Polish",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L881",
+      "id": "crm_excelbees_ship_to_prd_p3_polish",
+      "community": 4,
+      "norm_label": "p3 \u2014 polish"
+    },
+    {
+      "label": "4.18 Landing Page for CRM",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L883",
+      "id": "crm_excelbees_ship_to_prd_4_18_landing_page_for_crm",
+      "community": 4,
+      "norm_label": "4.18 landing page for crm"
+    },
+    {
+      "label": "4.19 `AITextarea` Naming",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L888",
+      "id": "crm_excelbees_ship_to_prd_4_19_aitextarea_naming",
+      "community": 4,
+      "norm_label": "4.19 `aitextarea` naming"
+    },
+    {
+      "label": "4.20 AI Fields on Lead Type",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L891",
+      "id": "crm_excelbees_ship_to_prd_4_20_ai_fields_on_lead_type",
+      "community": 4,
+      "norm_label": "4.20 ai fields on lead type"
+    },
+    {
+      "label": "4.21 Reports Page AI Terminology",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L894",
+      "id": "crm_excelbees_ship_to_prd_4_21_reports_page_ai_terminology",
+      "community": 4,
+      "norm_label": "4.21 reports page ai terminology"
+    },
+    {
+      "label": "4.22 Email Notification Templates",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L897",
+      "id": "crm_excelbees_ship_to_prd_4_22_email_notification_templates",
+      "community": 4,
+      "norm_label": "4.22 email notification templates"
+    },
+    {
+      "label": "4.23 CSV Export Testing",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L906",
+      "id": "crm_excelbees_ship_to_prd_4_23_csv_export_testing",
+      "community": 4,
+      "norm_label": "4.23 csv export testing"
+    },
+    {
+      "label": "4.24 Gemini Token/Cost Monitoring",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L910",
+      "id": "crm_excelbees_ship_to_prd_4_24_gemini_token_cost_monitoring",
+      "community": 4,
+      "norm_label": "4.24 gemini token/cost monitoring"
+    },
+    {
+      "label": "5. Priority Execution Order",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L920",
+      "id": "crm_excelbees_ship_to_prd_5_priority_execution_order",
+      "community": 0,
+      "norm_label": "5. priority execution order"
+    },
+    {
+      "label": "6. Deployment Checklist",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L937",
+      "id": "crm_excelbees_ship_to_prd_6_deployment_checklist",
+      "community": 0,
+      "norm_label": "6. deployment checklist"
+    },
+    {
+      "label": "Pre-Deployment",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L939",
+      "id": "crm_excelbees_ship_to_prd_pre_deployment",
+      "community": 0,
+      "norm_label": "pre-deployment"
+    },
+    {
+      "label": "AI Feature Verification",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L952",
+      "id": "crm_excelbees_ship_to_prd_ai_feature_verification",
+      "community": 0,
+      "norm_label": "ai feature verification"
+    },
+    {
+      "label": "Go-Live",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L966",
+      "id": "crm_excelbees_ship_to_prd_go_live",
+      "community": 0,
+      "norm_label": "go-live"
+    },
+    {
+      "label": "7. Completion Summary",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L979",
+      "id": "crm_excelbees_ship_to_prd_7_completion_summary",
+      "community": 0,
+      "norm_label": "7. completion summary"
+    },
+    {
+      "label": "\u2705 Fully Implemented",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L981",
+      "id": "crm_excelbees_ship_to_prd_fully_implemented",
+      "community": 0,
+      "norm_label": "\u2705 fully implemented"
+    },
+    {
+      "label": "AI Infrastructure (lib/gemini/)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L983",
+      "id": "crm_excelbees_ship_to_prd_ai_infrastructure_lib_gemini",
+      "community": 0,
+      "norm_label": "ai infrastructure (lib/gemini/)"
+    },
+    {
+      "label": "AI Server Actions (app/actions/ai/)",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L992",
+      "id": "crm_excelbees_ship_to_prd_ai_server_actions_app_actions_ai",
+      "community": 0,
+      "norm_label": "ai server actions (app/actions/ai/)"
+    },
+    {
+      "label": "AI UI Components",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L1006",
+      "id": "crm_excelbees_ship_to_prd_ai_ui_components",
+      "community": 0,
+      "norm_label": "ai ui components"
+    },
+    {
+      "label": "Production Hardening",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L1015",
+      "id": "crm_excelbees_ship_to_prd_production_hardening",
+      "community": 0,
+      "norm_label": "production hardening"
+    },
+    {
+      "label": "\ud83d\udccb Pre-Deployment Steps",
+      "file_type": "document",
+      "source_file": "ship-to-prd.md",
+      "source_location": "L1029",
+      "id": "crm_excelbees_ship_to_prd_pre_deployment_steps",
+      "community": 0,
+      "norm_label": "\ud83d\udccb pre-deployment steps"
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     }
   ],
   "links": [
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "lib_auth_auth_service_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "auth_auth_service_signinwithemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "auth_auth_service_signinwithgoogle",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "app_actions_login_rate_limit_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "actions_login_rate_limit_checkloginratelimit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "app_actions_check_auth_availability_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "actions_check_auth_availability_checkauthavailability",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "lib_env_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "login_page_features",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "login_page_loginpage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/login/page.tsx",
+      "source_location": "L315",
+      "weight": 1.0,
+      "source": "app_auth_login_page_tsx",
+      "target": "login_page_googleicon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "lib_auth_auth_service_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "auth_auth_service_signinwithgoogle",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "app_actions_check_auth_availability_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "actions_check_auth_availability_checkauthavailability",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "lib_env_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "signup_page_signupschema",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "signup_page_signupformdata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "signup_page_highlights",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "signup_page_signuppage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(auth)/signup/page.tsx",
+      "source_location": "L332",
+      "weight": 1.0,
+      "source": "app_auth_signup_page_tsx",
+      "target": "signup_page_googleicon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/actions/check-auth-availability.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "app_actions_check_auth_availability_ts",
+      "target": "lib_env_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/actions/check-auth-availability.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "app_actions_check_auth_availability_ts",
+      "target": "actions_check_auth_availability_checkauthavailability",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/actions/login-rate-limit.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "app_actions_login_rate_limit_ts",
+      "target": "lib_env_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/actions/login-rate-limit.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "app_actions_login_rate_limit_ts",
+      "target": "actions_login_rate_limit_checkloginratelimit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "app_layout_tsx",
+      "target": "components_system_environmentbanner_tsx",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "app_layout_tsx",
+      "target": "system_environmentbanner_environmentbanner",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "app_layout_tsx",
+      "target": "lib_env_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "app_layout_tsx",
+      "target": "app_layout_inter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "app_layout_tsx",
+      "target": "app_layout_metadata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "app_layout_tsx",
+      "target": "app_layout_viewport",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/layout.tsx",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "app_layout_tsx",
+      "target": "app_layout_rootlayout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "app_page_tsx",
+      "target": "app_page_testimonialssection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "app_page_tsx",
+      "target": "app_page_aboutsection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "app_page_tsx",
+      "target": "app_page_blogsection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "app_page_tsx",
+      "target": "app_page_metadata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/page.tsx",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "app_page_tsx",
+      "target": "app_page_home",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/robots.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "app_robots_ts",
+      "target": "lib_env_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/robots.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "app_robots_ts",
+      "target": "lib_environment_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/robots.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "app_robots_ts",
+      "target": "lib_environment_getappurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/robots.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "app_robots_ts",
+      "target": "app_robots_robots",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/robots.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "app_robots_robots",
+      "target": "lib_environment_getappurl"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/system/EnvironmentBanner.tsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "components_system_environmentbanner_tsx",
+      "target": "lib_env_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/system/EnvironmentBanner.tsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "components_system_environmentbanner_tsx",
+      "target": "system_environmentbanner_environmentbanner",
+      "confidence_score": 1.0
+    },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
@@ -55173,6 +56893,7 @@
       "source_file": "instrumentation.ts",
       "source_location": "L61",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_instrumentation_register",
       "target": "lib_firebase_admin_ts"
@@ -112699,40 +114420,117 @@
       "confidence_score": 1.0,
       "source": "lib_analytics_ts",
       "target": "logger_client_logger"
+=======
+      "source": "specs_2026_08_27_app_environment_design_app_environment_design_spec",
+      "target": "specs_2026_08_27_app_environment_design_maintenance_auth_block",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "lib/analytics.ts",
-      "source_location": "L4",
+      "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
+      "source_location": "L74",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_analytics_ts",
-      "target": "lib_analytics_eventtype"
+      "source": "specs_2026_08_27_app_environment_design_app_environment_design_spec",
+      "target": "specs_2026_08_27_app_environment_design_middleware",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "lib/analytics.ts",
-      "source_location": "L15",
+      "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
+      "source_location": "L78",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_analytics_ts",
-      "target": "lib_analytics_eventdata"
+      "source": "specs_2026_08_27_app_environment_design_app_environment_design_spec",
+      "target": "specs_2026_08_27_app_environment_design_files_touched",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "lib/analytics.ts",
-      "source_location": "L23",
+      "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
+      "source_location": "L96",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_analytics_ts",
-      "target": "lib_analytics_logevent"
+      "source": "specs_2026_08_27_app_environment_design_app_environment_design_spec",
+      "target": "specs_2026_08_27_app_environment_design_testing",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "specs_2026_08_27_app_environment_design_central_config_lib_env_ts_new",
+      "target": "specs_2026_08_27_app_environment_design_codeblock_1",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/superpowers/specs/2026-08-27-app-environment-design.md",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "specs_2026_08_27_app_environment_design_central_config_lib_env_ts_new",
+      "target": "specs_2026_08_27_app_environment_design_client_side_mirror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "instrumentation.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "instrumentation_ts",
+      "target": "crm_excelbees_instrumentation_register",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "instrumentation.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "crm_excelbees_instrumentation_register",
+      "target": "lib_env_ts",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "lib_auth_auth_service_ts",
+      "target": "auth_auth_service_signinwithemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "lib_auth_auth_service_ts",
+      "target": "auth_auth_service_signupwithemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "lib_auth_auth_service_ts",
+      "target": "auth_auth_service_signinwithgoogle",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "lib/analytics.ts",
       "source_location": "L55",
       "weight": 1.0,
@@ -117845,20 +119643,29 @@
       "confidence_score": 1.0,
       "source": "lib_email_merge_fields_ts",
       "target": "email_merge_fields_resolvemergefields"
+=======
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L112",
+      "weight": 1.0,
+      "source": "lib_auth_auth_service_ts",
+      "target": "auth_auth_service_signout",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "lib/email/merge-fields.ts",
+      "source_file": "lib/auth/auth-service.ts",
       "source_location": "L126",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_email_merge_fields_ts",
-      "target": "email_merge_fields_isvalidemail"
+      "source": "lib_auth_auth_service_ts",
+      "target": "auth_auth_service_sendpasswordreset",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "lib/email/merge-fields.ts",
       "source_location": "L132",
       "weight": 1.0,
@@ -120609,10 +122416,19 @@
       "confidence_score": 1.0,
       "source": "lib_firestore_leads_ts",
       "target": "types_crm_paginationparams"
+=======
+      "source_file": "lib/auth/auth-service.ts",
+      "source_location": "L140",
+      "weight": 1.0,
+      "source": "lib_auth_auth_service_ts",
+      "target": "auth_auth_service_onauthstatechanged",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "lib/firestore/leads.ts",
       "source_location": "L14",
       "weight": 1.0,
@@ -121040,15 +122856,19 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/firestore/notes.ts",
+=======
+      "source_file": "lib/env.ts",
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "source_location": "L22",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_notes_ts",
-      "target": "firestore_notes_createnote"
+      "source": "lib_env_ts",
+      "target": "lib_env_appenvironment",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "lib/firestore/notes.ts",
       "source_location": "L45",
       "weight": 1.0,
@@ -121911,25 +123731,50 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/firestore/projects.ts",
+=======
+      "source_file": "lib/env.ts",
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "source_location": "L15",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_projects_ts",
-      "target": "firestore_projects_cachekey"
+      "source": "lib_env_ts",
+      "target": "lib_env_parseappenvironment",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/projects.ts",
+      "source_file": "lib/env.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "lib_env_ts",
+      "target": "lib_env_appenvironmentclient",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/environment.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "lib_environment_ts",
+      "target": "lib_env_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/environment.ts",
       "source_location": "L19",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_projects_ts",
-      "target": "firestore_projects_rehydratets"
+      "source": "lib_environment_ts",
+      "target": "lib_environment_getappurl",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "lib/firestore/projects.ts",
       "source_location": "L28",
       "weight": 1.0,
@@ -122578,446 +124423,29 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/firestore/tasks.ts",
+=======
+      "source_file": "lib/environment.ts",
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "source_location": "L35",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_archivetask"
+      "source": "lib_environment_ts",
+      "target": "lib_environment_requireenvvar",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L52",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_unarchivetask"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L69",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_createtask"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L106",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_gettasks"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L174",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_gettask"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L183",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_updatetask"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L209",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_updatetaskstatus"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L227",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_deletetask"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L244",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_gettasksbyproject"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L259",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_tasks_ts",
-      "target": "firestore_tasks_gettasksbyassignee"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L17",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_cachekey",
-      "target": "firestore_tasks_orgcachekey"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L47",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_archivetask",
-      "target": "firestore_tasks_orgcachekey"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L64",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_unarchivetask",
-      "target": "firestore_tasks_orgcachekey"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L100",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_createtask",
-      "target": "firestore_tasks_orgcachekey"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L204",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_updatetask",
-      "target": "firestore_tasks_orgcachekey"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L222",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_updatetaskstatus",
-      "target": "firestore_tasks_orgcachekey"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L239",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_deletetask",
-      "target": "firestore_tasks_orgcachekey"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L129",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_gettasks",
-      "target": "firestore_tasks_cachekey"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L41",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_archivetask",
-      "target": "firestore_tasks_canedittask"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L58",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_unarchivetask",
-      "target": "firestore_tasks_canedittask"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L190",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_updatetask",
-      "target": "firestore_tasks_canedittask"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L215",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "firestore_tasks_updatetaskstatus",
-      "target": "firestore_tasks_canedittask"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L38",
-      "weight": 1.0,
-      "source": "firestore_tasks_archivetask",
-      "target": "helpers_admin_getdoc"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/firestore/tasks.ts",
+      "source_file": "lib/environment.ts",
       "source_location": "L46",
       "weight": 1.0,
-      "source": "firestore_tasks_archivetask",
-      "target": "firestore_utils_sanitizedata"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L55",
-      "weight": 1.0,
-      "source": "firestore_tasks_unarchivetask",
-      "target": "helpers_admin_getdoc"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L63",
-      "weight": 1.0,
-      "source": "firestore_tasks_unarchivetask",
-      "target": "firestore_utils_sanitizedata"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L92",
-      "weight": 1.0,
-      "source": "firestore_tasks_createtask",
-      "target": "firestore_utils_sanitizedata"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L177",
-      "weight": 1.0,
-      "source": "firestore_tasks_gettask",
-      "target": "helpers_admin_getdoc"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L186",
-      "weight": 1.0,
-      "source": "firestore_tasks_updatetask",
-      "target": "helpers_admin_getdoc"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L197",
-      "weight": 1.0,
-      "source": "firestore_tasks_updatetask",
-      "target": "firestore_utils_sanitizedata"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L212",
-      "weight": 1.0,
-      "source": "firestore_tasks_updatetaskstatus",
-      "target": "helpers_admin_getdoc"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L230",
-      "weight": 1.0,
-      "source": "firestore_tasks_deletetask",
-      "target": "helpers_admin_getdoc"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "lib/firestore/tasks.ts",
-      "source_location": "L238",
-      "weight": 1.0,
-      "source": "firestore_tasks_deletetask",
-      "target": "helpers_admin_deletedoc"
-    },
-    {
-      "relation": "re_exports",
-      "context": "export",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/users.ts",
-      "source_location": "L16",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_users_ts",
-      "target": "types_crm_ts"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/users.ts",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_users_ts",
-      "target": "types_crm_userprofile"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/users.ts",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_users_ts",
-      "target": "types_crm_userrole"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/users.ts",
-      "source_location": "L15",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_users_ts",
-      "target": "types_crm_userstatus"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/users.ts",
-      "source_location": "L17",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_users_ts",
-      "target": "types_crm_userpermissions"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/users.ts",
-      "source_location": "L18",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_users_ts",
-      "target": "types_crm_role_defaults"
-    },
-    {
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/users.ts",
-      "source_location": "L19",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_users_ts",
-      "target": "lib_logger_client_ts"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "lib/firestore/users.ts",
-      "source_location": "L19",
-      "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_firestore_users_ts",
-      "target": "logger_client_logger"
+      "source": "lib_environment_ts",
+      "target": "lib_environment_getenvvar",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "lib/firestore/users.ts",
       "source_location": "L21",
       "weight": 1.0,
@@ -123652,15 +125080,19 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/logger/client.ts",
+=======
+      "source_file": "lib/environment.ts",
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
       "source_location": "L54",
       "weight": 1.0,
-      "confidence_score": 1.0,
-      "source": "lib_logger_client_ts",
-      "target": "logger_client_stripknownfields"
+      "source": "lib_environment_ts",
+      "target": "lib_environment_getenvvarnumber",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "lib/logger/client.ts",
       "source_location": "L73",
       "weight": 1.0,
@@ -125723,6 +127155,14 @@
       "confidence_score": 1.0,
       "source": "scripts_seed_playwright_test_users_main",
       "target": "scripts_seed_playwright_test_users_seedsamplerecords"
+=======
+      "source_file": "lib/environment.ts",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "lib_environment_ts",
+      "target": "lib_environment_getenvvarboolean",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -125730,23 +127170,33 @@
       "source_file": "scripts/verify-robots.js",
       "source_location": "L3",
       "weight": 1.0,
-      "confidence_score": 1.0,
       "source": "scripts_verify_robots_js",
-      "target": "scripts_verify_robots_mockrobots"
+      "target": "scripts_verify_robots_mockrobots",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "store/auth.ts",
       "source_location": "L5",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "store_auth_ts",
       "target": "store_auth_authstate"
+=======
+      "source_file": "ship-to-prd.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "ship_to_prd_md",
+      "target": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "store/auth.ts",
       "source_location": "L18",
       "weight": 1.0,
@@ -125951,20 +127401,38 @@
       "confidence_score": 1.0,
       "source": "tests_tsconfig_json",
       "target": "tests_tsconfig_exclude"
+=======
+      "source_file": "ship-to-prd.md",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "target": "crm_excelbees_ship_to_prd_table_of_contents",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "tests/tsconfig.json",
       "source_location": "L4",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "tests_tsconfig_compileroptions",
       "target": "tests_tsconfig_compileroptions_noemit"
+=======
+      "source_file": "ship-to-prd.md",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "target": "crm_excelbees_ship_to_prd_1_completed_marketing_removal",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "tests/tsconfig.json",
       "source_location": "L5",
       "weight": 1.0,
@@ -128210,10 +129678,19 @@
       "confidence_score": 1.0,
       "source": "tests_e2e_leads_extra_spec_ts",
       "target": "leads_extra_spec_statusfilter"
+=======
+      "source_file": "ship-to-prd.md",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "target": "crm_excelbees_ship_to_prd_2_current_architecture",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "tests/e2e/leads/extra.spec.ts",
       "source_location": "L76",
       "weight": 1.0,
@@ -130146,10 +131623,19 @@
       "confidence_score": 1.0,
       "source": "tests_e2e_team_user_management_spec_ts",
       "target": "team_user_management_spec_resetbtn"
+=======
+      "source_file": "ship-to-prd.md",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "target": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "tests/e2e/team/user-management.spec.ts",
       "source_location": "L135",
       "weight": 1.0,
@@ -134081,10 +135567,19 @@
       "confidence_score": 1.0,
       "source": "types_crm_ts",
       "target": "types_crm_projectinput"
+=======
+      "source_file": "ship-to-prd.md",
+      "source_location": "L694",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "target": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+<<<<<<< HEAD
       "source_file": "types/crm.ts",
       "source_location": "L695",
       "weight": 1.0,
@@ -146121,21 +147616,38 @@
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
       "target": "crm_excelbees_ship_to_prd_table_of_contents"
+=======
+      "source_file": "ship-to-prd.md",
+      "source_location": "L920",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "target": "crm_excelbees_ship_to_prd_5_priority_execution_order",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L21",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
       "target": "crm_excelbees_ship_to_prd_1_completed_marketing_removal"
+=======
+      "source_location": "L937",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "target": "crm_excelbees_ship_to_prd_6_deployment_checklist",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L67",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -146191,6 +147703,13 @@
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
       "target": "crm_excelbees_ship_to_prd_7_completion_summary"
+=======
+      "source_location": "L979",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_excelbees_crm_ship_to_production_roadmap",
+      "target": "crm_excelbees_ship_to_prd_7_completion_summary",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146198,9 +147717,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L25",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_1_completed_marketing_removal",
       "target": "crm_excelbees_ship_to_prd_deleted_42_directories_files"
+=======
+      "source": "crm_excelbees_ship_to_prd_1_completed_marketing_removal",
+      "target": "crm_excelbees_ship_to_prd_deleted_42_directories_files",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146208,9 +147733,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L39",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_1_completed_marketing_removal",
       "target": "crm_excelbees_ship_to_prd_files_modified"
+=======
+      "source": "crm_excelbees_ship_to_prd_1_completed_marketing_removal",
+      "target": "crm_excelbees_ship_to_prd_files_modified",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146218,9 +147749,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L59",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_1_completed_marketing_removal",
       "target": "crm_excelbees_ship_to_prd_dependencies_removed_to_be_selectively_re_added"
+=======
+      "source": "crm_excelbees_ship_to_prd_1_completed_marketing_removal",
+      "target": "crm_excelbees_ship_to_prd_dependencies_removed_to_be_selectively_re_added",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146228,9 +147765,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L69",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_2_current_architecture",
       "target": "crm_excelbees_ship_to_prd_tech_stack"
+=======
+      "source": "crm_excelbees_ship_to_prd_2_current_architecture",
+      "target": "crm_excelbees_ship_to_prd_tech_stack",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146238,9 +147781,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L80",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_2_current_architecture",
       "target": "crm_excelbees_ship_to_prd_crm_modules"
+=======
+      "source": "crm_excelbees_ship_to_prd_2_current_architecture",
+      "target": "crm_excelbees_ship_to_prd_crm_modules",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146248,9 +147797,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L98",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_2_current_architecture",
       "target": "crm_excelbees_ship_to_prd_key_patterns"
+=======
+      "source": "crm_excelbees_ship_to_prd_2_current_architecture",
+      "target": "crm_excelbees_ship_to_prd_key_patterns",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146258,9 +147813,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L109",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
       "target": "crm_excelbees_ship_to_prd_3_0_design_principles"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
+      "target": "crm_excelbees_ship_to_prd_3_0_design_principles",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146268,9 +147829,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L117",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
       "target": "crm_excelbees_ship_to_prd_3_1_foundation_layer"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
+      "target": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146278,9 +147845,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L279",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
       "target": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
+      "target": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146288,9 +147861,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L614",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
       "target": "crm_excelbees_ship_to_prd_3_3_ai_feature_summary_matrix"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
+      "target": "crm_excelbees_ship_to_prd_3_3_ai_feature_summary_matrix",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146298,9 +147877,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L629",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
       "target": "crm_excelbees_ship_to_prd_3_4_ai_architecture_diagram"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
+      "target": "crm_excelbees_ship_to_prd_3_4_ai_architecture_diagram",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146308,9 +147893,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L666",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
       "target": "crm_excelbees_ship_to_prd_3_5_ai_feature_gating"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
+      "target": "crm_excelbees_ship_to_prd_3_5_ai_feature_gating",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146318,9 +147909,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L675",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
       "target": "crm_excelbees_ship_to_prd_3_6_caching_strategy_for_ai"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_gemini_ai_integration_plan",
+      "target": "crm_excelbees_ship_to_prd_3_6_caching_strategy_for_ai",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146328,9 +147925,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L119",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
       "target": "crm_excelbees_ship_to_prd_3_1_1_re_add_dependency"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
+      "target": "crm_excelbees_ship_to_prd_3_1_1_re_add_dependency",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146338,9 +147941,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L124",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
       "target": "crm_excelbees_ship_to_prd_3_1_2_gemini_client_lib_gemini_client_ts_new"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
+      "target": "crm_excelbees_ship_to_prd_3_1_2_gemini_client_lib_gemini_client_ts_new",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146348,9 +147957,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L171",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
       "target": "crm_excelbees_ship_to_prd_3_1_3_environment_variable"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
+      "target": "crm_excelbees_ship_to_prd_3_1_3_environment_variable",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146358,9 +147973,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L183",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
       "target": "crm_excelbees_ship_to_prd_3_1_4_types_types_gemini_ts_new"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
+      "target": "crm_excelbees_ship_to_prd_3_1_4_types_types_gemini_ts_new",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146368,9 +147989,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L257",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
       "target": "crm_excelbees_ship_to_prd_3_1_5_ai_permission_toggle"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_foundation_layer",
+      "target": "crm_excelbees_ship_to_prd_3_1_5_ai_permission_toggle",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146378,9 +148005,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L120",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_1_re_add_dependency",
       "target": "crm_excelbees_ship_to_prd_codeblock_1"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_1_re_add_dependency",
+      "target": "crm_excelbees_ship_to_prd_codeblock_1",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146388,9 +148021,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L128",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_2_gemini_client_lib_gemini_client_ts_new",
       "target": "crm_excelbees_ship_to_prd_codeblock_2"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_2_gemini_client_lib_gemini_client_ts_new",
+      "target": "crm_excelbees_ship_to_prd_codeblock_2",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146398,9 +148037,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L146",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_2_gemini_client_lib_gemini_client_ts_new",
       "target": "crm_excelbees_ship_to_prd_codeblock_3"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_2_gemini_client_lib_gemini_client_ts_new",
+      "target": "crm_excelbees_ship_to_prd_codeblock_3",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146408,9 +148053,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L164",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_2_gemini_client_lib_gemini_client_ts_new",
       "target": "crm_excelbees_ship_to_prd_codeblock_4"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_2_gemini_client_lib_gemini_client_ts_new",
+      "target": "crm_excelbees_ship_to_prd_codeblock_4",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146418,9 +148069,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L173",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_3_environment_variable",
       "target": "crm_excelbees_ship_to_prd_codeblock_5"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_3_environment_variable",
+      "target": "crm_excelbees_ship_to_prd_codeblock_5",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146428,9 +148085,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L179",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_3_environment_variable",
       "target": "crm_excelbees_ship_to_prd_codeblock_6"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_3_environment_variable",
+      "target": "crm_excelbees_ship_to_prd_codeblock_6",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146438,9 +148101,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L185",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_4_types_types_gemini_ts_new",
       "target": "crm_excelbees_ship_to_prd_codeblock_7"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_4_types_types_gemini_ts_new",
+      "target": "crm_excelbees_ship_to_prd_codeblock_7",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146448,9 +148117,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L261",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_1_5_ai_permission_toggle",
       "target": "crm_excelbees_ship_to_prd_codeblock_8"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_1_5_ai_permission_toggle",
+      "target": "crm_excelbees_ship_to_prd_codeblock_8",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146458,9 +148133,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L285",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_1_natural_language_search"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_1_natural_language_search",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146468,9 +148149,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L319",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_2_lead_intelligence_scoring"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_2_lead_intelligence_scoring",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146478,9 +148165,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L350",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_3_predictive_deal_insights"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_3_predictive_deal_insights",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146488,9 +148181,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L379",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_4_smart_email_drafting"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_4_smart_email_drafting",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146498,9 +148197,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L429",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_5_ai_textarea_restore_improve"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_5_ai_textarea_restore_improve",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146508,9 +148213,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L463",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_6_smart_follow_up_suggestions"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_6_smart_follow_up_suggestions",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146518,9 +148229,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L492",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_7_communication_sentiment_analysis"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_7_communication_sentiment_analysis",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146528,9 +148245,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L526",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_8_meeting_notes_summarizer"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_8_meeting_notes_summarizer",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146538,9 +148261,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L555",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_9_smart_task_prioritization"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_9_smart_task_prioritization",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146548,9 +148277,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L582",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
       "target": "crm_excelbees_ship_to_prd_feature_10_report_insights_restore_improve"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_2_ai_feature_catalog_10_features",
+      "target": "crm_excelbees_ship_to_prd_feature_10_report_insights_restore_improve",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146558,9 +148293,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L301",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_1_natural_language_search",
       "target": "crm_excelbees_ship_to_prd_codeblock_9"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_1_natural_language_search",
+      "target": "crm_excelbees_ship_to_prd_codeblock_9",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146568,9 +148309,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L330",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_2_lead_intelligence_scoring",
       "target": "crm_excelbees_ship_to_prd_codeblock_10"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_2_lead_intelligence_scoring",
+      "target": "crm_excelbees_ship_to_prd_codeblock_10",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146578,9 +148325,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L361",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_3_predictive_deal_insights",
       "target": "crm_excelbees_ship_to_prd_codeblock_11"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_3_predictive_deal_insights",
+      "target": "crm_excelbees_ship_to_prd_codeblock_11",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146588,9 +148341,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L389",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_4_smart_email_drafting",
       "target": "crm_excelbees_ship_to_prd_codeblock_12"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_4_smart_email_drafting",
+      "target": "crm_excelbees_ship_to_prd_codeblock_12",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146598,9 +148357,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L439",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_5_ai_textarea_restore_improve",
       "target": "crm_excelbees_ship_to_prd_codeblock_13"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_5_ai_textarea_restore_improve",
+      "target": "crm_excelbees_ship_to_prd_codeblock_13",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146608,9 +148373,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L473",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_6_smart_follow_up_suggestions",
       "target": "crm_excelbees_ship_to_prd_codeblock_14"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_6_smart_follow_up_suggestions",
+      "target": "crm_excelbees_ship_to_prd_codeblock_14",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146618,9 +148389,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L502",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_7_communication_sentiment_analysis",
       "target": "crm_excelbees_ship_to_prd_codeblock_15"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_7_communication_sentiment_analysis",
+      "target": "crm_excelbees_ship_to_prd_codeblock_15",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146628,9 +148405,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L536",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_8_meeting_notes_summarizer",
       "target": "crm_excelbees_ship_to_prd_codeblock_16"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_8_meeting_notes_summarizer",
+      "target": "crm_excelbees_ship_to_prd_codeblock_16",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146638,9 +148421,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L565",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_9_smart_task_prioritization",
       "target": "crm_excelbees_ship_to_prd_codeblock_17"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_9_smart_task_prioritization",
+      "target": "crm_excelbees_ship_to_prd_codeblock_17",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146648,9 +148437,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L592",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_feature_10_report_insights_restore_improve",
       "target": "crm_excelbees_ship_to_prd_codeblock_18"
+=======
+      "source": "crm_excelbees_ship_to_prd_feature_10_report_insights_restore_improve",
+      "target": "crm_excelbees_ship_to_prd_codeblock_18",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146658,9 +148453,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L631",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_3_4_ai_architecture_diagram",
       "target": "crm_excelbees_ship_to_prd_codeblock_19"
+=======
+      "source": "crm_excelbees_ship_to_prd_3_4_ai_architecture_diagram",
+      "target": "crm_excelbees_ship_to_prd_codeblock_19",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146668,39 +148469,69 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L696",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
       "target": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment"
+=======
+      "source": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
+      "target": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L759",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
       "target": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users"
+=======
+      "source_location": "L760",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
+      "target": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L845",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
       "target": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch"
+=======
+      "source_location": "L846",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
+      "target": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L880",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
       "target": "crm_excelbees_ship_to_prd_p3_polish"
+=======
+      "source_location": "L881",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_4_production_readiness_gaps",
+      "target": "crm_excelbees_ship_to_prd_p3_polish",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146708,9 +148539,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L698",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
       "target": "crm_excelbees_ship_to_prd_4_1_firestore_rules_cleanup"
+=======
+      "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
+      "target": "crm_excelbees_ship_to_prd_4_1_firestore_rules_cleanup",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146718,9 +148555,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L703",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
       "target": "crm_excelbees_ship_to_prd_4_2_middleware_proxy_migration"
+=======
+      "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
+      "target": "crm_excelbees_ship_to_prd_4_2_middleware_proxy_migration",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146728,9 +148571,15 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L708",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
       "target": "crm_excelbees_ship_to_prd_4_3_edge_auth_enforcement"
+=======
+      "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
+      "target": "crm_excelbees_ship_to_prd_4_3_edge_auth_enforcement",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146738,29 +148587,51 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L713",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
       "target": "crm_excelbees_ship_to_prd_4_4_env_example_creation"
+=======
+      "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
+      "target": "crm_excelbees_ship_to_prd_4_4_env_example_creation",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L747",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
       "target": "crm_excelbees_ship_to_prd_4_5_secret_exposure_in_next_config_ts"
+=======
+      "source_location": "L748",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
+      "target": "crm_excelbees_ship_to_prd_4_5_secret_exposure_in_next_config_ts",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L752",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
       "target": "crm_excelbees_ship_to_prd_4_6_re_add_gemini_api_key_securely"
+=======
+      "source_location": "L753",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p0_critical_must_fix_before_deployment",
+      "target": "crm_excelbees_ship_to_prd_4_6_re_add_gemini_api_key_securely",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
@@ -146768,294 +148639,525 @@
       "source_file": "ship-to-prd.md",
       "source_location": "L716",
       "weight": 1.0,
+<<<<<<< HEAD
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_4_4_env_example_creation",
       "target": "crm_excelbees_ship_to_prd_codeblock_20"
+=======
+      "source": "crm_excelbees_ship_to_prd_4_4_env_example_creation",
+      "target": "crm_excelbees_ship_to_prd_codeblock_20",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L761",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
       "target": "crm_excelbees_ship_to_prd_4_7_structured_logging"
+=======
+      "source_location": "L762",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
+      "target": "crm_excelbees_ship_to_prd_4_7_structured_logging",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L770",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
       "target": "crm_excelbees_ship_to_prd_4_8_rate_limiting_including_ai"
+=======
+      "source_location": "L771",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
+      "target": "crm_excelbees_ship_to_prd_4_8_rate_limiting_including_ai",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L786",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
       "target": "crm_excelbees_ship_to_prd_4_9_api_input_validation"
+=======
+      "source_location": "L787",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
+      "target": "crm_excelbees_ship_to_prd_4_9_api_input_validation",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L791",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
       "target": "crm_excelbees_ship_to_prd_4_10_database_indexing"
+=======
+      "source_location": "L792",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
+      "target": "crm_excelbees_ship_to_prd_4_10_database_indexing",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L815",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
       "target": "crm_excelbees_ship_to_prd_4_11_security_headers"
+=======
+      "source_location": "L816",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
+      "target": "crm_excelbees_ship_to_prd_4_11_security_headers",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L834",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
       "target": "crm_excelbees_ship_to_prd_4_12_error_handling_standardization"
+=======
+      "source_location": "L835",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p1_high_priority_fix_before_production_users",
+      "target": "crm_excelbees_ship_to_prd_4_12_error_handling_standardization",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L795",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_4_10_database_indexing",
       "target": "crm_excelbees_ship_to_prd_codeblock_21"
+=======
+      "source_location": "L796",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_4_10_database_indexing",
+      "target": "crm_excelbees_ship_to_prd_codeblock_21",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L818",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_4_11_security_headers",
       "target": "crm_excelbees_ship_to_prd_codeblock_22"
+=======
+      "source_location": "L819",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_4_11_security_headers",
+      "target": "crm_excelbees_ship_to_prd_codeblock_22",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L847",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
       "target": "crm_excelbees_ship_to_prd_4_13_error_reporting_integration"
+=======
+      "source_location": "L848",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
+      "target": "crm_excelbees_ship_to_prd_4_13_error_reporting_integration",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L852",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
       "target": "crm_excelbees_ship_to_prd_4_14_health_check_endpoint"
+=======
+      "source_location": "L853",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
+      "target": "crm_excelbees_ship_to_prd_4_14_health_check_endpoint",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L857",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
       "target": "crm_excelbees_ship_to_prd_4_15_cleanup_stale_documents"
+=======
+      "source_location": "L858",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
+      "target": "crm_excelbees_ship_to_prd_4_15_cleanup_stale_documents",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L861",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
       "target": "crm_excelbees_ship_to_prd_4_16_performance_optimization"
+=======
+      "source_location": "L862",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
+      "target": "crm_excelbees_ship_to_prd_4_16_performance_optimization",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L868",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
       "target": "crm_excelbees_ship_to_prd_4_17_gemini_error_resilience"
+=======
+      "source_location": "L869",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p2_medium_priority_stabilize_post_launch",
+      "target": "crm_excelbees_ship_to_prd_4_17_gemini_error_resilience",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L882",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p3_polish",
       "target": "crm_excelbees_ship_to_prd_4_18_landing_page_for_crm"
+=======
+      "source_location": "L883",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p3_polish",
+      "target": "crm_excelbees_ship_to_prd_4_18_landing_page_for_crm",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L887",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p3_polish",
       "target": "crm_excelbees_ship_to_prd_4_19_aitextarea_naming"
+=======
+      "source_location": "L888",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p3_polish",
+      "target": "crm_excelbees_ship_to_prd_4_19_aitextarea_naming",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L890",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p3_polish",
       "target": "crm_excelbees_ship_to_prd_4_20_ai_fields_on_lead_type"
+=======
+      "source_location": "L891",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p3_polish",
+      "target": "crm_excelbees_ship_to_prd_4_20_ai_fields_on_lead_type",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L893",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p3_polish",
       "target": "crm_excelbees_ship_to_prd_4_21_reports_page_ai_terminology"
+=======
+      "source_location": "L894",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p3_polish",
+      "target": "crm_excelbees_ship_to_prd_4_21_reports_page_ai_terminology",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L896",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p3_polish",
       "target": "crm_excelbees_ship_to_prd_4_22_email_notification_templates"
+=======
+      "source_location": "L897",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p3_polish",
+      "target": "crm_excelbees_ship_to_prd_4_22_email_notification_templates",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L905",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p3_polish",
       "target": "crm_excelbees_ship_to_prd_4_23_csv_export_testing"
+=======
+      "source_location": "L906",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p3_polish",
+      "target": "crm_excelbees_ship_to_prd_4_23_csv_export_testing",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L909",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_p3_polish",
       "target": "crm_excelbees_ship_to_prd_4_24_gemini_token_cost_monitoring"
+=======
+      "source_location": "L910",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_p3_polish",
+      "target": "crm_excelbees_ship_to_prd_4_24_gemini_token_cost_monitoring",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L938",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_6_deployment_checklist",
       "target": "crm_excelbees_ship_to_prd_pre_deployment"
+=======
+      "source_location": "L939",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_6_deployment_checklist",
+      "target": "crm_excelbees_ship_to_prd_pre_deployment",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L951",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_6_deployment_checklist",
       "target": "crm_excelbees_ship_to_prd_ai_feature_verification"
+=======
+      "source_location": "L952",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_6_deployment_checklist",
+      "target": "crm_excelbees_ship_to_prd_ai_feature_verification",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L965",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_6_deployment_checklist",
       "target": "crm_excelbees_ship_to_prd_go_live"
+=======
+      "source_location": "L966",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_6_deployment_checklist",
+      "target": "crm_excelbees_ship_to_prd_go_live",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L980",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_7_completion_summary",
       "target": "crm_excelbees_ship_to_prd_fully_implemented"
+=======
+      "source_location": "L981",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_7_completion_summary",
+      "target": "crm_excelbees_ship_to_prd_fully_implemented",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L1028",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_7_completion_summary",
       "target": "crm_excelbees_ship_to_prd_pre_deployment_steps"
+=======
+      "source_location": "L1029",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_7_completion_summary",
+      "target": "crm_excelbees_ship_to_prd_pre_deployment_steps",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L982",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_fully_implemented",
       "target": "crm_excelbees_ship_to_prd_ai_infrastructure_lib_gemini"
+=======
+      "source_location": "L983",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_fully_implemented",
+      "target": "crm_excelbees_ship_to_prd_ai_infrastructure_lib_gemini",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L991",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_fully_implemented",
       "target": "crm_excelbees_ship_to_prd_ai_server_actions_app_actions_ai"
+=======
+      "source_location": "L992",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_fully_implemented",
+      "target": "crm_excelbees_ship_to_prd_ai_server_actions_app_actions_ai",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L1005",
       "weight": 1.0,
       "confidence_score": 1.0,
       "source": "crm_excelbees_ship_to_prd_fully_implemented",
       "target": "crm_excelbees_ship_to_prd_ai_ui_components"
+=======
+      "source_location": "L1006",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_fully_implemented",
+      "target": "crm_excelbees_ship_to_prd_ai_ui_components",
+      "confidence_score": 1.0
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "ship-to-prd.md",
+<<<<<<< HEAD
       "source_location": "L1014",
       "weight": 1.0,
       "confidence_score": 1.0,
@@ -166405,4 +168507,15 @@
   ],
   "hyperedges": [],
   "built_at_commit": "5bc96b0a33f5cb9c8540102a64a8fe62d3186d29"
+=======
+      "source_location": "L1015",
+      "weight": 1.0,
+      "source": "crm_excelbees_ship_to_prd_fully_implemented",
+      "target": "crm_excelbees_ship_to_prd_production_hardening",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "ef98b1f34e8747a3b1ebcf43275986eadc8988dd"
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
 }

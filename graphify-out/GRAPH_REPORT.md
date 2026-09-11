@@ -5,12 +5,21 @@
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
+<<<<<<< HEAD
 - 6101 nodes · 10667 edges · 443 communities (395 shown, 48 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 118 edges (avg confidence: 0.79)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
 - Built from commit: `5bc96b0a`
+=======
+- 161 nodes · 171 edges · 12 communities
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
+- Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `ef98b1f3`
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -26,6 +35,7 @@
 - [[_COMMUNITY_Community 8|Community 8]]
 - [[_COMMUNITY_Community 9|Community 9]]
 - [[_COMMUNITY_Community 10|Community 10]]
+<<<<<<< HEAD
 - [[_COMMUNITY_Community 11|Community 11]]
 - [[_COMMUNITY_Community 12|Community 12]]
 - [[_COMMUNITY_Community 13|Community 13]]
@@ -895,13 +905,44 @@ Cohesion: 0.12
 Nodes (16): Breakpoint System, code:html (<!-- Base: 1 column (mobile)), code:html (<!-- Only on mobile and tablet (below 1024px) -->), code:html (<!-- Only on tablets (between md and lg) -->), code:html (<div class="@container">), code:css (@theme {), code:html (<div class="tablet:grid-cols-2 3xl:grid-cols-6">), code:html (<!-- Hover effect only on desktop -->) (+8 more)
 
 ### Community 104 - "Community 104"
+=======
+
+## God Nodes (most connected - your core abstractions)
+1. `APP_ENVIRONMENT — Design Spec` - 11 edges
+2. `3.2 AI Feature Catalog (10 Features)` - 11 edges
+3. `ExcelBees CRM — Ship to Production Roadmap` - 9 edges
+4. `3. Gemini AI Integration Plan` - 8 edges
+5. `P3 — Polish` - 8 edges
+6. `P0 — Critical (Must fix before deployment)` - 7 edges
+7. `P1 — High Priority (Fix before production users)` - 7 edges
+8. `3.1 Foundation Layer` - 6 edges
+9. `P2 — Medium Priority (Stabilize post-launch)` - 6 edges
+10. `4. Production Readiness Gaps` - 5 edges
+
+## Surprising Connections (you probably didn't know these)
+- `robots()` --calls--> `getAppUrl()`  [EXTRACTED]
+  app/robots.ts → lib/environment.ts
+
+## Communities (12 total, 0 thin omitted)
+
+### Community 0 - "Community 0"
+Cohesion: 0.09
+Nodes (22): 1. Completed: Marketing Removal, 2. Current Architecture, 5. Priority Execution Order, 6. Deployment Checklist, 7. Completion Summary, AI Feature Verification, AI Infrastructure (lib/gemini/), AI Server Actions (app/actions/ai/) (+14 more)
+
+### Community 1 - "Community 1"
+Cohesion: 0.10
+Nodes (19): 3.2 AI Feature Catalog (10 Features), code:ts (export async function scoreLead(leadId: string): Promise<AIR), code:ts (export async function analyzeDeal(dealId: string): Promise<A), code:ts (export async function draftEmail(params: {), code:ts (export async function rewriteText(params: {), code:ts (export async function getFollowUpSuggestions(userId: string)), code:ts (export async function summarizeMeeting(notes: string): Promi), code:ts (export async function prioritizeTasks(userId: string): Promi) (+11 more)
+
+### Community 2 - "Community 2"
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
 Cohesion: 0.13
-Nodes (17): main, ShadcnInstaller.check_shadcn_config, ShadcnInstaller.get_installed_components, excluded_lines, executed_lines, missing_lines, summary, functions (+9 more)
+Nodes (8): checkAuthAvailability(), checkLoginRateLimit(), signInWithEmail(), signInWithGoogle(), FEATURES, HIGHLIGHTS, SignupFormData, signupSchema
 
-### Community 105 - "Community 105"
+### Community 3 - "Community 3"
 Cohesion: 0.12
-Nodes (8): bodyEditor, deleteItem, dialog, emails, row, saveDraftBtn, templatesSelector, EmailsPage
+Nodes (9): inter, metadata, viewport, robots(), register(), AppEnvironment, appEnvironmentClient, getAppUrl() (+1 more)
 
+<<<<<<< HEAD
 ### Community 106 - "Community 106"
 Cohesion: 0.11
 Nodes (4): loginPage, emailInput, loginPage, LoginPage
@@ -1635,13 +1676,29 @@ Cohesion: 0.39
 Nodes (7): apiDelete(), apiFetch(), apiGet(), apiPost(), apiPut(), ApiRequestInit, useApi()
 
 ### Community 291 - "Community 291"
+=======
+### Community 4 - "Community 4"
+Cohesion: 0.11
+Nodes (18): 4.10 Database Indexing, 4.11 Security Headers, 4.12 Error Handling Standardization, 4.18 Landing Page for CRM, 4.19 `AITextarea` Naming, 4.20 AI Fields on Lead Type, 4.21 Reports Page AI Terminology, 4.22 Email Notification Templates (+10 more)
+
+### Community 5 - "Community 5"
+Cohesion: 0.14
+Nodes (14): 3.1.1 Re-add Dependency, 3.1.2 Gemini Client — `lib/gemini/client.ts` (new), 3.1.3 Environment Variable, 3.1.4 Types — `types/gemini.ts` (new), 3.1.5 AI Permission Toggle, 3.1 Foundation Layer, code:bash (npm install @google/generative-ai react-markdown), code:block2 (lib/gemini/) (+6 more)
+
+### Community 6 - "Community 6"
+Cohesion: 0.14
+Nodes (13): APP_ENVIRONMENT — Design Spec, Banner — `components/system/EnvironmentBanner.tsx` (new), Central config: `lib/env.ts` (new), Client-side mirror, code:ts (export type AppEnvironment = "dev" | "prd" | "maintenance";), Files touched, Goal, Maintenance auth block (+5 more)
+
+### Community 7 - "Community 7"
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
 Cohesion: 0.25
-Nodes (8): 15.1 Create a Note, 15.2 Create Note with Empty Content, 15.3 Pin a Note, 15.4 Unpin a Note, 15.5 Edit a Note, 15.6 Delete a Note, 15.7 Notes Search, 15. Notes
+Nodes (8): 4.1 Firestore Rules Cleanup, 4.2 Middleware → Proxy Migration, 4.3 Edge Auth Enforcement, 4.4 `.env.example` Creation, 4.5 Secret Exposure in `next.config.ts`, 4.6 Re-add `GEMINI_API_KEY` Securely, code:env (# App), P0 — Critical (Must fix before deployment)
 
-### Community 292 - "Community 292"
-Cohesion: 0.40
-Nodes (5): code:html (<div class="w-full">100%</div>), code:html (<div class="h-full">100%</div>), Height, Width, Width & Height
+### Community 8 - "Community 8"
+Cohesion: 0.29
+Nodes (7): 3.0 Design Principles, 3.3 AI Feature Summary Matrix, 3.4 AI Architecture Diagram, 3.5 AI Feature Gating, 3.6 Caching Strategy for AI, 3. Gemini AI Integration Plan, code:block19 (┌──────────────────────────────────────────────────────┐)
 
+<<<<<<< HEAD
 ### Community 293 - "Community 293"
 Cohesion: 0.27
 Nodes (10): archiveDeal(), cacheKey(), createDeal(), orgCacheKey(), unarchiveDeal(), updateDeal(), updateDealStage(), createNotification() (+2 more)
@@ -2034,10 +2091,24 @@ Nodes (3): code:text (/), code:text (crm.excelbees.com/), Public Website Structu
 - **3001 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+2996 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **48 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+=======
+### Community 9 - "Community 9"
+Cohesion: 0.33
+Nodes (4): AboutSection, BlogSection, metadata, TestimonialsSection
+
+### Community 10 - "Community 10"
+Cohesion: 0.33
+Nodes (6): 4.13 Error Reporting Integration, 4.14 Health Check Endpoint, 4.15 Cleanup Stale Documents, 4.16 Performance Optimization, 4.17 Gemini Error Resilience, P2 — Medium Priority (Stabilize post-launch)
+
+## Knowledge Gaps
+- **85 isolated node(s):** `FEATURES`, `signupSchema`, `SignupFormData`, `HIGHLIGHTS`, `inter` (+80 more)
+  These have ≤1 connection - possible missing edges or undocumented components.
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
+<<<<<<< HEAD
 - **Why does `getDoc()` connect `Community 4` to `Community 3`, `Community 100`, `Community 293`, `Community 67`, `Community 5`, `Community 234`, `Community 205`, `Community 14`, `Community 238`, `Community 242`, `Community 246`, `Community 24`, `Community 58`?**
   _High betweenness centrality (0.029) - this node is a cross-community bridge._
 - **Why does `test` connect `Community 13` to `Community 66`, `Community 133`, `Community 134`, `Community 7`, `Community 168`, `Community 169`, `Community 106`, `Community 105`, `Community 170`, `Community 14`, `Community 143`, `Community 85`, `Community 125`, `Community 154`, `Community 124`, `Community 93`, `Community 190`?**
@@ -2052,3 +2123,19 @@ _Questions this graph is uniquely positioned to answer:_
   _Cohesion score 0.04214424263798272 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.04115784712799638 - nodes in this community are weakly interconnected._
+=======
+- **Why does `ExcelBees CRM — Ship to Production Roadmap` connect `Community 0` to `Community 8`, `Community 4`?**
+  _High betweenness centrality (0.249) - this node is a cross-community bridge._
+- **Why does `3. Gemini AI Integration Plan` connect `Community 8` to `Community 0`, `Community 1`, `Community 5`?**
+  _High betweenness centrality (0.218) - this node is a cross-community bridge._
+- **Why does `4. Production Readiness Gaps` connect `Community 4` to `Community 0`, `Community 10`, `Community 7`?**
+  _High betweenness centrality (0.187) - this node is a cross-community bridge._
+- **What connects `FEATURES`, `signupSchema`, `SignupFormData` to the rest of the system?**
+  _85 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `Community 0` be split into smaller, more focused modules?**
+  _Cohesion score 0.08695652173913043 - nodes in this community are weakly interconnected._
+- **Should `Community 1` be split into smaller, more focused modules?**
+  _Cohesion score 0.09523809523809523 - nodes in this community are weakly interconnected._
+- **Should `Community 2` be split into smaller, more focused modules?**
+  _Cohesion score 0.12857142857142856 - nodes in this community are weakly interconnected._
+>>>>>>> fc6ed1c10dc2e91104e0ed77e764d6c5e6151663

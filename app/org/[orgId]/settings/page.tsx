@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { updateProfile } from "firebase/auth";
 import { getUserProfile, updateUserProfile } from "@/lib/firestore/users";
-import { leaveOrganization, deleteOrganization } from "@/lib/firestore/organizations";
+import { leaveOrganization, deleteOrganization, updateOrganization } from "@/lib/firestore/organizations";
 import { logger } from "@/lib/logger/client";
 
 export default function SettingsPage() {
@@ -42,6 +42,12 @@ export default function SettingsPage() {
     const [deletingOrg, setDeletingOrg] = useState(false);
     const { confirm, ConfirmDialog } = useConfirm();
 
+    const [orgDialogOpen, setOrgDialogOpen] = useState(false);
+    const [orgName, setOrgName] = useState("");
+    const [orgWebsite, setOrgWebsite] = useState("");
+    const [orgIndustry, setOrgIndustry] = useState("");
+    const [orgSize, setOrgSize] = useState("");
+
     const [profileName, setProfileName] = useState(currentMember?.displayName || "");
     const [profileEmail, setProfileEmail] = useState(currentMember?.email || "");
 
@@ -49,6 +55,42 @@ export default function SettingsPage() {
     const [taskReminders, setTaskReminders] = useState(true);
     const [weeklySummary, setWeeklySummary] = useState(false);
     const [userSettings, setUserSettings] = useState<NonNullable<import("@/types/crm").UserProfile["settings"]>>({});
+
+    const handleEditOrg = () => {
+        setOrgName(currentOrg?.name || "");
+        setOrgWebsite(currentOrg?.website || "");
+        setOrgIndustry(currentOrg?.industry || "");
+        setOrgSize(currentOrg?.size || "");
+        setOrgDialogOpen(true);
+    };
+
+    const handleSaveOrg = async () => {
+        if (!orgName.trim()) {
+            toast.error("Organization name is required");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            logger.info("Updating organization", { module: "settings", action: "save", orgId });
+            const { success, error } = await updateOrganization(orgId, {
+                name: orgName,
+                website: orgWebsite,
+                industry: orgIndustry,
+                size: orgSize,
+            });
+
+            if (!success) throw new Error(error || "Failed to update organization");
+
+            toast.success("Organization updated successfully");
+            setOrgDialogOpen(false);
+        } catch (error: any) {
+            logger.error("Error updating organization", { module: "settings", action: "save", orgId, error });
+            toast.error(error.message || "Failed to update organization");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleEditProfile = () => {
         setProfileName(currentMember?.displayName || "");
@@ -196,6 +238,40 @@ export default function SettingsPage() {
             />
 
             <div className="grid gap-6 md:grid-cols-2">
+                {currentMember?.role === "admin" && (
+                    <Card className="md:col-span-2">
+                        <CardHeader>
+                            <CardTitle>Organization Profile</CardTitle>
+                            <CardDescription>
+                                Manage your organization's basic details (Name, Website, Industry, Size)
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <Label className="text-muted-foreground text-xs uppercase tracking-wider">Name</Label>
+                                    <p className="text-sm font-medium mt-1">{currentOrg?.name}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-muted-foreground text-xs uppercase tracking-wider">Website</Label>
+                                    <p className="text-sm font-medium mt-1">{currentOrg?.website || "—"}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-muted-foreground text-xs uppercase tracking-wider">Industry</Label>
+                                    <p className="text-sm font-medium mt-1">{currentOrg?.industry || "—"}</p>
+                                </div>
+                                <div>
+                                    <Label className="text-muted-foreground text-xs uppercase tracking-wider">Size</Label>
+                                    <p className="text-sm font-medium mt-1">{currentOrg?.size || "—"}</p>
+                                </div>
+                            </div>
+                            <Button variant="outline" className="mt-4" onClick={handleEditOrg}>
+                                Edit Organization Details
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Appearance</CardTitle>
@@ -493,6 +569,69 @@ export default function SettingsPage() {
                         </Button>
                         <Button onClick={handleSaveCurrency} disabled={saving}>
                             {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : "Save Currency"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={orgDialogOpen} onOpenChange={setOrgDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Organization Profile</DialogTitle>
+                        <DialogDescription>
+                            Update your organization's basic information
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="settings-org-name">Organization Name</Label>
+                            <Input
+                                id="settings-org-name"
+                                value={orgName}
+                                onChange={(e) => setOrgName(e.target.value)}
+                                placeholder="Company Name"
+                                disabled={saving}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="settings-org-website">Website</Label>
+                            <Input
+                                id="settings-org-website"
+                                value={orgWebsite}
+                                onChange={(e) => setOrgWebsite(e.target.value)}
+                                placeholder="https://example.com"
+                                disabled={saving}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="settings-org-industry">Industry</Label>
+                                <Input
+                                    id="settings-org-industry"
+                                    value={orgIndustry}
+                                    onChange={(e) => setOrgIndustry(e.target.value)}
+                                    placeholder="e.g. Software, Real Estate"
+                                    disabled={saving}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="settings-org-size">Size</Label>
+                                <Input
+                                    id="settings-org-size"
+                                    value={orgSize}
+                                    onChange={(e) => setOrgSize(e.target.value)}
+                                    placeholder="e.g. 1-10, 11-50"
+                                    disabled={saving}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOrgDialogOpen(false)} disabled={saving}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveOrg} disabled={saving}>
+                            {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : "Save Changes"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
